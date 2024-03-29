@@ -1,0 +1,1770 @@
+"use strict";
+
+const { default: Swal } = require("sweetalert2");
+import Cleave from "cleave.js"
+import { Chart, registerables } from "chart.js";
+Chart.register(...registerables);
+
+$(function () {
+    let routeName = ($('meta[name=route]')[0].content);
+
+    console.log(routeName)
+
+    if($('.thousand-style').toArray().length > 0) {
+        $('.thousand-style').toArray().forEach(e => {
+            new Cleave(e, {
+                numeral: true,
+                numeralThousandsGroupStyle: 'thousand'
+            });
+        });
+    }
+    if (document.location.pathname == '/konfigurasi/spbu') {
+        $('.table-spbu').DataTable({
+            language: {
+                url: "//cdn.datatables.net/plug-ins/1.10.24/i18n/Indonesian.json",
+            },
+            processing: true,
+            serverSide: true,
+            ajax: document.location.href,
+            columns: [
+                {data: 'nama_spbu', name: 'nama_spbu'},
+                {data: 'nomor_spbu', name: 'nomor_spbu'},
+                {data: 'tanggal_pendirian', name: 'tanggal_pendirian'},
+                {data: 'alamat', name: 'alamat'},
+                {data: 'action', name: 'action', orderable: false, searchable: false},
+            ]
+        });
+    }
+    if (document.location.pathname == '/konfigurasi/divisi') {
+        $('.table-divisi').DataTable({
+            language: {
+                url: "//cdn.datatables.net/plug-ins/1.10.24/i18n/Indonesian.json",
+            },
+            processing: true,
+            serverSide: true,
+            ajax: document.location.href,
+            columns: [
+                {data: 'nama_divisi', name: 'nama_divisi'},
+                {data: 'keterangan', name: 'keterangan'},
+                {data: 'is_aktif', name: 'is_aktif'},
+                {data: 'action', name: 'action', orderable: false, searchable: false},
+            ]
+        });
+    }
+    if (document.location.pathname == '/konfigurasi/hari') {
+        $('.table-hari').DataTable({
+            language: {
+                url: "//cdn.datatables.net/plug-ins/1.10.24/i18n/Indonesian.json",
+            },
+            processing: true,
+            serverSide: true,
+            ajax: document.location.href,
+            columns: [
+                {data: 'nama_hari', name: 'nama_hari'},
+                {data: 'hari_kerja', name: 'hari_kerja'},
+                {data: 'keterangan', name: 'keterangan'},
+                {data: 'action', name: 'action', orderable: false, searchable: false},
+            ]
+        });
+    }
+    if (document.location.pathname == '/konfigurasi/jam_kerja') {
+        $('.table-jam-kerja').DataTable({
+            language: {
+                url: "//cdn.datatables.net/plug-ins/1.10.24/i18n/Indonesian.json",
+            },
+            processing: true,
+            serverSide: true,
+            ajax: document.location.href,
+            columns: [
+                {data: 'nama_jam_kerja', name: 'nama_jam_kerja'},
+                {data: 'jam_datang_in', name: 'jam_datang_in'},
+                {data: 'jam_pulang_out', name: 'jam_pulang_out'},
+                {data: 'action', name: 'action', orderable: false, searchable: false},
+            ]
+        });
+    }
+    if (document.location.pathname == '/master/aset') {
+        $('.table-aset').DataTable({
+            language: {
+                url: "//cdn.datatables.net/plug-ins/1.10.24/i18n/Indonesian.json",
+            },
+            processing: true,
+            serverSide: true,
+            ajax: document.location.href,
+            columns: [
+                {data: 'nama_aset', name: 'nama_aset'},
+                {data: 'jumlah', name: 'jumlah'},
+                {data: 'keterangan', name: 'keterangan'},
+                {data: 'action', name: 'action', orderable: false, searchable: false},
+            ]
+        });
+    }
+    if (document.location.pathname == '/master/fasilitas') {
+        $('.table-fasilitas').DataTable({
+            language: {
+                url: "//cdn.datatables.net/plug-ins/1.10.24/i18n/Indonesian.json",
+            },
+            processing: true,
+            serverSide: true,
+            ajax: document.location.href,
+            columns: [
+                {data: 'nama_fasilitas', name: 'nama_fasilitas'},
+                {data: 'jumlah', name: 'jumlah'},
+                {data: 'tanggal_digunakan', name: 'tanggal_digunakan'},
+                {data: 'keterangan', name: 'keterangan'},
+                {data: 'action', name: 'action', orderable: false, searchable: false},
+            ]
+        });
+
+    }
+    if (document.location.pathname == '/master/produk') {
+        $('.table-produk').DataTable({
+            language: {
+                url: "//cdn.datatables.net/plug-ins/1.10.24/i18n/Indonesian.json",
+            },
+            processing: true,
+            serverSide: true,
+            ajax: document.location.href,
+            columns: [
+                {data: 'nama_produk', name: 'nama_produk'},
+                {data: 'nama_jenis', name: 'nama_jenis'},
+                {data: 'oktan', name: 'oktan'},
+                {data: 'is_aktif', name: 'keterangan'},
+                {data: 'action', name: 'action', orderable: false, searchable: false},
+            ]
+        });
+    }
+    if (document.location.pathname == '/master/dombak') {
+        $('.table-dombak').DataTable({
+            language: {
+                url: "//cdn.datatables.net/plug-ins/1.10.24/i18n/Indonesian.json",
+            },
+            processing: true,
+            serverSide: true,
+            ajax: document.location.href,
+            columns: [
+                {data: 'nama_dombak', name: 'nama_dombak'},
+                {data: 'is_aktif', name: 'is_aktif'},
+                {data: 'keterangan', name: 'keterangan'},
+                {data: 'action', name: 'action', orderable: false, searchable: false},
+            ]
+        });
+    }
+    if (document.location.pathname == '/master/payung') {
+        $('.table-payung').DataTable({
+            language: {
+                url: "//cdn.datatables.net/plug-ins/1.10.24/i18n/Indonesian.json",
+            },
+            processing: true,
+            serverSide: true,
+            ajax: document.location.href,
+            columns: [
+                {data: 'nama_payung', name: 'nama_payung'},
+                {data: 'is_aktif', name: 'is_aktif'},
+                {data: 'keterangan', name: 'keterangan'},
+                {data: 'action', name: 'action', orderable: false, searchable: false},
+            ]
+        });
+    }
+    if (document.location.pathname == '/master/dispenser') {
+        $('.table-dispenser').DataTable({
+            language: {
+                url: "//cdn.datatables.net/plug-ins/1.10.24/i18n/Indonesian.json",
+            },
+            processing: true,
+            serverSide: true,
+            ajax: document.location.href,
+            columns: [
+                {data: 'nama_dispenser', name: 'nama_dispenser'},
+                {data: 'nama_payung', name: 'nama_payung'},
+                {data: 'is_aktif', name: 'is_aktif'},
+                {data: 'keterangan', name: 'keterangan'},
+                {data: 'action', name: 'action', orderable: false, searchable: false},
+            ]
+        });
+    }
+    if (document.location.pathname == '/master/nozzle') {
+        $('.table-nozzle').DataTable({
+            language: {
+                url: "//cdn.datatables.net/plug-ins/1.10.24/i18n/Indonesian.json",
+            },
+            processing: true,
+            serverSide: true,
+            ajax: document.location.href,
+            columns: [
+                {data: 'nama_payung', name: 'nama_payung'},
+                {data: 'nama_dispenser', name: 'nama_dispenser'},
+                {data: 'nama_produk', name: 'nama_payung'},
+                {data: 'nama_nozzle', name: 'nama_nozzle'},
+                {data: 'is_aktif', name: 'is_aktif'},
+                {data: 'keterangan', name: 'keterangan'},
+                {data: 'action', name: 'action', orderable: false, searchable: false},
+            ]
+        });
+    }
+    if (routeName == 'harga.index' || routeName == 'harga.riwayat.index') {
+        $('.table-harga').DataTable({
+            language: {
+                url: "//cdn.datatables.net/plug-ins/1.10.24/i18n/Indonesian.json",
+            },
+            processing: true,
+            serverSide: true,
+            ajax: document.location.href,
+            columns: [
+                {data: 'produk', name: 'produk'},
+                {data: 'tanggal', name: 'tanggal'},
+                {data: 'jam_kerja', name: 'jam_kerja'},
+                {data: 'harga_jual', name: 'harga_jual'},
+                {data: 'harga_beli', name: 'harga_beli'},
+                {data: 'action', name: 'action', orderable: false, searchable: false},
+            ]
+        });
+    }
+    if (routeName == 'payung.dombak') {
+        $('.table-payung-dombak').DataTable({
+            language: {
+                url: "//cdn.datatables.net/plug-ins/1.10.24/i18n/Indonesian.json",
+            },
+            processing: true,
+            serverSide: true,
+            ajax: document.location.href,
+            columns: [
+                {data: 'nama_payung', name: 'nama_payung'},
+                {data: 'nama_dombak', name: 'nama_dombak'},
+                {data: 'action', name: 'action', orderable: false, searchable: false},
+            ]
+        });
+    }
+    if (routeName == 'payung.dombak.create') {
+        $('.table-payung-dombak-create').DataTable({
+            language: {
+                url: "//cdn.datatables.net/plug-ins/1.10.24/i18n/Indonesian.json",
+            },
+            processing: true,
+            serverSide: true,
+            ajax: document.location.href,
+            columns: [
+                {data: 'dombak_id', name: 'dombak_id'},
+                {data: 'nama_dombak', name: 'nama_dombak'},
+                {data: 'is_aktif', name: 'is_aktif'},
+                {data: 'action', name: 'action', orderable: false, searchable: false},
+            ]
+        });
+    }
+    if (routeName == 'konversi.index') {
+        $('.table-konversi').DataTable({
+            language: {
+                url: "//cdn.datatables.net/plug-ins/1.10.24/i18n/Indonesian.json",
+            },
+            processing: true,
+            serverSide: true,
+            ajax: document.location.href,
+            columns: [
+                {data: 'tinggi', name: 'tinggi'},
+                {data: 'volume', name: 'volume'},
+                {data: 'action', name: 'action', orderable: false, searchable: false},
+            ]
+        });
+    }
+    if (routeName == 'member.index') {
+        $('.table-member').DataTable({
+            language: {
+                url: "//cdn.datatables.net/plug-ins/1.10.24/i18n/Indonesian.json",
+            },
+            processing: true,
+            serverSide: true,
+            ajax: document.location.href,
+            columns: [
+                {data: 'avatar', name: 'avatar'},
+                {data: 'nama', name: 'nama'},
+                {data: 'username', name: 'username'},
+                {data: 'verified', name: 'verified'},
+                {data: 'action', name: 'action', orderable: false, searchable: false},
+            ]
+        });
+    }
+    if (routeName == 'level.index') {
+        $('.table-level').DataTable({
+            language: {
+                url: "//cdn.datatables.net/plug-ins/1.10.24/i18n/Indonesian.json",
+            },
+            processing: true,
+            serverSide: true,
+            ajax: document.location.href,
+            columns: [
+                {data: 'nama_level', name: 'nama_level'},
+                {data: 'nama_divisi', name: 'nama_divisi'},
+                {data: 'keterangan', name: 'keterangan'},
+                {data: 'is_aktif', name: 'is_aktif'},
+                {data: 'action', name: 'action', orderable: false, searchable: false},
+            ]
+        });
+    }
+    if (routeName == 'jabatan.index') {
+        $('.table-jabatan').DataTable({
+            language: {
+                url: "//cdn.datatables.net/plug-ins/1.10.24/i18n/Indonesian.json",
+            },
+            processing: true,
+            serverSide: true,
+            ajax: document.location.href,
+            columns: [
+                {data: 'nama_jabatan', name: 'nama_jabatan'},
+                {data: 'nama_level', name: 'nama_level'},
+                {data: 'keterangan', name: 'keterangan'},
+                {data: 'is_aktif', name: 'is_aktif'},
+                {data: 'action', name: 'action', orderable: false, searchable: false},
+            ]
+        });
+    }
+    if (routeName == 'member.jabatan.index') {
+        $('.table-jabatan-member').DataTable({
+            language: {
+                url: "//cdn.datatables.net/plug-ins/1.10.24/i18n/Indonesian.json",
+            },
+            processing: true,
+            serverSide: true,
+            ajax: document.location.href,
+            columns: [
+                {data: 'jabatan_id', name: 'jabatan_id'},
+                {data: 'nama_divisi', name: 'nama_divisi'},
+                {data: 'nama_level', name: 'nama_level'},
+                {data: 'nama_jabatan', name: 'nama_jabatan'},
+                {data: 'action', name: 'action', orderable: false, searchable: false},
+            ]
+        });
+    }
+    if (routeName == 'member.jabatan.create') {
+        $('.table-jabatan-member-create').DataTable({
+            language: {
+                url: "//cdn.datatables.net/plug-ins/1.10.24/i18n/Indonesian.json",
+            },
+            processing: true,
+            serverSide: true,
+            ajax: document.location.href,
+            columns: [
+                {data: 'nama_divisi', name: 'nama_divisi'},
+                {data: 'nama_level', name: 'nama_level'},
+                {data: 'nama_jabatan', name: 'nama_jabatan'},
+                {data: 'action', name: 'action', orderable: false, searchable: false},
+            ]
+        });
+    }
+    if (routeName == 'monitoring.index') {
+        $('.table-monitoring').DataTable({
+            language: {
+                url: "//cdn.datatables.net/plug-ins/1.10.24/i18n/Indonesian.json",
+            },
+            processing: true,
+            serverSide: true,
+            ajax: document.location.href,
+            columns: [
+                {data: 'nama_produk', name: 'nama_produk'},
+                {data: 'stok', name: 'stok'},
+                {data: 'action', name: 'action', orderable: false, searchable: false},
+            ]
+        });
+    }
+    if(routeName == 'monitoring.show_riwayat') {
+        $('.table-riwayat-monitoring').DataTable({
+            language: {
+                url: "//cdn.datatables.net/plug-ins/1.10.24/i18n/Indonesian.json",
+            },
+            processing: true,
+            serverSide: true,
+            ajax: document.location.href,
+            columns: [
+                {data: 'tanggal', name: 'tanggal'},
+                {data: 'type_movement', name: 'type_movement'},
+                {data: 'nama_dombak', name: 'nama_dombak'},
+                {data: 'stok_awal', name: 'stok_awal'},
+                {data: 'stok_akhir', name: 'stok_akhir'},
+                {data: 'action', name: 'action', orderable: false, searchable: false},
+            ]
+        });
+    }
+    if (routeName == 'monitoring.dombak.index') {
+        $('.table-monitoring-dombak').DataTable({
+            language: {
+                url: "//cdn.datatables.net/plug-ins/1.10.24/i18n/Indonesian.json",
+            },
+            processing: true,
+            serverSide: true,
+            ajax: document.location.href,
+            columns: [
+                {data: 'dombak_id', name: 'dombak_id'},
+                {data: 'nama_dombak', name: 'nama_dombak'},
+                {data: 'stok', name: 'stok'},
+                {data: 'action', name: 'action', orderable: false, searchable: false},
+            ]
+        });
+    }
+    if (routeName == 'monitoring.dombak.create') {
+        $('.table-monitoring-dombak').DataTable({
+            language: {
+                url: "//cdn.datatables.net/plug-ins/1.10.24/i18n/Indonesian.json",
+            },
+            processing: true,
+            serverSide: true,
+            ajax: document.location.href,
+            columns: [
+                {data: 'dombak_id', name: 'dombak_id'},
+                {data: 'nama_dombak', name: 'nama_dombak'},
+                {data: 'action', name: 'action', orderable: false, searchable: false},
+            ]
+        });
+    }
+    if(routeName == 'home') {
+        $.ajax({
+            url: document.location.origin + '/api/chart',
+            method: 'get',
+            dataType: 'json',
+            success: function(data) {
+                new Chart(document.getElementById('chart-stok'), {
+                    type: 'bar',
+                    label: 'Stok BBM',
+                    data: data.data.chart_stok,
+                    options: {
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                    }
+                });
+                new Chart(document.getElementById('chart-stok-split'), {
+                    type: 'bar',
+                    label: 'Pengeluaran Stok Tanggal 12 Juli 2023',
+                    data: data.data.chart_stok_split,
+                    options: {
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                    }
+                });
+            },
+            error: function(err) {console.error(err)}
+        })
+
+    }
+    if(routeName == 'profil.edit_password') {
+        $('button.see_password').on('click', function() {
+            if($(this).parent().siblings().attr('type') == 'password') {
+                $(this).parent().siblings().attr('type', 'text');
+            } else {
+                $(this).parent().siblings().attr('type', 'password');
+            }
+        });
+    }
+    if(routeName == 'notifikasi') {
+        $('.table-notifikasi').DataTable({
+            language: {
+                url: "//cdn.datatables.net/plug-ins/1.10.24/i18n/Indonesian.json",
+            },
+            processing: true,
+            serverSide: true,
+            ajax: document.location.href,
+            columns: [
+                {data: 'created_at', name: 'created_at'},
+                {data: 'judul', name: 'judul'},
+                {data: 'status', name: 'status'},
+                {data: 'action', name: 'action', orderable: false, searchable: false},
+            ]
+        });
+    }
+    if (routeName == 'perencanaan.index' || routeName == 'perencanaan.ditolak' ) {
+        $('.table-perencanaan').DataTable({
+            language: {
+                url: "//cdn.datatables.net/plug-ins/1.10.24/i18n/Indonesian.json",
+            },
+            processing: true,
+            serverSide: true,
+            ajax: document.location.href,
+            columns: [
+                {data: 'kode_pembelian', name: 'kode_pembelian'},
+                {data: 'created_at', name: 'created_at'},
+                {data: 'member_id', name: 'member_id'},
+                {data: 'produk_id', name: 'produk_id'},
+                {data: 'is_confirmation', name: 'is_confirmation'},
+                {data: 'action', name: 'action', orderable: false, searchable: false},
+            ]
+        });
+    }
+    if (routeName == 'perencanaan.detail.index') {
+        $('.table-detail-rencana').DataTable({
+            language: {
+                url: "//cdn.datatables.net/plug-ins/1.10.24/i18n/Indonesian.json",
+            },
+            processing: true,
+            serverSide: true,
+            ajax: document.location.href,
+            columns: [
+                {data: 'detail_rencana_pembelian_id', name: 'detail_rencana_pembelian_id'},
+                {data: 'nama_produk', name: 'nama_produk'},
+                {data: 'jumlah', name: 'jumlah'},
+                {data: 'satuan_jumlah', name: 'satuan_jumlah'},
+                {data: 'action', name: 'action', orderable: false, searchable: false},
+            ]
+        });
+    }
+    if (routeName == 'pembelian.index') {
+        $('.table-pembelian').DataTable({
+            language: {
+                url: "//cdn.datatables.net/plug-ins/1.10.24/i18n/Indonesian.json",
+            },
+            processing: true,
+            serverSide: true,
+            ajax: document.location.href,
+            columns: [
+                {data: 'kode_pembelian', name: 'kode_pembelian'},
+                {data: 'created_at', name: 'created_at'},
+                {data: 'member_id', name: 'member_id'},
+                {data: 'produk_id', name: 'produk_id'},
+                {data: 'action', name: 'action', orderable: false, searchable: false},
+            ]
+        });
+    }
+    if (routeName == 'pembelian.detail.index') {
+        $('.table-detail-pembelian').DataTable({
+            language: {
+                url: "//cdn.datatables.net/plug-ins/1.10.24/i18n/Indonesian.json",
+            },
+            processing: true,
+            serverSide: true,
+            ajax: document.location.href,
+            columns: [
+                {data: 'nama_produk', name: 'nama_produk'},
+                {data: 'rit', name: 'rit'},
+                {data: 'jumlah', name: 'jumlah'},
+                {data: 'satuan_jumlah', name: 'satuan_jumlah'},
+                {data: 'harga', name: 'harga'},
+                {data: 'total_harga', name: 'total_harga'},
+                {data: 'action', name: 'action', orderable: false, searchable: false},
+            ]
+        });
+    }
+    if(routeName == 'pembelian.detail.edit') {
+
+        $('input#harga').on('keyup', function() {
+            let harga = $('input#harga').val().replaceAll(',', '')
+            let jml = ((($('input#jumlah').val()).split('.')[0]).replace(',', ''))
+
+            $('input#total_harga').val(new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR" }).format(jml * harga))
+        })
+    }
+    if (routeName == 'pembayaran.index') {
+        $('.table-pembayaran').DataTable({
+            language: {
+                url: "//cdn.datatables.net/plug-ins/1.10.24/i18n/Indonesian.json",
+            },
+            processing: true,
+            serverSide: true,
+            ajax: document.location.href,
+            columns: [
+                {data: 'kode_pembelian', name: 'kode_pembelian'},
+                {data: 'created_at', name: 'created_at'},
+                {data: 'grand_total', name: 'grand_total'},
+                {data: 'produk_id', name: 'produk_id'},
+                {data: 'action', name: 'action', orderable: false, searchable: false},
+            ]
+        });
+    }
+    if (routeName == 'pembayaran.show') {
+        $('.table-pembayaran-show').DataTable({
+            language: {
+                url: "//cdn.datatables.net/plug-ins/1.10.24/i18n/Indonesian.json",
+            },
+            processing: true,
+            serverSide: true,
+            ajax: document.location.href,
+            columns: [
+                {data: 'tanggal', name: 'tanggal'},
+                {data: 'no_rekening', name: 'no_rekening'},
+                {data: 'nama_rekening', name: 'nama_rekening'},
+                {data: 'total_setoran', name: 'total_setoran'},
+                {data: 'is_confirmation', name: 'is_confirmation'},
+                {data: 'action', name: 'action', orderable: false, searchable: false},
+            ]
+        });
+    }
+    if (routeName == 'pembayaran.detail') {
+        $('.table-pembayaran-file').DataTable({
+            language: {
+                url: "//cdn.datatables.net/plug-ins/1.10.24/i18n/Indonesian.json",
+            },
+            processing: true,
+            serverSide: true,
+            ajax: document.location.href,
+            columns: [
+                {data: 'tanggal_upload', name: 'tanggal_upload'},
+                {data: 'nama_file', name: 'nama_file'},
+                {data: 'nama_dokumen', name: 'nama_dokumen'},
+                {data: 'action', name: 'action', orderable: false, searchable: false},
+            ]
+        });
+    }
+    if(routeName == 'pembayaran.file.create') {
+        $(".custom-file-input").on("change", function (e) {
+            $(this).siblings().text(e.target.value.split("fakepath")[1]);
+            var input = $(e.currentTarget);
+            var file = input[0].files[0];
+            var reader = new FileReader();
+            reader.onload = function (e) {
+                $(".img.img-thumbnail.img-temporary").attr("src", e.target.result);
+                $(".img.img-thumbnail.img-temporary").removeClass("d-none");
+            };
+            reader.readAsDataURL(file);
+        });
+    }
+    if (routeName == 'pengiriman.index') {
+        $('.table-pengiriman').DataTable({
+            language: {
+                url: "//cdn.datatables.net/plug-ins/1.10.24/i18n/Indonesian.json",
+            },
+            processing: true,
+            serverSide: true,
+            ajax: document.location.href,
+            columns: [
+                {data: 'tanggal', name: 'tanggal'},
+                {data: 'no_pol', name: 'no_pol'},
+                {data: 'no_do', name: 'no_do'},
+                {data: 'is_done', name: 'is_done'},
+                {data: 'action', name: 'action', orderable: false, searchable: false},
+            ]
+        });
+    }
+    if(routeName == 'pengiriman.show') {
+        $('.table-pengiriman-lo').DataTable({
+            language: {
+                url: "//cdn.datatables.net/plug-ins/1.10.24/i18n/Indonesian.json",
+            },
+            processing: true,
+            serverSide: true,
+            ajax: document.location.href,
+            columns: [
+                {data: 'no_faktur', name: 'no_faktur'},
+                {data: 'no_lo', name: 'no_lo'},
+                {data: 'nama_produk', name: 'nama_produk'},
+                {data: 'jumlah', name: 'jumlah'},
+                {data: 'action', name: 'action', orderable: false, searchable: false},
+            ]
+        });
+    }
+    if (routeName == 'file_lo.index') {
+        $('.table-file-lo').DataTable({
+            language: {
+                url: "//cdn.datatables.net/plug-ins/1.10.24/i18n/Indonesian.json",
+            },
+            processing: true,
+            serverSide: true,
+            ajax: document.location.href,
+            columns: [
+                {data: 'no_lo', name: 'no_lo'},
+                {data: 'produk_id', name: 'produk_id'},
+                {data: 'jumlah', name: 'jumlah'},
+                {data: 'no_faktur', name: 'no_faktur'},
+                {data: 'tanggal_upload', name: 'tanggal_upload'},
+                {data: 'action', name: 'action', orderable: false, searchable: false},
+            ]
+        });
+    }
+    if (routeName == 'ms2.pengiriman.file_lo_show.lampiran.index') {
+        $('.table-file-lampiran-lo').DataTable({
+            language: {
+                url: "//cdn.datatables.net/plug-ins/1.10.24/i18n/Indonesian.json",
+            },
+            processing: true,
+            serverSide: true,
+            ajax: document.location.href,
+            columns: [
+                {data: 'nama_file', name: 'nama_file'},
+                {data: 'nama_dokumen', name: 'nama_dokumen'},
+                {data: 'tanggal_upload', name: 'tanggal_upload'},
+                {data: 'action', name: 'action', orderable: false, searchable: false},
+            ]
+        });
+    }
+    if (routeName == 'pengiriman.file_lo.show') {
+        $('.table-file-lampiran-lo').DataTable({
+            language: {
+                url: "//cdn.datatables.net/plug-ins/1.10.24/i18n/Indonesian.json",
+            },
+            columns: [
+                {data: 'nama_file', name: 'nama_file'},
+                {data: 'nama_dokumen', name: 'nama_dokumen'},
+                {data: 'tanggal_upload', name: 'tanggal_upload'},
+                {data: 'action', name: 'action', orderable: false, searchable: false},
+            ]
+        });
+    }
+    if (routeName == 'penerimaan.file.index') {
+        $('.table-penerimaan').DataTable({
+            language: {
+                url: "//cdn.datatables.net/plug-ins/1.10.24/i18n/Indonesian.json",
+            },
+            processing: true,
+            serverSide: true,
+            ajax: document.location.href,
+            columns: [
+                {data: 'file_penerimaan_id', name: 'file_penerimaan_id'},
+                {data: 'nama_dokumen', name: 'nama_dokumen'},
+                {data: 'tanggal_upload', name: 'tanggal_upload'},
+                {data: 'action', name: 'action', orderable: false, searchable: false},
+            ]
+        });
+    }
+    if (routeName == 'penerimaan.file.riwayat.index') {
+        $('.table-penerimaan').DataTable({
+            language: {
+                url: "//cdn.datatables.net/plug-ins/1.10.24/i18n/Indonesian.json",
+            },
+            processing: true,
+            serverSide: true,
+            ajax: document.location.href,
+            columns: [
+                {data: 'file_penerimaan_id', name: 'file_penerimaan_id'},
+                {data: 'nama_dokumen', name: 'nama_dokumen'},
+                {data: 'tanggal_upload', name: 'tanggal_upload'},
+                {data: 'action', name: 'action', orderable: false, searchable: false},
+            ]
+        });
+    }
+    if (routeName == 'stok-taking.index' || routeName == 'stok-taking.riwayat') {
+        $('.table-stok-taking').DataTable({
+            language: {
+                url: "//cdn.datatables.net/plug-ins/1.10.24/i18n/Indonesian.json",
+            },
+            processing: true,
+            serverSide: true,
+            ajax: document.location.href,
+            columns: [
+                {data: 'type_dokumen', name: 'type_dokumen'},
+                {data: 'nama_produk', name: 'nama_produk'},
+                {data: 'tanggal', name: 'tanggal'},
+                {data: 'jam_kerja', name: 'jam_kerja'},
+                {data: 'action', name: 'action', orderable: false, searchable: false},
+            ]
+        });
+    }
+    if (routeName == 'stok-taking.file.index') {
+        $('.table-stok-taking-file').DataTable({
+            language: {
+                url: "//cdn.datatables.net/plug-ins/1.10.24/i18n/Indonesian.json",
+            },
+            processing: true,
+            serverSide: true,
+            ajax: document.location.href,
+            columns: [
+                {data: 'file_dokumen_stok_id', name: 'file_dokumen_stok_id'},
+                {data: 'nama_dokumen', name: 'nama_dokumen'},
+                {data: 'tanggal_upload', name: 'tanggal_upload'},
+                {data: 'action', name: 'action', orderable: false, searchable: false},
+            ]
+        });
+    }
+    if (routeName == 'stok-transfer.index' || routeName == 'stok-transfer.riwayat') {
+        $('.table-stok-transfer').DataTable({
+            language: {
+                url: "//cdn.datatables.net/plug-ins/1.10.24/i18n/Indonesian.json",
+            },
+            processing: true,
+            serverSide: true,
+            ajax: document.location.href,
+            columns: [
+                {data: 'tanggal', name: 'tanggal'},
+                {data: 'jam_kerja', name: 'jam_kerja'},
+                {data: 'dombak_sebelum', name: 'dombak_sebelum'},
+                {data: 'dombak_setelah', name: 'dombak_setelah'},
+                {data: 'nama_produk', name: 'nama_produk'},
+                {data: 'stok_berpindah', name: 'stok_berpindah'},
+                {data: 'action', name: 'action', orderable: false, searchable: false},
+            ]
+        });
+    }
+    if (routeName == 'stok-transfer.file.index') {
+        $('.table-stok-transfer-file').DataTable({
+            language: {
+                url: "//cdn.datatables.net/plug-ins/1.10.24/i18n/Indonesian.json",
+            },
+            processing: true,
+            serverSide: true,
+            ajax: document.location.href,
+            columns: [
+                {data: 'nama_dokumen', name: 'nama_dokumen'},
+                {data: 'tanggal_upload', name: 'tanggal_upload'},
+                {data: 'action', name: 'action', orderable: false, searchable: false},
+            ]
+        });
+    }
+    if (routeName == 'stok-transfer.create') {
+        $('select#dombak_id').on('change', function(e) {
+            checkKonversiDombakPertama('sebelumnya');
+            checkKonversiDombakPertama('setelahnya');
+            checkVolumeDombakPertama();
+        });
+        $('input#tinggi_dombak').on('change', function(e) {
+            checkKonversiDombakPertama('sebelumnya');
+        });
+        $('input#tinggi_dombak_setelahnya').on('change', function(e) {
+            checkKonversiDombakPertama('setelahnya');
+        });
+
+        function checkVolumeDombakPertama() {
+            if($('select#dombak_id').val() != '') {
+                $.ajax({
+                    url: document.location.origin + '/master/dombak/api',
+                    method: 'get',
+                    data: {
+                        dombak_id: $('select#dombak_id').val(),
+                        type: 'transfer'
+                    },
+                    dataType: 'json',
+                    success: function(data) {
+                        if(data.status == 200){
+                            if(data.data != null){
+                                $('input#volume_tercatat').val(data.data.stok)
+                                $('#tinggi_dombak').removeAttr('readonly');
+                                $('#tinggi_dombak_setelahnya').removeAttr('readonly');
+
+                                if(data.dombak.length > 0) {
+                                    $('select#dombak_kedua_id').children().remove();
+                                    let wrap = '<option value="">Silahkan Pilih Dombak Kedua</option>'
+                                    data.dombak.forEach(e => {
+                                        wrap += '<option value="'+ e.dombak_id +'">'+ e.nama_dombak +' ('+ e.nama_produk + ': ' +e.stok +'Liter)</option>'
+                                    });
+                                    $('select#dombak_kedua_id').append(wrap);
+                                    $('select#dombak_kedua_id').removeAttr('disabled');
+                                } else {
+                                    $('select#dombak_kedua_id').children().remove();
+                                    $('select#dombak_kedua_id').attr('disabled', '');
+                                    $('select#dombak_kedua_id').append('<option value="">Silahkan Pilih Dombak Kedua</option>');
+                                }
+                            }
+                            else {
+                                $('input#volume_tercatat').val("Tidak ada Data")
+                                $('#tinggi_dombak').attr('readonly', '');
+                                $('#tinggi_dombak_setelahnya').attr('readonly', '');
+                            }
+                        }
+                    },
+                    error: function(err) {console.error(err)}
+                });
+            }
+        }
+
+        function checkKonversiDombakPertama (type) {
+            if(type == 'sebelumnya') {
+                if($('select#dombak_id').val() != '' && $('input#tinggi_dombak').val() != '') {
+                    $.ajax({
+                        url: document.location.origin + '/master/dombak/konversi/api',
+                        method: 'get',
+                        data: {
+                            dombak_id: $('select#dombak_id').val(),
+                            tinggi: $('input#tinggi_dombak').val(),
+                        },
+                        dataType: 'json',
+                        success: function(data) {
+                            if(data.status == 200){
+                                if(data.data != null){
+                                    let calc = parseFloat($('input#volume_setelah').val().replace(',', '')) - parseFloat(data.data.volume.replace(',', ''))
+                                    $('input#volume_sebelumnya').val(data.data.volume)
+                                    $('input#volume').val(Intl.NumberFormat('id-ID', {style: 'decimal' }).format(calc).replaceAll('.', ','))
+                                }
+                                else {
+                                    $('input#volume_sebelumnya').val("Tidak ada Data")
+                                    $('input#volume').val("0")
+                                }
+                            }
+                        },
+                        error: function(err) {console.error(err)}
+                    });
+                } else {
+                    $('input#volume_sebelumnya').val("0")
+                }
+            } else if(type == 'setelahnya') {
+                if($('select#dombak_id').val() != '' && $('input#tinggi_dombak_setelahnya').val() != '') {
+                    $.ajax({
+                        url: document.location.origin + '/master/dombak/konversi/api',
+                        method: 'get',
+                        data: {
+                            dombak_id: $('select#dombak_id').val(),
+                            tinggi: $('input#tinggi_dombak_setelahnya').val(),
+                        },
+                        dataType: 'json',
+                        success: function(data) {
+                            if(data.status == 200){
+                                if(data.data != null){
+                                    let calc = parseFloat(data.data.volume.replace(',', '')) - parseFloat($('input#volume_sebelumnya').val().replace(',', ''))
+                                    $('input#volume_setelah').val(data.data.volume)
+                                    $('input#volume').val(Intl.NumberFormat('id-ID', {style: 'decimal' }).format(calc).replaceAll('.', ','))
+                                }
+                                else {
+                                    $('input#volume_setelah').val("Tidak ada Data")
+                                    $('input#volume').val("0")
+                                }
+                            }
+                        },
+                        error: function(err) {console.error(err)}
+                    });
+                } else {
+                    $('input#volume_setelah').val("0")
+                }
+            } else {
+                return;
+            }
+        }
+
+        $('select#dombak_kedua_id').on('change', function(e) {
+            checkKonversiDombakKedua('sebelumnya');
+            checkKonversiDombakKedua('setelahnya');
+            checkVolumeDombakKedua();
+        });
+        $('input#tinggi_dombak_kedua').on('change', function(e) {
+            checkKonversiDombakKedua('sebelumnya');
+        });
+        $('input#tinggi_dombak_kedua_setelah').on('change', function(e) {
+            checkKonversiDombakKedua('setelahnya');
+        });
+
+        function checkVolumeDombakKedua() {
+            if($('select#dombak_kedua_id').val() != '') {
+                $.ajax({
+                    url: document.location.origin + '/master/dombak/api',
+                    method: 'get',
+                    data: {
+                        dombak_id: $('select#dombak_kedua_id').val(),
+                    },
+                    dataType: 'json',
+                    success: function(data) {
+                        if(data.status == 200){
+                            if(data.data != null){
+                                $('input#volume_sebelumnya_kedua_terakhir').val(data.data.stok)
+                                $('#tinggi_dombak_kedua').removeAttr('readonly');
+                                $('#tinggi_dombak_kedua_setelah').removeAttr('readonly');
+                            }
+                            else {
+                                $('input#volume_sebelumnya_kedua_terakhir').val("Tidak ada Data")
+                                $('#tinggi_dombak_kedua').attr('readonly', '');
+                                $('#tinggi_dombak_kedua_setelah').attr('readonly', '');
+                            }
+                        }
+                    },
+                    error: function(err) {console.error(err)}
+                });
+            }
+        }
+
+        function checkKonversiDombakKedua (type) {
+            if(type == 'sebelumnya') {
+                if($('select#dombak_kedua_id').val() != '' && $('input#tinggi_dombak_kedua').val() != '') {
+                    $.ajax({
+                        url: document.location.origin + '/master/dombak/konversi/api',
+                        method: 'get',
+                        data: {
+                            dombak_id: $('select#dombak_kedua_id').val(),
+                            tinggi: $('input#tinggi_dombak_kedua').val(),
+                        },
+                        dataType: 'json',
+                        success: function(data) {
+                            if(data.status == 200){
+                                if(data.data != null){
+                                    let calc = parseFloat($('input#volume_sebelumnya_kedua').val().replace(',', '')) - parseFloat(data.data.volume.replace(',', ''))
+                                    let calc_ = (parseFloat(data.data.volume.replace(',', '')) - parseFloat($('input#volume_sebelumnya_kedua').val().replace(',', ''))) - (parseFloat($('input#volume').val().replace(',', '')) * -1);
+                                    $('input#volume_sebelumnya_kedua').val(data.data.volume)
+                                    $('input#volume_kedua').val(Intl.NumberFormat('id-ID', {style: 'decimal' }).format(calc).replaceAll('.', ','));
+                                    $('input#volume_selisih_kedua').val(Intl.NumberFormat('id-ID', {style: 'decimal' }).format(calc_).replaceAll('.', ','));
+                                }
+                                else {
+                                    $('input#volume_sebelumnya_kedua').val("Tidak ada Data")
+                                    $('input#volume_kedua').val("0");
+                                }
+                            }
+                        },
+                        error: function(err) {console.error(err)}
+                    });
+                } else {
+                    $('input#volume_sebelumnya_kedua').val("0")
+
+                }
+            } else if(type == 'setelahnya') {
+                if($('select#dombak_kedua_id').val() != '' && $('input#tinggi_dombak_kedua_setelah').val() != '') {
+                    $.ajax({
+                        url: document.location.origin + '/master/dombak/konversi/api',
+                        method: 'get',
+                        data: {
+                            dombak_id: $('select#dombak_kedua_id').val(),
+                            tinggi: $('input#tinggi_dombak_kedua_setelah').val(),
+                        },
+                        dataType: 'json',
+                        success: function(data) {
+                            if(data.status == 200){
+                                if(data.data != null){
+                                    let calc = parseFloat(data.data.volume.replace(',', '')) - parseFloat($('input#volume_sebelumnya_kedua').val().replace(',', ''));
+                                    let calc_ = (parseFloat(data.data.volume.replace(',', '')) - parseFloat($('input#volume_sebelumnya_kedua').val().replace(',', ''))) - (parseFloat($('input#volume').val().replace(',', '')) * -1);
+                                    $('input#volume_sebelumnya_kedua_setelah').val(data.data.volume)
+                                    $('input#volume_kedua').val(Intl.NumberFormat('id-ID', {style: 'decimal' }).format(calc).replaceAll('.', ','));
+                                    $('input#volume_selisih_kedua').val(Intl.NumberFormat('id-ID', {style: 'decimal' }).format(calc_).replaceAll('.', ','));
+                                    $('button[type=submit]').removeAttr('disabled');
+                                }
+                                else {
+                                    $('input#volume_sebelumnya_kedua_setelah').val("Tidak ada Data")
+                                    $('input#volume_kedua').val("0");
+                                    $('button[type=submit]').attr('disabled', '');
+                                }
+                            }
+                        },
+                        error: function(err) {console.error(err)}
+                    });
+                } else {
+                    $('input#volume_sebelumnya_kedua_setelah').val("0")
+
+                }
+            } else {return;}
+        }
+    }
+    if (routeName == 'totalisator.index' || routeName == 'totalisator.riwayat') {
+        $('.table-totalisator').DataTable({
+            language: {
+                url: "//cdn.datatables.net/plug-ins/1.10.24/i18n/Indonesian.json",
+            },
+            processing: true,
+            serverSide: true,
+            ajax: document.location.href,
+            columns: [
+                {data: 'nozzle', name: 'nozzle'},
+                {data: 'nama_produk', name: 'nama_produk'},
+                {data: 'tanggal', name: 'tanggal'},
+                {data: 'jam_kerja', name: 'jam_kerja'},
+                {data: 'stand_meter_awal', name: 'stand_meter_awal'},
+                {data: 'stand_meter_akhir', name: 'stand_meter_akhir'},
+                {data: 'selisih', name: 'selisih'},
+                {data: 'status', name: 'status'},
+                {data: 'action', name: 'action', orderable: false, searchable: false},
+            ]
+        });
+    }
+    if (routeName == 'totalisator.create') {
+        $('select#dombak_id').on('change', function(e) {
+            $.ajax({
+                url: document.location.origin + '/stok/totalisator/create/api',
+                method: 'get',
+                data: {
+                    dombak_id: $('select#dombak_id').val(),
+                },
+                dataType: 'json',
+                beforeSend: function() {
+                    $('select#nozzle_id').children().remove();
+                    $('select#nozzle_id').attr('disabled', '');
+                },
+                success: function(data) {
+                    if(data.status == 'success'){
+                        if(data.data != null){
+                            $('button[type=submit]').attr('disabled', '');
+                            $('select#nozzle_id').removeAttr('disabled');
+                            $('select#nozzle_id').append('<option value="0">Silakan Pilih Nozzle</option>')
+                            data.data.forEach(e => {
+                                $('select#nozzle_id').append('<option value="'+ e.nozzle_id +'">'+ e.nama_nozzle + " - " + e.nama_produk +'</option>');
+                            })
+                            $('input#tanggal').attr('type', 'text');
+                            $('input#tanggal').val('');
+                            $('input#jam_kerja_id').val('');
+                            $('input#stand_meter_awal').val('');
+                            $('input#stand_meter_awal').attr('readonly', '')
+                        }
+                    }
+                },
+                error: function(err) {console.error(err)}
+            });
+        });
+
+
+        $('select#nozzle_id').on('change', function(e) {
+            $.ajax({
+                url: document.location.origin + '/stok/totalisator/create/api',
+                method: 'get',
+                data: {
+                    nozzle_id: $('select#nozzle_id').val()
+                },
+                dataType: 'json',
+                beforeSend: function() {
+                    $('button[type=submit]').attr('disabled');
+                },
+                success: function(data) {
+                    if(data.status == 'success'){
+                        if(data.data != null){
+                            if ($('select#nozzle_id').children().first()[0].textContent == 'Silakan Pilih Nozzle') {
+                                $('select#nozzle_id').children().first().remove();
+                            }
+                            $('button[type=submit]').removeAttr('disabled');
+                            $('input#tanggal').attr('type', 'date');
+                            $('input#tanggal').val(data.data.tanggal);
+                            $('input#jam_kerja_id').val('Shift ' + (data.data.jam_kerja ?? 1));
+                            if(data.data.stand_meter_akhir == 0) {
+                                $('input#stand_meter_awal').removeAttr('readonly');
+                                $('input#stand_meter_awal').val(0);
+                            } else {
+                                $('input#stand_meter_awal').attr('readonly', '');
+                                $('input#stand_meter_awal').val(data.data.stand_meter_akhir ?? 0);
+                            }
+                        }
+                        else {
+
+                        }
+                    }
+                },
+                error: function(err) {console.error(err)}
+            });
+        })
+
+
+    }
+    if(routeName == 'totalisator.edit' || routeName == 'totalisator.final') {
+        $('input#stand_meter_akhir').on('change', function(e) {
+            let awal = removeComma(clearDot($('input#stand_meter_awal').val())), akhir = removeComma(clearDot($(this).val()));
+            $('input#selisih').val(Intl.NumberFormat(["ban", "id"]).format(akhir - awal));
+        });
+
+        function clearDot(number) {
+            const reDot = /[.]/;
+            if(number.search(reDot)) {
+                return number.split('.')['0'];
+            } else {
+                return number;
+            }
+        }
+
+        function removeComma(number) {
+            return number.replaceAll(',', '');
+        }
+    }
+    if (routeName == 'totalisator.file.index' || routeName == 'totalisator.file.riwayat.index') {
+        $('.table-stok-taking-file').DataTable({
+            language: {
+                url: "//cdn.datatables.net/plug-ins/1.10.24/i18n/Indonesian.json",
+            },
+            processing: true,
+            serverSide: true,
+            ajax: document.location.href,
+            columns: [
+                {data: 'file_stand_meter_id', name: 'file_stand_meter_id'},
+                {data: 'nama_dokumen', name: 'nama_dokumen'},
+                {data: 'tanggal_upload', name: 'tanggal_upload'},
+                {data: 'action', name: 'action', orderable: false, searchable: false},
+            ]
+        });
+    }
+    if(routeName == 'stok-taking.create') {
+        $('input#tinggi_dombak').on('change', function(e) {
+            checkKonversiDombak();
+        });
+
+        $('select#dombak_id').on('change', function(e) {
+            checkKonversiDombak();
+            checkVolumeDombak();
+        });
+
+        function checkVolumeDombak() {
+            if($('select#dombak_id').val() != '') {
+                $.ajax({
+                    url: document.location.origin + '/master/dombak/api',
+                    method: 'get',
+                    data: {
+                        dombak_id: $('select#dombak_id').val(),
+                    },
+                    dataType: 'json',
+                    success: function(data) {
+                        if(data.status == 200){
+                            if(data.data != null){
+                                $('input#volume_sebelumnya').val(data.data.stok)
+                                $('input#volume_selisih').val(data.data.stok - $('input#volume').val());
+                                $('button[type=submit]').removeAttr('disabled');
+                            }
+                            else {
+                                $('input#volume_sebelumnya').val("Tidak ada Data")
+                                $('input#volume_selisih').val("0");
+                                $('button[type=submit]').attr('disabled', '');
+                            }
+                        }
+                    },
+                    error: function(err) {console.error(err)}
+                });
+            }
+        }
+
+        function checkKonversiDombak () {
+            if($('select#dombak_id').val() != '' && $('input#tinggi_dombak').val() != '') {
+                $.ajax({
+                    url: document.location.origin + '/master/dombak/konversi/api',
+                    method: 'get',
+                    data: {
+                        dombak_id: $('select#dombak_id').val(),
+                        tinggi: $('input#tinggi_dombak').val(),
+                    },
+                    dataType: 'json',
+                    success: function(data) {
+                        if(data.status == 200){
+                            let calc = data.data.volume.replace(',', '') - $('input#volume_sebelumnya').val().replace(',', '');
+                            if(data.data != null){
+                                $('input#volume').val(data.data.volume)
+                                $('input#volume_selisih').val(Intl.NumberFormat('id-ID', {style: 'decimal' }).format(calc).replaceAll('.', ','));
+                                $('button[type=submit]').removeAttr('disabled');
+                            }
+                            else {
+                                $('input#volume').val("Tidak ada Data")
+                                $('input#volume_selisih').val("0");
+                                $('button[type=submit]').attr('disabled', '');
+                            }
+                        }
+                    },
+                    error: function(err) {console.error(err)}
+                });
+            } else {
+                $('input#volume').val("0")
+
+            }
+        }
+
+    }
+    if (routeName == 'financial.petty-cash') {
+        $('.table-petty-cash').DataTable({
+            language: {
+                url: "//cdn.datatables.net/plug-ins/1.10.24/i18n/Indonesian.json",
+            },
+            processing: true,
+            serverSide: true,
+            ajax: document.location.href,
+            columns: [
+                {data: 'tanggal', name: 'tanggal'},
+                {data: 'no_kode', name: 'no_kode'},
+                {data: 'jenis', name: 'jenis'},
+                {data: 'jumlah', name: 'jumlah'},
+                {data: 'action', name: 'action', orderable: false, searchable: false},
+            ]
+        });
+    }
+    if (routeName == 'financial.petty-cash.file') {
+        $('.table-petty-cash').DataTable({
+            language: {
+                url: "//cdn.datatables.net/plug-ins/1.10.24/i18n/Indonesian.json",
+            },
+            processing: true,
+            serverSide: true,
+            ajax: document.location.href,
+            columns: [
+                {data: 'tanggal', name: 'tanggal'},
+                {data: 'nama_dokumen', name: 'nama_dokumen'},
+                {data: 'action', name: 'action', orderable: false, searchable: false},
+            ]
+        });
+    }
+    if (routeName == 'penerimaan.index') {
+        $('.table-penerimaan').DataTable({
+            language: {
+                url: "//cdn.datatables.net/plug-ins/1.10.24/i18n/Indonesian.json",
+            },
+            processing: true,
+            serverSide: true,
+            ajax: document.location.href,
+            columns: [
+                {data: 'no_faktur', name: 'no_faktur'},
+                {data: 'no_lo', name: 'no_lo'},
+                {data: 'nama_produk', name: 'nama_produk'},
+                {data: 'jumlah', name: 'jumlah'},
+                {data: 'action', name: 'action', orderable: false, searchable: false},
+            ]
+        });
+    }
+    if (routeName == 'penerimaan.verifikasi') {
+        $('.table-verifikasi').DataTable({
+            language: {
+                url: "//cdn.datatables.net/plug-ins/1.10.24/i18n/Indonesian.json",
+            },
+            processing: true,
+            serverSide: true,
+            ajax: document.location.href,
+            columns: [
+                {data: 'tanggal', name: 'tanggal'},
+                {data: 'dombak', name: 'dombak'},
+                {data: 'no_faktur', name: 'no_faktur'},
+                {data: 'no_lo', name: 'no_lo'},
+                {data: 'nama_produk', name: 'nama_produk'},
+                {data: 'jumlah', name: 'jumlah'},
+                {data: 'action', name: 'action', orderable: false, searchable: false},
+            ]
+        });
+    }
+    if (routeName == 'penerimaan.riwayat') {
+        $('.table-penerimaan-riwayat').DataTable({
+            language: {
+                url: "//cdn.datatables.net/plug-ins/1.10.24/i18n/Indonesian.json",
+            },
+            processing: true,
+            serverSide: true,
+            ajax: document.location.href,
+            columns: [
+                {data: 'tanggal', name: 'tanggal'},
+                {data: 'dombak', name: 'dombak'},
+                {data: 'no_faktur', name: 'no_faktur'},
+                {data: 'no_lo', name: 'no_lo'},
+                {data: 'nama_produk', name: 'nama_produk'},
+                {data: 'jumlah', name: 'jumlah'},
+                {data: 'action', name: 'action', orderable: false, searchable: false},
+            ]
+        });
+    }
+    if (routeName == 'penerimaan.show') {
+        $('#tinggi_dombak_sebelumnya').on('change', function () {
+            checkKonversiDombak($(this).val()).then(res => {
+                $('#volume_sebelumnya').val(res.data.volume)
+                volume_terisi();
+            }).catch(err => console.error(err));
+        });
+        $('#tinggi_dombak_setelahnya').on('change', function () {
+            checkKonversiDombak($(this).val()).then(res => {
+                $('#volume_penerimaan').val(res.data.volume)
+                volume_terisi();
+            }).catch(err => console.error(err));
+        });
+
+        $('select#dombak_id').on('change', function(e) {
+            checkVolumeDombak();
+        });
+
+        function volume_terisi() {
+            if($('input#volume_sebelumnya').val() != '' && $('input#volume_penerimaan').val() != ' ') {
+                let v_sbl = $('input#volume_sebelumnya').val().replace(',', '');
+                let v_stl = $('input#volume_penerimaan').val().replace(',', '');
+                let v_dbl = $('input#volume_dibeli').val().replace(',', '');
+                let v_akt = v_stl - v_sbl;
+                let v_lpt = v_akt - v_dbl;
+
+                $('#volume_aktual').val(v_akt.toLocaleString('en'));
+                $('#volume_selisih').val(v_lpt.toLocaleString('en'));
+            }
+        }
+        function checkVolumeDombak() {
+            if($('select#dombak_id').val() != '') {
+                $.ajax({
+                    url: document.location.origin + '/master/dombak/api',
+                    method: 'get',
+                    data: {
+                        dombak_id: $('select#dombak_id').val(),
+                    },
+                    dataType: 'json',
+                    success: function(data) {
+                        if(data.status == 200){
+                            if(data.data != null){
+                                $('input#tinggi_dombak_sebelumnya').attr('min', data.tinggi.min).attr('max', data.tinggi.max).removeAttr('readonly');
+                                $('input#tinggi_dombak_setelahnya').attr('min', data.tinggi.min).attr('max', data.tinggi.max).removeAttr('readonly');
+                                $('span#show-last-volume').removeClass('d-none');
+                                $('span#show-last-volume > span').text(data.data.stok)
+                            } else {
+                                console.error('Terdapat Error');
+                            }
+                        }
+                    },
+                    error: function(err) {console.error(err)}
+                });
+            }
+        }
+
+        async function checkKonversiDombak (tinggi) {
+            if($('select#dombak_id').val() != '' && $('input#tinggi_dombak').val() != '') {
+                return await $.ajax({
+                    url: document.location.origin + '/master/dombak/konversi/api',
+                    method: 'get',
+                    data: {
+                        dombak_id: $('select#dombak_id').val(),
+                        tinggi: tinggi,
+                    },
+                    dataType: 'json',
+                    success: function(data) {
+                        if(data.status == 200){
+                            return data;
+                        }
+                    },
+                    error: function(err) {console.error(err)}
+                });
+            } else {
+                console.error('Pilih dombak dan tinggi')
+            }
+        }
+    }
+    if (routeName == 'setoran.open') {
+        $('.table-open-setoran').DataTable({
+            language: {
+                url: "//cdn.datatables.net/plug-ins/1.10.24/i18n/Indonesian.json",
+            },
+            processing: true,
+            serverSide: true,
+            ajax: document.location.href,
+            columns: [
+                {data: 'produk', name: 'produk'},
+                {data: 'dispenser', name: 'dispenser'},
+                {data: 'tanggal', name: 'tanggal'},
+                {data: 'jam_kerja', name: 'jam_kerja'},
+                {data: 'total_penjualan', name: 'total_penjualan'},
+                {data: 'action', name: 'action', orderable: false, searchable: false},
+            ]
+        });
+    }
+    if (routeName == 'setoran.open.detail') {
+        $('.table-open-detail-setoran').DataTable({
+            language: {
+                url: "//cdn.datatables.net/plug-ins/1.10.24/i18n/Indonesian.json",
+            },
+            processing: true,
+            serverSide: true,
+            ajax: document.location.href,
+            columns: [
+                {data: 'nama_nozzle', name: 'nama_nozzle'},
+                {data: 'stand_meter_awal', name: 'stand_meter_awal'},
+                {data: 'stand_meter_akhir', name: 'stand_meter_akhir'},
+                {data: 'harga', name: 'harga'},
+                {data: 'liter', name: 'liter'},
+                {data: 'total_detail_jual', name: 'total_detail_jual'},
+                {data: 'action', name: 'action', orderable: false, searchable: false},
+            ]
+        });
+    }
+    if(routeName == 'setoran.open.detail.create') {
+        $('select[id=stand_meter_id]').on('change', function(e) {
+            $.ajax({
+                url: document.location.href + '/api',
+                dataType:'json',
+                method: 'get',
+                data: {
+                    stand_meter_id: $('select[id=stand_meter_id]').val()
+                },
+                success: function(res) {
+                    console.log(res)
+                    $('input[name=stand_meter_awal]').val(res.data.stand_meter_awal)
+                    $('input[name=stand_meter_akhir]').val(res.data.stand_meter_akhir)
+                    $('input[name=harga_jual]').val(res.data.harga_jual)
+                    $('input[name=total_detail_jual]').val(res.data.total_penjualan)
+                },
+                error: function(err) {console.error(err);}
+            });
+        });
+    }
+    if(routeName == 'pembayaran.pajak_edit') {
+        let gross_cleansing = $('input[data-type=gross_price_check]').val().replaceAll(',', '');
+
+        $('input[name=ppn]').on('change', function(e) {
+            let calc = gross_cleansing - $('input[name=ppn]').val().replaceAll(',', '') -  $('input[name=pph]').val().replaceAll(',', '') -  $('input[name=ppbkb]').val().replaceAll(',', '');
+
+            $('input[name=net_price]').val(Intl.NumberFormat('id-ID', {style: 'decimal' }).format(calc).replaceAll('.', ','))
+        })
+        $('input[name=pph]').on('change', function(e) {
+            let calc = gross_cleansing - $('input[name=ppn]').val().replaceAll(',', '') -  $('input[name=pph]').val().replaceAll(',', '') -  $('input[name=ppbkb]').val().replaceAll(',', '');
+
+            $('input[name=net_price]').val(Intl.NumberFormat('id-ID', {style: 'decimal' }).format(calc).replaceAll('.', ','))
+        })
+        $('input[name=ppbkb]').on('change', function(e) {
+            let calc = gross_cleansing - $('input[name=ppn]').val().replaceAll(',', '') -  $('input[name=pph]').val().replaceAll(',', '') -  $('input[name=ppbkb]').val().replaceAll(',', '');
+
+            $('input[name=net_price]').val(Intl.NumberFormat('id-ID', {style: 'decimal' }).format(calc).replaceAll('.', ','))
+        })
+    }
+    if(routeName == 'setoran.penitipan') {
+        $('.table-penitipan-setoran').DataTable({
+            language: {
+                url: "//cdn.datatables.net/plug-ins/1.10.24/i18n/Indonesian.json",
+            },
+            processing: true,
+            serverSide: true,
+            ajax: document.location.href,
+            columns: [
+                {data: 'produk', name: 'produk'},
+                {data: 'dispenser', name: 'dispenser'},
+                {data: 'tanggal', name: 'tanggal'},
+                {data: 'jam_kerja', name: 'jam_kerja'},
+                {data: 'total_penjualan', name: 'total_penjualan'},
+                {data: 'action', name: 'action', orderable: false, searchable: false},
+            ]
+        });
+    }
+    if(routeName == 'setoran.penitipan.index_penitipan') {
+        $('.table-penitipan-setoran-list').DataTable({
+            language: {
+                url: "//cdn.datatables.net/plug-ins/1.10.24/i18n/Indonesian.json",
+            },
+            processing: true,
+            serverSide: true,
+            ajax: document.location.href,
+            columns: [
+                {data: 'tanggal', name: 'tanggal'},
+                {data: 'nama_bank', name: 'nama_bank'},
+                {data: 'no_ref', name: 'no_ref'},
+                {data: 'metode_transfer', name: 'metode_transfer'},
+                {data: 'total_uang', name: 'total_uang'},
+                {data: 'status', name: 'status'},
+                {data: 'action', name: 'action', orderable: false, searchable: false},
+            ]
+        });
+    }
+    if(routeName == 'setoran.closing') {
+        $('.table-closing-setoran').DataTable({
+            language: {
+                url: "//cdn.datatables.net/plug-ins/1.10.24/i18n/Indonesian.json",
+            },
+            processing: true,
+            serverSide: true,
+            ajax: document.location.href,
+            columns: [
+                {data: 'produk', name: 'produk'},
+                {data: 'dispenser', name: 'dispenser'},
+                {data: 'tanggal', name: 'tanggal'},
+                {data: 'jam_kerja', name: 'jam_kerja'},
+                {data: 'status_admin', name: 'status_admin'},
+                {data: 'status_top', name: 'status_top'},
+                {data: 'total_uang', name: 'total_uang'},
+                {data: 'action', name: 'action', orderable: false, searchable: false},
+            ]
+        });
+    }
+    if(routeName == 'setoran.penitipan.file.index') {
+        $('.table-file-penarikan').DataTable({
+            language: {
+                url: "//cdn.datatables.net/plug-ins/1.10.24/i18n/Indonesian.json",
+            },
+            processing: true,
+            serverSide: true,
+            ajax: document.location.href,
+            columns: [
+                {data: 'tanggal', name: 'tanggal'},
+                {data: 'gambar', name: 'gambar'},
+                {data: 'nama_file', name: 'nama_file'},
+                {data: 'action', name: 'action', orderable: false, searchable: false},
+            ]
+        });
+    }
+    if(routeName == 'ms2.produk.index') {
+        $('.table-ms2').DataTable({
+            language: {
+                url: "//cdn.datatables.net/plug-ins/1.10.24/i18n/Indonesian.json",
+            },
+            processing: true,
+            serverSide: true,
+            ajax: document.location.href,
+            columns: [
+                {data: 'nama_produk', name: 'nama_produk'},
+                {data: 'stok', name: 'stok'},
+                {data: 'total_pembelian', name: 'total_pembelian'},
+                {data: 'action', name: 'action', orderable: false, searchable: false},
+            ]
+        });
+    }
+    if(routeName == 'ms2.produk.show') {
+        $('.table-detail-produk').DataTable({
+            language: {
+                url: "//cdn.datatables.net/plug-ins/1.10.24/i18n/Indonesian.json",
+            },
+            processing: true,
+            serverSide: true,
+            ajax: document.location.href,
+            columns: [
+                {data: 'tanggal_pembelian', name: 'tanggal_pembelian'},
+                {data: 'kode_pembelian', name: 'kode_pembelian'},
+                {data: 'jumlah', name: 'jumlah'},
+                {data: 'action', name: 'action', orderable: false, searchable: false},
+            ]
+        });
+    }
+    if(routeName == 'ms2.pengiriman') {
+        $('.table-pengiriman').DataTable({
+            language: {
+                url: "//cdn.datatables.net/plug-ins/1.10.24/i18n/Indonesian.json",
+            },
+            processing: true,
+            serverSide: true,
+            ajax: document.location.href,
+            columns: [
+                {data: 'tanggal', name: 'tanggal'},
+                {data: 'no_do', name: 'no_do'},
+                {data: 'no_pol', name: 'no_pol'},
+                {data: 'action', name: 'action', orderable: false, searchable: false},
+            ]
+        });
+    }
+    if(routeName == 'pajak_pembelian_lib.index') {
+        $('.table-pajak-lib').DataTable({
+            language: {
+                url: "//cdn.datatables.net/plug-ins/1.10.24/i18n/Indonesian.json",
+            },
+            processing: true,
+            serverSide: true,
+            ajax: document.location.href,
+            columns: [
+                {data: 'tanggal', name: 'tanggal'},
+                {data: 'ppn', name: 'ppn'},
+                {data: 'pph', name: 'pph'},
+                {data: 'ppbkb', name: 'ppbkb'},
+                {data: 'is_aktif', name: 'is_aktif'},
+                {data: 'action', name: 'action', orderable: false, searchable: false},
+            ]
+        });
+    }
+    if(routeName == 'pembelian.detail.edit_pajak') {
+        let hrg_dasar = 0, ppn = 0,pph = 0,ppbkb = 0;
+        $('#ppn').on('keyup', function(e) {
+            $('#total_amount').val(new Intl.NumberFormat("id-ID", { style: "decimal" }).format(parseInt($('#net_price').val().replaceAll(',', '')) + parseInt(e.target.value.replaceAll(',', '')) + parseInt($('#pph').val().replaceAll(',', '')) + parseInt($('#ppbkb').val().replaceAll(',', ''))));
+        });
+        $('#pph').on('keyup', function(e) {
+            $('#total_amount').val(new Intl.NumberFormat("id-ID", { style: "decimal" }).format(parseInt($('#net_price').val().replaceAll(',', '')) + parseInt($('#ppn').val().replaceAll(',', '')) + parseInt(e.target.value.replaceAll(',', '')) + parseInt($('#ppbkb').val().replaceAll(',', ''))));
+        });
+        $('#ppbkb').on('keyup', function(e) {
+            $('#total_amount').val(new Intl.NumberFormat("id-ID", { style: "decimal" }).format(parseInt($('#net_price').val().replaceAll(',', '')) + parseInt($('#ppn').val().replaceAll(',', '')) + parseInt($('#pph').val().replaceAll(',', '')) + parseInt(e.target.value.replaceAll(',', ''))));
+        });
+
+    }
+    if(routeName == 'kategori.index') {
+        $('.table-kategori').DataTable({
+            language: {
+                url: "//cdn.datatables.net/plug-ins/1.10.24/i18n/Indonesian.json",
+            },
+            processing: true,
+            serverSide: true,
+            ajax: document.location.href,
+            columns: [
+                {data: 'nama_kategori', name: 'nama_kategori'},
+                {data: 'action', name: 'action', orderable: false, searchable: false},
+            ]
+        });
+    }
+    if(routeName == 'tag.index') {
+        $('.table-tag').DataTable({
+            language: {
+                url: "//cdn.datatables.net/plug-ins/1.10.24/i18n/Indonesian.json",
+            },
+            processing: true,
+            serverSide: true,
+            ajax: document.location.href,
+            columns: [
+                {data: 'nama_tag', name: 'nama_tag'},
+                {data: 'action', name: 'action', orderable: false, searchable: false},
+            ]
+        });
+    }
+    if(routeName == 'post.index') {
+        $('.table-post').DataTable({
+            language: {
+                url: "//cdn.datatables.net/plug-ins/1.10.24/i18n/Indonesian.json",
+            },
+            processing: true,
+            serverSide: true,
+            ajax: document.location.href,
+            columns: [
+                {data: 'tanggal', name: 'tanggal'},
+                {data: 'title', name: 'title'},
+                {data: 'status', name: 'status'},
+                {data: 'action', name: 'action', orderable: false, searchable: false},
+            ]
+        });
+    }
+    if(routeName == 'post.create') {
+        console.log("Jai")
+        $('select#tag').select2();
+        $('select#kategori').select2();
+    }
+
+    if(routeName == 'file.post.index') {
+        $('.table-file-post').DataTable({
+            language: {
+                url: "//cdn.datatables.net/plug-ins/1.10.24/i18n/Indonesian.json",
+            },
+            processing: true,
+            serverSide: true,
+            ajax: document.location.href,
+            columns: [
+                {data: 'nama_dokumen', name: 'nama_dokumen'},
+                {data: 'action', name: 'action', orderable: false, searchable: false},
+            ]
+        });
+    }
+    if(routeName == 'ms2.pengiriman.show') {
+        $('.table-produk-detail-ms2').DataTable({
+            language: {
+                url: "//cdn.datatables.net/plug-ins/1.10.24/i18n/Indonesian.json",
+            },
+            processing: true,
+            serverSide: true,
+            ajax: document.location.href,
+            columns: [
+                {data: 'no_lo', name: 'no_lo'},
+                {data: 'tanggal', name: 'tanggal'},
+                {data: 'kode', name: 'kode'},
+                {data: 'nama_produk', name: 'nama_produk'},
+                {data: 'stok', name: 'stok'},
+                {data: 'action', name: 'action', orderable: false, searchable: false},
+            ]
+        });
+    }
+
+    $('.table-file-fasilitas').DataTable({
+        language: {
+            url: "//cdn.datatables.net/plug-ins/1.10.24/i18n/Indonesian.json",
+        },
+        processing: true,
+        serverSide: true,
+        ajax: document.location.href,
+        columns: [
+            {data: 'nama_file', name: 'nama_file'},
+            {data: 'nama_dokumen', name: 'nama_dokumen'},
+            {data: 'tanggal_upload', name: 'tanggal_upload'},
+            {data: 'action', name: 'action', orderable: false, searchable: false},
+        ]
+    });
+    $('.table-file-aset').DataTable({
+        language: {
+            url: "//cdn.datatables.net/plug-ins/1.10.24/i18n/Indonesian.json",
+        },
+        processing: true,
+        serverSide: true,
+        ajax: document.location.href,
+        columns: [
+            {data: 'nama_file', name: 'nama_file'},
+            {data: 'nama_dokumen', name: 'nama_dokumen'},
+            {data: 'tanggal_upload', name: 'tanggal_upload'},
+            {data: 'action', name: 'action', orderable: false, searchable: false},
+        ]
+    });
+
+    if(routeName == 'aset.create' || routeName == 'aset.edit') {
+        var cleaveOne = new Cleave('.currency', {
+            numeral: true,
+            numeralThousandsGroupStyle: 'thousand'
+        });
+    }
+
+    $(".custom-file-input").on("change", function (e) {
+        $(this).siblings().text(e.target.value.split("fakepath")[1]);
+        var input = $(e.currentTarget);
+        var file = input[0].files[0];
+        var reader = new FileReader();
+        reader.onload = function (e) {
+            $(".img.img-thumbnail.img-temporary").attr("src", e.target.result);
+            $(".img.img-thumbnail.img-temporary").removeClass("d-none");
+        };
+        reader.readAsDataURL(file);
+    });
+
+    $("#logout-btn").on("click", function () {
+        Swal.fire({
+            title: "Keluar ?",
+            text: "Keluar dari sistem e-KPB!",
+            icon: "question",
+            showCancelButton: true,
+            confirmButtonColor: "#3085d6",
+            cancelButtonColor: "#d33",
+            confirmButtonText: "Keluar!",
+            cancelButtonText: "Batalkan",
+        }).then((result) => {
+            if (result.isConfirmed) {
+                document.getElementById("logout-form").submit();
+            }
+        });
+    });
+});
