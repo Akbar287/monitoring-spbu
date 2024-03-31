@@ -231,34 +231,29 @@ class StandMeterController extends Controller
             ->first();
 
         // Tentukan tanggal dan jam kerja berdasarkan stand_meter terbaru
-        $tanggal = optional($latestStandMeter)->tanggal ? Carbon::parse($latestStandMeter->tanggal)->addDay()->format('Y-m-d') : date('Y-m-d');
-        $nextJamKerjaUrutan = is_null($latestStandMeter) ? 1 : ($latestStandMeter->urutan == $jamKerjaCount ? 1 : $latestStandMeter->urutan + 1);
-        $nextJamKerja = JamKerja::where('urutan', $nextJamKerjaUrutan)->first();
+        $jamKerjaCount = JamKerja::count();
+        $tgl = is_null($latestStandMeter) ? null : Carbon::createFromFormat('Y-m-d', $latestStandMeter->tanggal);
+        $nextJamKerja = is_null($latestStandMeter) ? 1 : ($latestStandMeter->urutan == $jamKerjaCount ? 1 : $latestStandMeter->urutan + 1);
+        $jamKerja = JamKerja::where('urutan', $nextJamKerja)->first();
+        $tanggal = is_null($tgl) ? null : ($latestStandMeter->urutan == $jamKerjaCount ? $tgl->addDay()->format('Y-m-d') : $tgl->format('Y-m-d'));
         $standMeter = $latestStandMeter->stand_meter_akhir ?? str_replace(',', '', request('stand_meter_awal'));
 
         // Masukan data ke DB
-        $standMeterData = StandMeter::create([
+        StandMeter::create([
             'nozzle_id' => $nozzle->nozzle_id,
             'dombak_id' => $request->dombak_id,
-            'jam_kerja_id' => $nextJamKerja->jam_kerja_id ?? null,
+            'jam_kerja_id' => $jamKerja->jam_kerja_id,
             'tanggal' => $tanggal,
             'stand_meter_awal' => $standMeter,
             'stand_meter_akhir' => 0,
             'is_confirmation' => false
         ]);
 
-        // Hapus data duplikat
-        $standMeterData->delete();
-        $id = StandMeter::select('stand_meter_id')
-            ->where('nozzle_id', $nozzle->nozzle_id,)
-            ->where('dombak_id', $request->dombak_id)
-            ->where('tanggal', $tanggal)
-            ->where('jam_kerja_id', $nextJamKerja->jam_kerja_id)
-            ->where('stand_meter_awal', $standMeter)
-            ->where('stand_meter_akhir', 0)
-            ->first()->stand_meter_id;
+        // Hapus Duplikat Database
+        StandMeter::where('nozzle_id', $nozzle->nozzle_id)->where('dombak_id', $request->dombak_id)->where('jam_kerja_id', $jamKerja->jam_kerja_id)->where('tanggal', $tanggal)->where('stand_meter_awal', 0)->where('stand_meter_akhir', 0)->delete();
 
-        return redirect()->route('totalisator.show', $id)->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> Stand Meter sudah di tambah.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
+        // Redirect ke Halaman Index
+        return redirect()->route('totalisator.index')->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> Stand Meter sudah di tambah.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
         exit;
     }
 

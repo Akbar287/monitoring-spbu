@@ -6,6 +6,7 @@ use App\Models\Dombak;
 use App\Models\JamKerja;
 use App\Models\Member;
 use App\Models\Notifikasi;
+use App\Models\Nozzle;
 use App\Models\Pengiriman;
 use App\Models\Produk;
 use App\Models\StatusPurchase;
@@ -169,70 +170,71 @@ class HomeController extends Controller
 
     public function chart()
     {
-        // Chart Kiri
+        $jamKerja = JamKerja::orderBy('nama_jam_kerja', 'asc')->get();
         $produk = Produk::where('is_aktif', true)->get();
+        $nozzles = Nozzle::orderBy('nama_nozzle', 'asc')->get();
 
+        // Chart Kiri
+        $kamusWarna = [
+            'Pertamina Dex' => 'rgba(6, 107, 45, 0.5)',
+            'Pertamax' => 'rgba(0, 51, 102, 0.5)',
+            'Bio Solar' => 'rgba(193, 154, 107, 0.5)',
+            'Dexlite' => 'rgba(205, 213, 221, 0.5)',
+            'Pertalite' => 'rgba(127, 255, 0, 0.5)',
+            'Premium' => 'rgba(255, 255, 0, 0.5)',
+        ];
         $label = [];
         $temp = [];
-        $temp_out_shift = [];
+        $bg = [];
         foreach ($produk as $p) {
             $label[] = $p->nama_produk;
+            $bg[] = $kamusWarna[$p->nama_produk];
             $temp[] = is_null($p->stok_inventory()) ? 0 : $p->stok_inventory()->first()->stok;
         }
+
+        $dataset[] = ['label' => 'Stok (dalam liter)', 'data' => $temp, 'borderWidth' => 1, "backgroundColor" => $bg];
+
+        $chart_stok = [
+            "labels" => $label,
+            "datasets" => $dataset,
+        ];
+        unset($dataset);
+        unset($temp);
+        unset($bg);
+        unset($kamusWarna);
+
         // End Chart Kiri
 
         // Chart Kanan
-        $jamKerja = JamKerja::all();
-
+        $temp_out_shift = [];
         foreach ($jamKerja as $jk) {
-            $temp_diver_stok = [];
-            $temp_loss = [];
+            $temp_diver_penjualan = [];
 
             foreach ($produk as $p) {
-                $loss = $p->stok_inventory()->first()->dokumen_stok()->where('jam_kerja_id', $jk->jam_kerja_id)->where('tanggal', date('Y-m-d'))->where('type_dokumen_stok_id', TypeDokumenStok::where('type_movement', 'Loss')->first()->type_dokumen_stok_id)->get();
-
-                $lossTempCalculation = 0;
-                foreach ($loss as $s) {
-                    if ($s->losses()->first()->simbol == 'lebih') {
-                        $lossTempCalculation = $lossTempCalculation + $s->losses()->first()->jumlah;
-                    } else {
-                        $lossTempCalculation = $lossTempCalculation - $s->losses()->first()->jumlah;
-                    }
+                $count = 0;
+                foreach ($p->nozzle()->get() as $nozzle) {
+                    $count += round(($nozzle->stand_meter()
+                        ->selectRaw('SUM(stand_meter.stand_meter_akhir - stand_meter.stand_meter_awal) as selisih')
+                        ->whereDate('tanggal', today())
+                        // ->whereDate('tanggal', '2024-01-20')
+                        ->where('jam_kerja_id', $jk->jam_kerja_id)
+                        ->first()->selisih ?? 0));
                 }
-
-                // $goodIssueSales = $p->stok_inventory()->first()->dokumen_stok()->where('jam_kerja_id', $jk->jam_kerja_id)->where('tanggal', date('Y-m-d'))->where('type_dokumen_stok_id', TypeDokumenStok::where('type_movement', 'Good Issue Sales')->first()->type_dokumen_stok_id)->get();
-
-                // $goodIssueSalesTempCalculation = 0;
-                // foreach ($goodIssueSales as $s) {
-                //     if ($s->stok_awal - $s->stok_akhir > 0) {
-                //         $goodIssueSalesTempCalculation = $s->stok_awal - $s->stok_akhir;
-                //     } else {
-                //         $goodIssueSalesTempCalculation = $s->stok_akhir - $s->stok_awal;
-                //     }
-                // }
-
-                $goodIssueSales = $p->penjualan()
-                    ->where('penjualan.jam_kerja_id', $jk->jam_kerja_id)
-                    ->where('tanggal', date('Y-m-d'))
-                    ->first()->total_penjualan ?? 0;
-
-                $temp_diver_stok[] = $goodIssueSales;
-                $temp_loss[] = $lossTempCalculation;
+                $temp_diver_penjualan[] = $count;
             }
 
             $temp_out_shift[] = [
                 "label" => $jk->nama_jam_kerja,
-                "data" => $temp_diver_stok,
-                "borderWidth" => 1
+                "data" => $temp_diver_penjualan,
+                "stack" => $jk->nama_jam_kerja == 'Shift 1' ? 'Stack 1' : ($jk->nama_jam_kerja == 'Shift 2' ? 'Stack 2' : 'Stack 3'),
+                "borderWidth" => 1,
+                "backgroundColor" => $jk->nama_jam_kerja == 'Shift 1' ? 'rgba(255, 0, 0, 0.5)' : ($jk->nama_jam_kerja == 'Shift 2' ? 'rgba(255, 255, 0, 0.5)' : 'rgba(0, 0, 255, 0.5)')
             ];
-
-            // End Chart Kanan
         }
 
-        $dataset[] = ['label' => 'Stok (dalam liter)', 'data' => $temp, 'borderWidth' => 1];
-        $chart_stok = [
+        $chart_stok_penjualan = [
             "labels" => $label,
-            "datasets" => $dataset,
+            "datasets" => $temp_out_shift,
         ];
 
         $chart_stok_split = [
@@ -240,11 +242,72 @@ class HomeController extends Controller
             "datasets" => $temp_out_shift,
         ];
 
+        unset($label);
+        unset($temp_out_shift);
+        unset($temp_diver_stok);
+        unset($temp_loss);
+
+        // End Chart Kanan
+
+
+        // Chart Kiri Penjualan
+        $res = [];
+        $labelPenjualan = [];
+        foreach ($nozzles as $nozzle) {
+            $labelPenjualan[] = $nozzle->nama_nozzle;
+            $res[] = round(($nozzle->stand_meter()
+                ->selectRaw('SUM(stand_meter.stand_meter_akhir - stand_meter.stand_meter_awal) as selisih')
+                ->whereDate('tanggal', today())
+                // ->whereDate('tanggal', '2024-01-20')
+                ->first()->selisih ?? 0) * $nozzle->produk()->first()->harga()->where('is_default', true)->first()->harga_jual);
+        }
+        $datasetPenjualan[] = ['label' => 'Penjualan (dalam Rupiah)', 'data' => $res, 'borderWidth' => 1];
+
+        $chart_penjualan = [
+            "labels" => $labelPenjualan,
+            "datasets" => $datasetPenjualan,
+        ];
+
+        unset($res);
+        unset($datasetPenjualan);
+        // End Chart Kiri Penjualan
+
+
+        // Chart Kanan Penjualan
+        $temp_out_shift = [];
+        foreach ($jamKerja as $jk) {
+            $temp_diver_penjualan = [];
+            foreach ($nozzles as $nozzle) {
+                $temp_diver_penjualan[] = round(($nozzle->stand_meter()
+                    ->selectRaw('SUM(stand_meter.stand_meter_akhir - stand_meter.stand_meter_awal) as selisih')
+                    ->whereDate('tanggal', today())
+                    // ->whereDate('tanggal', '2024-01-20')
+                    ->where('jam_kerja_id', $jk->jam_kerja_id)
+                    ->first()->selisih ?? 0) * $nozzle->produk()->first()->harga()->where('is_default', true)->first()->harga_jual);
+            }
+            $temp_out_shift[] = [
+                "label" => $jk->nama_jam_kerja,
+                "data" => $temp_diver_penjualan,
+                "stack" => $jk->nama_jam_kerja == 'Shift 1' ? 'Stack 1' : ($jk->nama_jam_kerja == 'Shift 2' ? 'Stack 2' : 'Stack 3'),
+                "borderWidth" => 1,
+                "backgroundColor" => $jk->nama_jam_kerja == 'Shift 1' ? 'rgba(255, 0, 0, 0.5)' : ($jk->nama_jam_kerja == 'Shift 2' ? 'rgba(255, 255, 0, 0.5)' : 'rgba(0, 0, 255, 0.5)')
+            ];
+        }
+
+        $chart_stok_penjualan = [
+            "labels" => $labelPenjualan,
+            "datasets" => $temp_out_shift,
+        ];
+        // End Chart Kanan Penjualan
+
+
         return response()->json([
             "message" => 'success',
             "data" => [
                 'chart_stok' => $chart_stok,
-                'chart_stok_split' => $chart_stok_split
+                'chart_stok_split' => $chart_stok_split,
+                'chart_penjualan' => $chart_penjualan,
+                'chart_penjualan_split' => $chart_stok_penjualan,
             ],
             "status" => true
         ], 200);

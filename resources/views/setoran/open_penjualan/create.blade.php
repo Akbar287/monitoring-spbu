@@ -46,17 +46,17 @@
                                 </div>
 
                                 <div class="row mb-3 justify-content-center">
-                                    <label for="produk_id" class="col-md-4 col-form-label text-md-end">{{ __('Produk')
+                                    <label for="nozzle_id" class="col-md-4 col-form-label text-md-end">{{ __('Nozzle')
                                         }}</label>
 
                                     <div class="col-md-6">
-                                        <select class="custom-select @error('produk_id') is-invalid @enderror" name="produk_id" id="produk_id">
-                                            @foreach($produk as $s)
-                                            <option {{ old('produk_id') == $s->produk_id ? 'selected' : '' }} value="{{ $s->produk_id }}">{{ $s->nama_produk }}</option>
+                                        <select class="custom-select @error('nozzle_id') is-invalid @enderror" name="nozzle_id" id="nozzle_id">
+                                            @foreach($nozzle as $s)
+                                            <option {{ old('nozzle_id') == $s->nozzle_id ? 'selected' : '' }} value="{{ $s->nozzle_id }}">{{ $s->nama_nozzle . ' ('. $s->produk()->first()->nama_produk .')' }}</option>
                                             @endforeach
                                         </select>
 
-                                        @error('produk_id')
+                                        @error('nozzle_id')
                                         <span class="invalid-feedback" role="alert">
                                             <strong>{{ $message }}</strong>
                                         </span>
@@ -65,17 +65,15 @@
                                 </div>
 
                                 <div class="row mb-3 justify-content-center">
-                                    <label for="dispenser_id" class="col-md-4 col-form-label text-md-end">{{ __('Dispenser')
+                                    <label for="tanggal" class="col-md-4 col-form-label text-md-end">{{ __('Tanggal')
                                         }}</label>
 
                                     <div class="col-md-6">
-                                        <select class="custom-select @error('dispenser_id') is-invalid @enderror" name="dispenser_id" id="dispenser_id">
-                                            @foreach($dispenser as $s)
-                                            <option {{ old('dispenser_id') == $s->dispenser_id ? 'selected' : '' }} value="{{ $s->dispenser_id }}">{{ $s->nama_dispenser }}</option>
-                                            @endforeach
-                                        </select>
+                                        <input id="tanggal" type="date"
+                                            class="form-control @error('tanggal') is-invalid @enderror" name="tanggal"
+                                            value="{{ is_null(old("tanggal")) ? date('Y-m-d') : old("tanggal") }}"/>
 
-                                        @error('dispenser_id')
+                                        @error('tanggal')
                                         <span class="invalid-feedback" role="alert">
                                             <strong>{{ $message }}</strong>
                                         </span>
@@ -103,70 +101,28 @@
                                 </div>
 
                                 <div class="row mb-3 justify-content-center">
-                                    <label for="tanggal" class="col-md-4 col-form-label text-md-end">{{ __('Tanggal')
-                                        }}</label>
-
-                                    <div class="col-md-6">
-                                        <input id="tanggal" type="date"
-                                            class="form-control @error('tanggal') is-invalid @enderror" name="tanggal"
-                                            value="{{ is_null(old("tanggal")) ? date('Y-m-d') : old("tanggal") }}" autocomplete="name"
-                                            autofocus>
-
-                                        @error('tanggal')
-                                        <span class="invalid-feedback" role="alert">
-                                            <strong>{{ $message }}</strong>
-                                        </span>
-                                        @enderror
-                                    </div>
-                                </div>
-
-                                <div class="row mb-3 justify-content-center">
-                                    <label for="total_uang_kotak" class="col-md-4 col-form-label text-md-end">{{ __('Total Uang Kotak')
+                                    <label for="stand_meter_awal" class="col-md-4 col-form-label text-md-end">{{ __('Stand Meter Awal')
                                         }}</label>
 
                                     <div class="col-md-6">
                                         <div class="input-group">
-                                            <div class="input-group-prepend">
-                                                <div class="input-group-text">
-                                                    Rp
-                                                </div>
-                                            </div>
-                                            <input id="total_uang_kotak" type="text"
-                                                class="form-control thousand-style @error('total_uang_kotak') is-invalid @enderror" name="total_uang_kotak"
-                                                value="{{ old("total_uang_kotak") }}" autocomplete="name"
-                                                autofocus>
+                                            <input id="stand_meter_awal" type="text"
+                                                class="form-control thousand-style " name="stand_meter_awal"
+                                                value="{{ "0" }}" />
                                         </div>
-
-                                        @error('total_uang_kotak')
-                                        <span class="invalid-feedback" role="alert">
-                                            <strong>{{ $message }}</strong>
-                                        </span>
-                                        @enderror
                                     </div>
                                 </div>
 
                                 <div class="row mb-3 justify-content-center">
-                                    <label for="total_penjualan" class="col-md-4 col-form-label text-md-end">{{ __('Total Penjualan')
+                                    <label for="stand_meter_akhir" class="col-md-4 col-form-label text-md-end">{{ __('Stand Meter Akhir')
                                         }}</label>
 
                                     <div class="col-md-6">
                                         <div class="input-group">
-                                            <div class="input-group-prepend">
-                                                <div class="input-group-text">
-                                                    Rp
-                                                </div>
-                                            </div>
-                                            <input id="total_penjualan" type="text" readonly
-                                                class="form-control thousand-style @error('total_penjualan') is-invalid @enderror" name="total_penjualan"
-                                                value="{{ '0' }}" autocomplete="name"
-                                                autofocus>
+                                            <input id="stand_meter_akhir" type="text" readonly
+                                                class="form-control thousand-style " name="stand_meter_akhir"
+                                                value="{{ '0' }}" />
                                         </div>
-
-                                        @error('total_penjualan')
-                                        <span class="invalid-feedback" role="alert">
-                                            <strong>{{ $message }}</strong>
-                                        </span>
-                                        @enderror
                                     </div>
                                 </div>
 

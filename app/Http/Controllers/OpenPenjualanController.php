@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\PenjualanRequest;
 use App\Models\Dispenser;
 use App\Models\JamKerja;
+use App\Models\Nozzle;
 use App\Models\Penjualan;
 use App\Models\Produk;
 use App\Models\Spbu;
@@ -69,10 +70,9 @@ class OpenPenjualanController extends Controller
     public function create()
     {
         $spbu = Spbu::select('spbu_id')->addSelect('nama_spbu')->addSelect('nomor_spbu')->get();
-        $produk = Produk::where('is_aktif', true)->get();
-        $dispenser = Dispenser::where('is_aktif', true)->get();
-        $jamKerja = JamKerja::get();
-        return view('setoran/open_penjualan/create', compact('spbu', 'produk', 'dispenser', 'jamKerja'));
+        $jamKerja = JamKerja::orderBy('nama_jam_kerja', 'asc')->get();
+        $nozzle = Nozzle::orderBy('nama_nozzle', 'asc')->get();
+        return view('setoran/open_penjualan/create', compact('spbu', 'nozzle', 'jamKerja'));
     }
 
     /**

@@ -20,7 +20,7 @@
         "vite": "^4.0.0"
     },
     "dependencies": {
-        "chart.js": "^4.3.0",
+        "chart.js": "^4.4.2",
         "cleave.js": "^1.6.0",
         "datatables.net-bs4": "^1.10.24",
         "fullcalendar": "^3.4.0",

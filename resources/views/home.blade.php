@@ -67,8 +67,7 @@
 <div class="row justify-content-center">
     <div class="col-md-12">
         <div class="card">
-            <div class="card-header"><h4>{{ __('Dashboard') }}</h4></div>
-
+            <div class="card-header"><h4>{{ __('Dashboard Stok Hari Ini') }}</h4></div>
             <div class="card-body">
                 <div class="row">
                     <div class="col-12 col-md-12 col-lg-6 col-xl-6">
@@ -76,6 +75,23 @@
                     </div>
                     <div class="col-12 col-md-12 col-lg-6 col-xl-6">
                         <canvas id="chart-stok-split"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="row justify-content-center">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header"><h4>{{ __('Dashboard Penjualan Hari Ini') }}</h4></div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-12 col-md-12 col-lg-6 col-xl-6">
+                        <canvas id="chart-penjualan"></canvas>
+                    </div>
+                    <div class="col-12 col-md-12 col-lg-6 col-xl-6">
+                        <canvas id="chart-penjualan-split"></canvas>
                     </div>
                 </div>
             </div>

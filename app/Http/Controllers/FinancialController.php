@@ -19,6 +19,12 @@ class FinancialController extends Controller
                 "color" => "primary"
             ],
             [
+                "nama" => "Rekap Pajak",
+                "icon" => "file",
+                "url" => route('rekap-pajak.index'),
+                "color" => "info"
+            ],
+            [
                 "nama" => "Margin",
                 "icon" => "tint",
                 "url" => route('margin.index'),

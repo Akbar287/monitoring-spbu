@@ -2,8 +2,7 @@
 
 const { default: Swal } = require("sweetalert2");
 import Cleave from "cleave.js"
-import { Chart, registerables } from "chart.js";
-Chart.register(...registerables);
+import { Chart, registerables } from "chart.js/auto";
 
 $(function () {
     let routeName = ($('meta[name=route]')[0].content);
@@ -415,6 +414,7 @@ $(function () {
         });
     }
     if(routeName == 'home') {
+
         $.ajax({
             url: document.location.origin + '/api/chart',
             method: 'get',
@@ -425,11 +425,12 @@ $(function () {
                     label: 'Stok BBM',
                     data: data.data.chart_stok,
                     options: {
-                    scales: {
-                        y: {
-                            beginAtZero: true
+                        responsive: true,
+                        scales: {
+                            y: {
+                                beginAtZero: true
+                            }
                         }
-                    }
                     }
                 });
                 new Chart(document.getElementById('chart-stok-split'), {
@@ -437,17 +438,65 @@ $(function () {
                     label: 'Pengeluaran Stok Tanggal 12 Juli 2023',
                     data: data.data.chart_stok_split,
                     options: {
-                    scales: {
-                        y: {
-                            beginAtZero: true
+                        plugins: {
+                            title: {
+                                display: true,
+                                text: 'Penjualan Per Shift (dalam Liter)'
+                            },
+                        },
+                        interaction: {
+                            intersect: false,
+                        },
+                        responsive: true,
+                        scales: {
+                            y: {
+                                beginAtZero: true
+                            }
                         }
                     }
+                });
+
+                new Chart(document.getElementById('chart-penjualan'), {
+                    type: 'bar',
+                    label: 'Penjualan',
+                    data: data.data.chart_penjualan,
+                    options: {
+                        responsive: true,
+                        scales: {
+                            y: {
+                                beginAtZero: true
+                            }
+                        }
+                    }
+                });
+                new Chart(document.getElementById('chart-penjualan-split'), {
+                    type: 'bar',
+                    data: data.data.chart_penjualan_split,
+                    options: {
+                        plugins: {
+                            title: {
+                                display: true,
+                                text: 'Penjualan Per Shift (dalam Rupiah)'
+                            },
+                        },
+                        interaction: {
+                            intersect: false,
+                        },
+                        responsive: true,
+                        scales: {
+                            x: {
+                                stacked: true
+                            },
+                            y: {
+                                stacked: true,
+                                beginAtZero: true
+                            }
+                        }
                     }
                 });
             },
             error: function(err) {console.error(err)}
         })
-
     }
     if(routeName == 'profil.edit_password') {
         $('button.see_password').on('click', function() {
@@ -1669,7 +1718,25 @@ $(function () {
         $('select#tag').select2();
         $('select#kategori').select2();
     }
-
+    if(routeName == 'rekap-pajak.index') {
+        $('.table-rekap-pajak').DataTable({
+            language: {
+                url: "//cdn.datatables.net/plug-ins/1.10.24/i18n/Indonesian.json",
+            },
+            processing: true,
+            serverSide: true,
+            ajax: document.location.href,
+            columns: [
+                {data: 'tanggal', name: 'tanggal'},
+                {data: 'kode_pembelian', name: 'kode_pembelian'},
+                {data: 'ppn', name: 'ppn'},
+                {data: 'pph', name: 'pph'},
+                {data: 'ppbkb', name: 'ppbkb'},
+                {data: 'total_pajak', name: 'total_pajak'},
+                {data: 'action', name: 'action', orderable: false, searchable: false},
+            ]
+        });
+    }
     if(routeName == 'file.post.index') {
         $('.table-file-post').DataTable({
             language: {

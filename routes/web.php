@@ -54,6 +54,7 @@ use App\Http\Controllers\PettyCashController;
 use App\Http\Controllers\PostController;
 use App\Http\Controllers\ProcurementController;
 use App\Http\Controllers\ProdukController;
+use App\Http\Controllers\RekapPajakController;
 use App\Http\Controllers\RencanaPembelianController;
 use App\Http\Controllers\SetoranController;
 use App\Http\Controllers\SetoranUangOperatorController;
@@ -530,6 +531,10 @@ Route::middleware(['auth', 'cache.header'])->group(function ($route) {
     $route->get('/financial/petty-cash/{pettyCash}/file/{file}/edit', [FilePettyCashController::class, 'edit'])->name('petty-cash.file.edit');
     $route->put('/financial/petty-cash/{pettyCash}/file/{file}', [FilePettyCashController::class, 'update'])->name('petty-cash.file.update');
     $route->delete('/financial/petty-cash/{pettyCash}/file/{file}', [FilePettyCashController::class, 'destroy'])->name('petty-cash.file.delete');
+
+    $route->get('/financial/rekap-pajak', [RekapPajakController::class, 'index'])->name('rekap-pajak.index');
+    $route->post('/financial/rekap-pajak/export', [RekapPajakController::class, 'export'])->name('rekap-pajak.export');
+    $route->get('/financial/rekap-pajak/{pajakPembelian}', [RekapPajakController::class, 'show'])->name('rekap-pajak.show');
 
     $route->get('/financial/margin', [MarginController::class, 'index'])->name('margin.index');
 

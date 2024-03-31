@@ -45,11 +45,11 @@
                                 <table class="table table-hover table-open-setoran">
                                     <thead>
                                         <tr>
-                                            <th>Produk</th>
-                                            <th>Dispenser</th>
                                             <th>Tanggal</th>
                                             <th>Jam Kerja</th>
-                                            <th>Total Penjualan</th>
+                                            <th>Nozzle</th>
+                                            <th>Stand Meter Awal</th>
+                                            <th>Stand Meter Akhir</th>
                                             <th>Aksi</th>
                                         </tr>
                                     </thead>

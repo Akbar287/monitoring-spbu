@@ -6,6 +6,7 @@ use App\Http\Requests\HargaRequest;
 use App\Models\Harga;
 use App\Models\JamKerja;
 use App\Models\Produk;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Yajra\DataTables\DataTables;
 
@@ -19,6 +20,9 @@ class HargaController extends Controller
                 ->addIndexColumn()
                 ->addColumn('produk', function ($row) {
                     return $row->produk()->first()->nama_produk;
+                })
+                ->addColumn('tanggal', function ($row) {
+                    return Carbon::createFromFormat('Y-m-d', $row->tanggal)->format('d F Y');
                 })
                 ->addColumn('jam_kerja', function ($row) {
                     return $row->jam_kerja()->first()->nama_jam_kerja;
@@ -56,6 +60,9 @@ class HargaController extends Controller
                 })
                 ->addColumn('jam_kerja', function ($row) {
                     return $row->jam_kerja()->first()->nama_jam_kerja;
+                })
+                ->addColumn('tanggal', function ($row) {
+                    return Carbon::createFromFormat('Y-m-d', $row->tanggal)->format('d F Y');
                 })
                 ->addColumn('harga_beli', function ($row) {
                     return 'Rp. ' . number_format($row->harga_beli, 2, ".", ",");
