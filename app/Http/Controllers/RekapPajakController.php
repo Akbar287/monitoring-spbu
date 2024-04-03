@@ -112,7 +112,7 @@ class RekapPajakController extends Controller
         $header = ['Tanggal', 'Kode Pembelian', 'PPN', "PPH", 'PPBKB', 'Total Pajak'];
 
         array_unshift($pajak, $header);
-        $final_to_download = Excel::download(new PajakPembelianExport($pajak), 'Rekap_Pajak_Excel.xlsx', \Maatwebsite\Excel\Excel::XLS);
+        $final_to_download = Excel::download(new PajakPembelianExport($pajak), 'Rekap_Pajak_Excel.xls', \Maatwebsite\Excel\Excel::XLS);
         // Storage::delete('temp/' . $name);
         return $final_to_download;
     }

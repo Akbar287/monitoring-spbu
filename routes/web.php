@@ -26,6 +26,7 @@ use App\Http\Controllers\HargaController;
 use App\Http\Controllers\HariController;
 use App\Http\Controllers\ImportController;
 use App\Http\Controllers\JabatanController;
+use App\Http\Controllers\JadwalAbsensiController;
 use App\Http\Controllers\JamKerjaController;
 use App\Http\Controllers\KategoriController;
 use App\Http\Controllers\KehadiranOperatorController;
@@ -543,6 +544,16 @@ Route::middleware(['auth', 'cache.header'])->group(function ($route) {
     $route->get('/financial/buku-besar', [BukuBesarController::class, 'index'])->name('buku-besar.index');
     $route->get('/financial/arus-kas', [ArusKasController::class, 'index'])->name('arus-kas.index');
     $route->get('/financial/perubahan-modal', [PerubahanModalController::class, 'index'])->name('perubahan-modal.index');
+
+    // Absensi
+    $route->get('/jadwal_absensi', JadwalAbsensiController::class)->name('menu.jadwal_absensi');
+
+    $route->get('/jadwal_absensi/jadwal', [\App\Http\Controllers\JadwalKerjaController::class, 'index'])->name('jadwal-kerja.index');
+
+    $route->get('/jadwal_absensi/absensi', [\App\Http\Controllers\AbsensiController::class, 'index'])->name('absensi.index');
+
+    $route->get('/jadwal_absensi/laporan_absensi', [\App\Http\Controllers\LaporanAbsensiController::class, 'index'])->name('laporan-absensi.index');
+
 
     // Konfigurasi
     $route->get('/konfigurasi', KonfigurasiController::class)->name('menu.konfigurasi');

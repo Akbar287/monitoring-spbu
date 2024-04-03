@@ -12,9 +12,4 @@ const mix = require('laravel-mix');
  */
 
 mix.js('resources/js/app.js', 'public/js')
-    .minify('public/js/app.js', {
-        terserOptions: {
-            ecma: 7
-        }
-    })
     .sass('resources/sass/app.scss', 'public/css');

@@ -1657,7 +1657,6 @@ $(function () {
         });
     }
     if(routeName == 'pembelian.detail.edit_pajak') {
-        let hrg_dasar = 0, ppn = 0,pph = 0,ppbkb = 0;
         $('#ppn').on('keyup', function(e) {
             $('#total_amount').val(new Intl.NumberFormat("id-ID", { style: "decimal" }).format(parseInt($('#net_price').val().replaceAll(',', '')) + parseInt(e.target.value.replaceAll(',', '')) + parseInt($('#pph').val().replaceAll(',', '')) + parseInt($('#ppbkb').val().replaceAll(',', ''))));
         });
@@ -1768,6 +1767,258 @@ $(function () {
                 {data: 'action', name: 'action', orderable: false, searchable: false},
             ]
         });
+    }
+    if(routeName == 'jadwal-kerja.index') {
+        $(function() {
+            let numberWrapper = 1;
+            let temp_jam_kerja = '';
+            let temp_nozzle = '';
+            let date = new Date();
+            let now = [date.getFullYear(), (date.getMonth() + 1), date.getDate()];
+
+            $('input#temp_jam_kerja').val().split('||').map((jk, i) => {
+                if(jk.trim() == '') return;
+                temp_jam_kerja += '<option '+ (i == 0 ? 'selected' : '') + ' value="'+ jk.trim().split('|')[0] +'">'+ jk.trim().split('|')[1] +'</option>';
+            });
+
+            $('input#temp_nozzle').val().split('||').map((n, i) => {
+                if(n.trim() == '') return;
+                temp_nozzle += '<option '+ (i == 0 ? 'selected' : '') +' value="'+ n.trim().split('|')[0] +'">'+ n.trim().split('|')[1] +'</option>'
+            });
+
+            $("#add-schedule").fireModal({
+                title: 'Jadwalkan Kerja',
+                body: $("#modal-create-schedule"),
+                footerClass: 'bg-whitesmoke',
+                autoFocus: false,
+                onFormSubmit: function(modal, e, form) {
+                    const member_id = $('.input-employee-sch-id').val();
+                    const jabatan = $('.input-jabatan-sch').val();
+                    const tanggal_raw = $('.input-date-sch');
+                    const jam_kerja_raw = $('.input-jam_kerja-sch');
+                    const nozzle_raw = $('.input-nozzle-sch');
+                    let tanggal = [];
+                    let jam_kerja = [];
+                    let nozzle = [];
+
+                    // Tanggal
+                    for(let i = 0; i < tanggal_raw.length; i++) {
+                        tanggal.push(tanggal_raw[i].value);
+                    }
+                    // End Tanggal
+                    // Jam Kerja
+                    for(let i = 0; i < jam_kerja_raw.length; i++) {
+                        jam_kerja.push(jam_kerja_raw[i].value);
+                    }
+                    // End Jam Kerja
+                    // Nozzle
+                    for(let i = 0; i < nozzle_raw.length; i++) {
+                        nozzle.push(nozzle_raw[i].value);
+                    }
+                    // End Nozzle
+
+                    if($('.input-date-sch').val() == ""){
+                        form.stopProgress();
+                        modal.find('.modal-body').children('.alert').remove()
+                        modal.find('.modal-body').prepend('<div class="alert alert-danger">Tanggal Wajib Diisi!</div>')
+                    }  else {
+                        $.ajax({
+                            url : document.location.origin + '/api'  + document.location.pathname,
+                            type: 'post',
+                            data: {
+                                '_token': $('meta[name="csrf-token"]').attr('content'),
+                                member_id,
+                                jabatan,
+                                tanggal,
+                                jam_kerja,
+                                nozzle
+                            },
+                            success: async function(data) {
+                                form.stopProgress();
+                                modal.find('.modal-body').children('.alert').remove()
+                                modal.find('.modal-body').prepend('<div class="alert alert-success">Pegawai Telah Terjadwal</div>')
+                                $('.input-date-sch').val('')
+                                $('#calendar').fullCalendar('destroy');
+                                await $("#calendar").fullCalendar({
+                                    defaultView: 'month',
+                                    height: 750,
+                                    businessHours: true,
+                                    selectable: true,
+                                    header: {
+                                        left: 'today',
+                                        center: 'title',
+                                        right: 'month'
+                                    },
+                                    selectMirror: true,
+                                    select: function(arg) {
+                                        return false;
+                                    },eventClick: function(arg) {
+                                        if(window.confirm('Ingin Menghapus Jadwal Kerja Terpilih?')) {
+                                            deleteSchedule(arg)
+                                        }
+                                    },
+                                    dayMaxEvents: true,
+                                    editable: false,
+                                    droppable: false,
+                                    drop: function() {
+                                    },
+                                    events: data.schedule
+                                });
+                                $('#calendar').fullCalendar('render');
+
+                            }, error: function() {
+                                form.stopProgress();
+                                modal.find('.modal-body').children('.alert').remove()
+                                modal.find('.modal-body').prepend('<div class="alert alert-danger">Mohon Cek Internet Anda.</div>')
+                            }
+                        })
+                    }
+                    e.preventDefault();
+                },
+                shown: function(modal, form) {},
+                buttons: [
+                    {
+                        text: 'Jadwalkan',
+                        submit: true,
+                        class: 'btn btn-primary btn-shadow',
+                        handler: function(modal) {
+                        }
+                    }
+                ]
+            });
+
+            $('#add_setting').on('click', function() {
+                numberWrapper += 1;
+                $('.setting-calendar').append('<div class="card card-primary wrapper" data-wrapper="'+ numberWrapper +'"><div class="card-header"><h4>Kalendar #'+numberWrapper+'</h4></div><div class="card-body"><div class="form-group"><label>Tanggal Kerja</label><div class="input-group"><div class="input-group-prepend"><div class="input-group-text"><i class="fas fa-calendar"></i></div></div><input type="date" value="'+ now[0] + '-' + (now[1] < 10 ? '0'+now[1] : now[1]) + '-' + (now[2] < 10 ? '0'+now[2] : now[2]) +'" class="form-control input-date-sch"></div></div><div class="form-group"><label>Jam Kerja</label><div class="input-group"><div class="input-group-prepend"><div class="input-group-text"><i class="fas fa-clock"></i></div></div><select name="jenis_kerja" class="custom-select input-jam_kerja-sch">'+ temp_jam_kerja +'</select></div></div><div class="form-group"><label>Nozzle</label><div class="input-group"><div class="input-group-prepend"><div class="input-group-text"><i class="fas fa-thermometer-full"></i></div></div><select name="nozzle_id" id="nozzle_id" class="custom-select input-nozzle-sch"><option value="all">Semua Nozzle</option>'+ temp_nozzle +'</select></div></div></div></div>');
+            });
+
+            $('#remove_setting').on('click', function() {
+                if($('.setting-calendar').children().length > 1) {
+                    $('.setting-calendar').children().last().remove();
+                    numberWrapper -=1;
+                } else {
+                    window.alert('Anda tidak dapat menghapus pengaturan kalendar #1')
+                }
+            });
+
+            $('.jadwal-kerja-href').on('click', async function() {
+                let user = $(this).data('user');
+                let name = $(this).data('name');
+
+                $('.input-employee-sch-id').val(user)
+                $('.input-employee-sch-name').val(name)
+
+                // Jabatan
+                let jabatan = ($(this).parent().siblings().children('span')[0].innerText).split(', ')
+                $('select#jabatan').attr('disabled', '');
+                $('select#jabatan').children().remove();
+                let appendJabatan = '';
+                if(jabatan.length > 0 && jabatan[0] !== '') {
+                    $('select#jabatan').removeAttr('disabled');
+                    jabatan.forEach(j => appendJabatan += '<option value="'+ j +'">'+ j +'</option>')
+                    $('select#jabatan').append(appendJabatan)
+                } else {
+                    $('select#jabatan').attr('disabled', '');
+                    $('select#jabatan').append('<option value="0">Tidak ada Jabatan</option>')
+                }
+                // End Jabatan
+
+                $('.jadwal-kerja-href').removeClass('active-schedule');
+                $(this).addClass('active-schedule');
+
+                $('#title-calendar').text('Jadwal kerja ' + name);
+                let data = [];
+                $('.card-calendar').css('display', '')
+
+                await $.ajax({
+                    url: document.location.origin + '/api/jadwalkerja/cek',
+                    type: 'POST',
+                    data: {
+                      _token: $('meta[name="csrf-token"]').attr('content'),
+                      user: user
+                    },
+                    beforeSend: function() {},
+                    success: function(res) {
+                        if(res.status == true) {
+                            data = res.schedule
+                        }
+                    },
+                    error: function() {}
+                })
+                $('#calendar').fullCalendar('destroy');
+                await $("#calendar").fullCalendar({
+                    defaultView: 'month',
+                    height: 750,
+                    businessHours: true,
+                    selectable: true,
+                    header: {
+                        left: 'today',
+                        center: 'title',
+                        right: 'month'
+                    },
+                    selectMirror: true,
+                    select: function(arg) {
+                        return false;
+                    },eventClick: function(arg) {
+                        if(confirm('Ingin Menghapus Jadwal Kerja Terpilih?')) {
+                            deleteSchedule(arg)
+                        }
+                      },
+                    dayMaxEvents: true,
+                    editable: false,
+                    droppable: false,
+                    drop: function() {
+                    },
+                    events: data
+                });
+                $('#calendar').fullCalendar('render');
+            })
+            function deleteSchedule(arg) {
+                $.ajax({
+                    url: document.location.origin + '/api/jadwalkerja/delete',
+                    type: 'POST',
+                    data: {
+                      _token: $('meta[name="csrf-token"]').attr('content'),
+                      date: arg.start._i,
+                      title: arg.title,
+                      user_id: $('.input-employee-sch-id').val()
+                    },
+                    beforeSend: function() {},
+                    success: async function(res) {
+                        if(res.status == true) {
+                            $('#calendar').fullCalendar('destroy');
+                                await $("#calendar").fullCalendar({
+                                    defaultView: 'month',
+                                    height: 750,
+                                    businessHours: true,
+                                    selectable: true,
+                                    header: {
+                                        left: 'today',
+                                        center: 'title',
+                                        right: 'month'
+                                    },
+                                    selectMirror: true,
+                                    select: function(arg) {
+                                        return false;
+                                    },eventClick: function(arg) {
+                                        if(confirm('Ingin Menghapus Jadwal Kerja Terpilih?')) {
+                                            deleteSchedule(arg)
+                                        }
+                                    },
+                                    dayMaxEvents: true,
+                                    editable: false,
+                                    droppable: false,
+                                    drop: function() {
+                                    },
+                                    events: res.schedule
+                                });
+                                $('#calendar').fullCalendar('render');
+                        }
+                    },
+                    error: function() {}
+                })
+            }
+        })
     }
 
     $('.table-file-fasilitas').DataTable({

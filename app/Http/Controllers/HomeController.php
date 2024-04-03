@@ -84,6 +84,12 @@ class HomeController extends Controller
                     "color" => "info"
                 ],
                 [
+                    "nama" => "Jadwal & Absensi",
+                    "icon" => "calendar",
+                    "url" => route('menu.jadwal_absensi'),
+                    "color" => "danger"
+                ],
+                [
                     "nama" => "Konfigurasi",
                     "icon" => "wrench",
                     "url" => route('menu.konfigurasi'),

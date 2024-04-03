@@ -179,6 +179,17 @@
                         @endif
 
                         @if(Auth::user()->member()->first()->jabatan()->first()->level()->first()->nama_level == 'Penanggung Jawab')
+                        <li class="dropdown {{ Route::currentRouteName() == 'jadwal-kerja.index' || Route::currentRouteName() == 'absensi.index' || Route::currentRouteName() == 'laporan-absensi.index' ? 'active' : '' }}">
+                            <a href="#" class="nav-link has-dropdown"><i class="fas fa-calendar"></i> <span>Jadwal & Absensi</span></a>
+                            <ul class="dropdown-menu">
+                                <li class="{{ (Route::currentRouteName() == 'jadwal-kerja.index') ? 'active': '' }}"><a class="nav-link" href="{{ route('jadwal-kerja.index') }}">Penjadwalan Pegawai</span></a></li>
+                                <li class="{{ (Route::currentRouteName() == 'absensi.index') ? 'active': '' }}"><a class="nav-link" href="{{ route('absensi.index') }}">Absensi</span></a></li>
+                                <li class="{{ (Route::currentRouteName() == 'laporan-absensi.index') ? 'active': '' }}"><a class="nav-link" href="{{ route('laporan-absensi.index') }}">Laporan Rekap</span></a></li>
+                            </ul>
+                        </li>
+                        @endif
+
+                        @if(Auth::user()->member()->first()->jabatan()->first()->level()->first()->nama_level == 'Penanggung Jawab')
                         <li class="dropdown {{ Route::currentRouteName() == 'spbu.index' || Route::currentRouteName() == 'spbu.create' || Route::currentRouteName() == 'spbu.show' || Route::currentRouteName() == 'spbu.edit' || Route::currentRouteName() == 'divisi.index' || Route::currentRouteName() == 'divisi.create' || Route::currentRouteName() == 'divisi.show' || Route::currentRouteName() == 'divisi.edit' || Route::currentRouteName() == 'hari.index' || Route::currentRouteName() == 'hari.create' || Route::currentRouteName() == 'hari.show' || Route::currentRouteName() == 'hari.edit' || Route::currentRouteName() == 'jam_kerja.index' || Route::currentRouteName() == 'jam_kerja.create' || Route::currentRouteName() == 'jam_kerja.show' || Route::currentRouteName() == 'jam_kerja.edit' || Route::currentRouteName() == 'level.index' || Route::currentRouteName() == 'level.create' || Route::currentRouteName() == 'level.show' || Route::currentRouteName() == 'level.edit' || Route::currentRouteName() == 'jabatan.index' || Route::currentRouteName() == 'jabatan.create' || Route::currentRouteName() == 'jabatan.show' || Route::currentRouteName() == 'jabatan.edit' || Route::currentRouteName() == 'pajak_pembelian_lib.index' || Route::currentRouteName() == 'pajak_pembelian_lib.create' || Route::currentRouteName() == 'pajak_pembelian_lib.show' || Route::currentRouteName() == 'pajak_pembelian_lib.edit' || Route::currentRouteName() == 'import.index' || Route::currentRouteName() == 'menu.konfigurasi' ? 'active' : '' }}">
                             <a href="#" class="nav-link has-dropdown"><i class="fas fa-wrench"></i> <span>Konfigurasi</span></a>
                             <ul class="dropdown-menu">
@@ -193,6 +204,7 @@
                             </ul>
                         </li>
                         @endif
+
                         @if(Auth::user()->member()->first()->jabatan()->first()->level()->first()->nama_level == 'Operator')
                         <li class="{{ (Route::currentRouteName() == 'menu.stand-meter') ? 'active': '' }}"><a class="nav-link" href="{{ route('menu.stand-meter') }}"><i class="fas fa-tint"></i><span>Stand Meter</span></a></li>
                         <li class="{{ (Route::currentRouteName() == 'menu.setoran-uang') ? 'active': '' }}"><a class="nav-link" href="{{ route('menu.setoran-uang') }}"><i class="fas fa-percent"></i><span>Setoran</span></a></li>
