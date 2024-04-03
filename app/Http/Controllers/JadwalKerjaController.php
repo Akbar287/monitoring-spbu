@@ -2,10 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Jabatan;
 use App\Models\JamKerja;
 use App\Models\Member;
 use App\Models\Nozzle;
+use App\Models\StatusKehadiran;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class JadwalKerjaController extends Controller
 {
@@ -72,8 +75,6 @@ class JadwalKerjaController extends Controller
 
     public function jadwal(Request $request)
     {
-        dd($request);
-
         $request->validate([
             'member_id' => ['required'],
             'jabatan' => ['required'],
@@ -81,5 +82,44 @@ class JadwalKerjaController extends Controller
             'jam_kerja' => ['required'],
             'nozzle' => ['required'],
         ]);
+
+
+        $statusKehadiran = StatusKehadiran::select('status_kehadiran_id')->where('nama_kehadiran', 'Dijadwalkan')->first();
+        $jabatan = Jabatan::select('jabatan_id')->where('nama_jabatan', request('jabatan'))->first();
+        $nozzle = Nozzle::select('nozzle_id')->get();
+
+        for ($i = 0; $i < count($request->tanggal); $i++) {
+            $penjadwalan = $statusKehadiran->penjadwalan()->create([
+                'jabatan_id' => $jabatan->jabatan_id,
+                'member_id' => request('member_id'),
+                'jam_kerja_id' => $request->jam_kerja[$i],
+                'tanggal' => $request->tanggal[$i],
+                'deskripsi' => null,
+                'is_attended' => false,
+                'is_confirm' => false,
+                'attended' => null
+            ]);
+
+            if ($request->nozzle[$i] == 'all') {
+                for ($o = 0; $o < count($nozzle); $o) {
+                    DB::table('penjadwalan_nozzle')->insert([
+                        'penjadwalan_id' => $penjadwalan->penjadwalan_id,
+                        'nozzle_id' => $nozzle->nozzle_id
+                    ]);
+                }
+            } else {
+                DB::table('penjadwalan_nozzle')->insert([
+                    'penjadwalan_id' => $penjadwalan->penjadwalan_id,
+                    'nozzle_id' => $request->nozzle[$i]
+                ]);
+            }
+        }
+
+        return redirect()->json([
+            'status' => 'success',
+            'message' => 'success to create schedule',
+            'data' => []
+        ], 201);
+        exit;
     }
 }

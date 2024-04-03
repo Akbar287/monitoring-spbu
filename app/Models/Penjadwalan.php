@@ -54,4 +54,29 @@ class Penjadwalan extends Model
     {
         return $this->belongsTo(JamKerja::class, 'jam_kerja_id', 'jam_kerja_id');
     }
+
+    public function random_string_barcode()
+    {
+        return $this->hasMany(RandomStringBarcode::class, 'penjadwalan_id', 'penjadwalan_id');
+    }
+
+    public function devices()
+    {
+        return $this->hasMany(Devices::class, 'penjadwalan_id', 'penjadwalan_id');
+    }
+
+    public function image_selfie()
+    {
+        return $this->hasMany(ImageSelfie::class, 'penjadwalan_id', 'penjadwalan_id');
+    }
+
+    public function location()
+    {
+        return $this->hasMany(Location::class, 'penjadwalan_id', 'penjadwalan_id');
+    }
+
+    public function nozzle()
+    {
+        return $this->belongsToMany(Nozzle::class, 'penjadwalan_nozzle', 'penjadwalan_id', 'nozzle_id');
+    }
 }

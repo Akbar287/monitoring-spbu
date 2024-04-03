@@ -44,4 +44,9 @@ class Nozzle extends Model
     {
         return $this->belongsTo(Produk::class, 'produk_id', 'produk_id');
     }
+
+    public function penjadwalan()
+    {
+        return $this->belongsToMany(Penjadwalan::class, 'penjadwalan_nozzle', 'nozzle_id', 'penjadwalan_id');
+    }
 }
