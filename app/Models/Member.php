@@ -98,4 +98,9 @@ class Member extends Model
     {
         return $this->hasMany(Notifikasi::class, 'member_id', 'member_id');
     }
+
+    public function penjadwalan()
+    {
+        return $this->hasMany(Penjadwalan::class, 'member_id', 'member_id');
+    }
 }

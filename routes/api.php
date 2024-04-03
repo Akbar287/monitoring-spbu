@@ -19,5 +19,6 @@ Route::get('/chart', [HomeController::class, 'chart'])->name('home.chart');
 
 Route::middleware(['auth', 'cache.header'])->group(function ($route) {
     $route->post('/jadwalkerja/cek', [JadwalKerjaController::class, 'cek'])->name('jadwal_kerja.cek_api');
+    $route->post('/jadwalkerja/delete', [JadwalKerjaController::class, 'destroy'])->name('jadwal_kerja.destroy_api');
     $route->post('/jadwal_absensi/jadwal', [JadwalKerjaController::class, 'jadwal'])->name('jadwal_kerja.jadwal_api');
 });

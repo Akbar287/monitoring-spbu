@@ -69,4 +69,9 @@ class JamKerja extends Model
     {
         return $this->hasMany(DombakTransfer::class, 'jam_kerja_id', 'jam_kerja_id');
     }
+
+    public function penjadwalan()
+    {
+        return $this->hasMany(Penjadwalan::class, 'jam_kerja_id', 'jam_kerja_id');
+    }
 }

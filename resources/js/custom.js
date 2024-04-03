@@ -1935,7 +1935,7 @@ $(function () {
                     type: 'POST',
                     data: {
                       _token: $('meta[name="csrf-token"]').attr('content'),
-                      user: user
+                      member_id: user
                     },
                     beforeSend: function() {},
                     success: function(res) {
@@ -1981,7 +1981,7 @@ $(function () {
                       _token: $('meta[name="csrf-token"]').attr('content'),
                       date: arg.start._i,
                       title: arg.title,
-                      user_id: $('.input-employee-sch-id').val()
+                      member_id: $('.input-employee-sch-id').val()
                     },
                     beforeSend: function() {},
                     success: async function(res) {

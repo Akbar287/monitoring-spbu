@@ -38,6 +38,10 @@ class Jabatan extends Model
     {
         return $this->hasMany(Gaji::class, 'jabatan_id', 'jabatan_id');
     }
+    public function penjadwalan()
+    {
+        return $this->hasMany(Penjadwalan::class, 'jabatan_id', 'jabatan_id');
+    }
     public function member()
     {
         return $this->belongsToMany(Member::class, 'jabatan_member', 'jabatan_id', 'member_id');

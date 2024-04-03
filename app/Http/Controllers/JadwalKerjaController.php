@@ -6,12 +6,18 @@ use App\Models\Jabatan;
 use App\Models\JamKerja;
 use App\Models\Member;
 use App\Models\Nozzle;
+use App\Models\Penjadwalan;
 use App\Models\StatusKehadiran;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class JadwalKerjaController extends Controller
 {
+    public function __construct()
+    {
+        date_default_timezone_set('Asia/Jakarta');
+    }
     /**
      * Display a listing of the resource.
      */
@@ -58,9 +64,25 @@ class JadwalKerjaController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, string $id)
+    public function destroy(Request $request)
     {
-        //
+        $request->validate([
+            'member_id' => ['required'],
+            'title' => ['required'],
+            'date' => ['required'],
+        ]);
+
+        $date = explode('T', $request->date, -1)['0'];
+        $jam_kerja = JamKerja::where('nama_jam_kerja', request('title'))->first();
+        $penjadwalan = $jam_kerja->penjadwalan()->where('member_id', request('member_id'))->where('tanggal', $date)->first();
+
+        $penjadwalan->delete();
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Employee has been scheduled',
+            'schedule' => $this->getSchedule(request('member_id'))
+        ], 200);
     }
 
     /**
@@ -69,8 +91,14 @@ class JadwalKerjaController extends Controller
     public function cek(Request $request)
     {
         $request->validate([
-            'user' => ['required']
+            'member_id' => ['required']
         ]);
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Employee has been scheduled',
+            'schedule' => $this->getSchedule(request('member_id'))
+        ], 200);
     }
 
     public function jadwal(Request $request)
@@ -115,11 +143,26 @@ class JadwalKerjaController extends Controller
             }
         }
 
-        return redirect()->json([
+        return response()->json([
             'status' => 'success',
             'message' => 'success to create schedule',
-            'data' => []
+            'schedule' => $this->getSchedule(request('member_id'))
         ], 201);
         exit;
+    }
+
+    public function getSchedule($memberId)
+    {
+        $data = Penjadwalan::where('member_id', $memberId)->whereBetween('tanggal', [Carbon::now()->firstOfMonth(), Carbon::now()->endOfMonth()])->get();
+
+        $temp = [];
+        foreach ($data as $schedule) {
+            $temp[] = [
+                'title' => $schedule->jam_kerja()->first()->nama_jam_kerja,
+                'start' => $schedule->tanggal . 'T' . $schedule->jam_kerja()->first()->jam_datang_in,
+                'end' => $schedule->tanggal . 'T' . $schedule->jam_kerja()->first()->jam_pulang_out,
+            ];
+        }
+        return $temp;
     }
 }
