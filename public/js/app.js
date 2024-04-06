@@ -2619,6 +2619,7 @@ $(function () {
         footerClass: 'bg-whitesmoke',
         autoFocus: false,
         onFormSubmit: function onFormSubmit(modal, e, form) {
+          modal.find('.modal-body').children('.alert').remove();
           var member_id = $('.input-employee-sch-id').val();
           var jabatan = $('.input-jabatan-sch').val();
           var tanggal_raw = $('.input-date-sch');
@@ -2648,6 +2649,10 @@ $(function () {
             form.stopProgress();
             modal.find('.modal-body').children('.alert').remove();
             modal.find('.modal-body').prepend('<div class="alert alert-danger">Tanggal Wajib Diisi!</div>');
+          } else if (jabatan === '0') {
+            form.stopProgress();
+            modal.find('.modal-body').children('.alert').remove();
+            modal.find('.modal-body').prepend('<div class="alert alert-danger">Pegawai Tidak Memiliki Jabatan!</div>');
           } else {
             $.ajax({
               url: document.location.origin + '/api' + document.location.pathname,
@@ -2668,7 +2673,7 @@ $(function () {
                         form.stopProgress();
                         modal.find('.modal-body').children('.alert').remove();
                         modal.find('.modal-body').prepend('<div class="alert alert-success">Pegawai Telah Terjadwal</div>');
-                        $('.input-date-sch').val('');
+                        $('.input-date-sch').val(now[0] + '-' + (now[1] < 10 ? '0' + now[1] : now[1]) + '-' + (now[2] < 10 ? '0' + now[2] : now[2]));
                         $('#calendar').fullCalendar('destroy');
                         _context2.next = 7;
                         return $("#calendar").fullCalendar({

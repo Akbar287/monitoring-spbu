@@ -179,10 +179,10 @@
                         @endif
 
                         @if(Auth::user()->member()->first()->jabatan()->first()->level()->first()->nama_level == 'Penanggung Jawab')
-                        <li class="dropdown {{ Route::currentRouteName() == 'jadwal-kerja.index' || Route::currentRouteName() == 'absensi.index' || Route::currentRouteName() == 'laporan-absensi.index' ? 'active' : '' }}">
+                        <li class="dropdown {{ Route::currentRouteName() == 'jadwal-kerja.index' || Route::currentRouteName() == 'jadwal-kerja.upload_file.template' || Route::currentRouteName() == 'jadwal-kerja.upload_file' || Route::currentRouteName() == 'jadwal-kerja.upload_file.store' || Route::currentRouteName() == 'jadwal-kerja.upload_file.delete' || Route::currentRouteName() == 'jadwal-kerja.qr' || Route::currentRouteName() == 'absensi.index' || Route::currentRouteName() == 'laporan-absensi.index' ? 'active' : '' }}">
                             <a href="#" class="nav-link has-dropdown"><i class="fas fa-calendar"></i> <span>Jadwal & Absensi</span></a>
                             <ul class="dropdown-menu">
-                                <li class="{{ (Route::currentRouteName() == 'jadwal-kerja.index') ? 'active': '' }}"><a class="nav-link" href="{{ route('jadwal-kerja.index') }}">Penjadwalan Pegawai</span></a></li>
+                                <li class="{{ (Route::currentRouteName() == 'jadwal-kerja.index' || Route::currentRouteName() == 'jadwal-kerja.upload_file.template' || Route::currentRouteName() == 'jadwal-kerja.upload_file' || Route::currentRouteName() == 'jadwal-kerja.upload_file.store' || Route::currentRouteName() == 'jadwal-kerja.upload_file.delete' || Route::currentRouteName() == 'jadwal-kerja.qr') ? 'active': '' }}"><a class="nav-link" href="{{ route('jadwal-kerja.index') }}">Penjadwalan Pegawai</span></a></li>
                                 <li class="{{ (Route::currentRouteName() == 'absensi.index') ? 'active': '' }}"><a class="nav-link" href="{{ route('absensi.index') }}">Absensi</span></a></li>
                                 <li class="{{ (Route::currentRouteName() == 'laporan-absensi.index') ? 'active': '' }}"><a class="nav-link" href="{{ route('laporan-absensi.index') }}">Laporan Rekap</span></a></li>
                             </ul>

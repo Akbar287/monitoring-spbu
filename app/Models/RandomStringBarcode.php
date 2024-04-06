@@ -25,14 +25,21 @@ class RandomStringBarcode extends Model
 
     protected $fillable = [
         'penjadwalan_id',
+        'validate_barcode_id',
         'barcode',
         'start',
         'finish',
-        'is_done'
+        'is_done',
+        'is_active'
     ];
 
     public function penjadwalan()
     {
         return $this->belongsTo(Penjadwalan::class, 'penjadwalan_id', 'penjadwalan_id');
+    }
+
+    public function validate_barcode()
+    {
+        return $this->belongsTo(ValidateBarcode::class, 'validate_barcode_id', 'validate_barcode_id');
     }
 }

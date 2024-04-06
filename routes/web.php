@@ -71,7 +71,7 @@ use App\Http\Controllers\TagController;
 use App\Http\Controllers\TeraController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
-
+// use Illuminate\Support\Facades\Hash;
 
 Auth::routes([
     'register' => false,
@@ -79,7 +79,7 @@ Auth::routes([
     'verify' => false
 ]);
 
-// Route::get('/hash', function () { return Hash::make('Admin123'); })->name('uploadTest');
+// Route::get('/hash', function () {return hash('sha512', 'BARBIE_SPBU2434520_20240406_38271517-f3e7-4d21-92cc-a114e3f37eaa_f2837222-44c8-4deb-8d6b-c9458b0514ce');})->name('uploadTest');
 // Route::get('/upload', [App\Http\Controllers\WelcomeController::class, 'uploadTest'])->name('uploadTest');
 
 Route::middleware(['auth', 'cache.header'])->group(function ($route) {
@@ -549,6 +549,11 @@ Route::middleware(['auth', 'cache.header'])->group(function ($route) {
     $route->get('/jadwal_absensi', JadwalAbsensiController::class)->name('menu.jadwal_absensi');
 
     $route->get('/jadwal_absensi/jadwal', [\App\Http\Controllers\JadwalKerjaController::class, 'index'])->name('jadwal-kerja.index');
+    $route->get('/jadwal_absensi/jadwal/template', [\App\Http\Controllers\JadwalKerjaController::class, 'template'])->name('jadwal-kerja.upload_file.template');
+    $route->get('/jadwal_absensi/jadwal/upload', [\App\Http\Controllers\JadwalKerjaController::class, 'upload_file'])->name('jadwal-kerja.upload_file');
+    $route->post('/jadwal_absensi/jadwal/upload', [\App\Http\Controllers\JadwalKerjaController::class, 'upload_file_store'])->name('jadwal-kerja.upload_file.store');
+    $route->delete('/jadwal_absensi/jadwal/delete', [\App\Http\Controllers\JadwalKerjaController::class, 'delete'])->name('jadwal-kerja.upload_file.delete');
+    $route->get('/jadwal_absensi/jadwal/qr', [\App\Http\Controllers\JadwalKerjaController::class, 'qrcode'])->name('jadwal-kerja.qr');
 
     $route->get('/jadwal_absensi/absensi', [\App\Http\Controllers\AbsensiController::class, 'index'])->name('absensi.index');
 

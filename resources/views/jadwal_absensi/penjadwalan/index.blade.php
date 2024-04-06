@@ -8,7 +8,8 @@
             <div class="card-header">
                 <h4>Pegawai</h4>
                 <div class="card-header-action">
-                    <a href="{{ url('jadwalkerja/qr') }}" class="btn btn-primary btn-sm">Kode QR</a>
+                    <a href="{{ route('jadwal-kerja.qr') }}" class="btn btn-primary btn-sm mr-2">Kode QR</a>
+                    <a href="{{ route('jadwal-kerja.upload_file') }}" class="btn btn-primary btn-sm">Upload File</a>
                 </div>
             </div>
             <div class="card-body">
@@ -33,7 +34,7 @@
             <div class="card-header">
                 <h4 id="title-calendar">Jadwal Kerja Pegawai</h4>
                 <div class="card-header-action">
-                    <button class="btn btn-primary btn-sm" data-user="" data-name="" id="add-schedule">Jadwalkan</button>
+                    <button class="btn btn-primary btn-sm mr-2" data-user="" data-name="" id="add-schedule">Jadwalkan</button>
                 </div>
             </div>
             <div class="card-body">
