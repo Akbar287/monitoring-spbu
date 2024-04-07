@@ -3,12 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\PenjualanRequest;
-use App\Models\Dispenser;
 use App\Models\JamKerja;
 use App\Models\Nozzle;
 use App\Models\Penjualan;
-use App\Models\Produk;
 use App\Models\Spbu;
+use App\Models\StandMeter;
 use App\Models\StatusSetoran;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -35,14 +34,6 @@ class OpenPenjualanController extends Controller
             $data = StatusSetoran::where('nama_status', 'Open Penjualan')->first()->penjualan()->whereBetween('penjualan.tanggal', [$waktuMulai, $waktuSelesai])->get();
             return DataTables::of($data)
                 ->addIndexColumn()
-                ->addColumn('produk', function ($row) {
-                    $actionBtn =  $row->produk()->first()->nama_produk;
-                    return $actionBtn;
-                })
-                ->addColumn('dispenser', function ($row) {
-                    $actionBtn =  $row->dispenser()->first()->nama_dispenser;
-                    return $actionBtn;
-                })
                 ->addColumn('tanggal', function ($row) {
                     return Carbon::createFromFormat('Y-m-d', $row->tanggal)->format('d F Y');
                 })
@@ -50,8 +41,8 @@ class OpenPenjualanController extends Controller
                     $actionBtn =  $row->jam_kerja()->first()->nama_jam_kerja;
                     return $actionBtn;
                 })
-                ->addColumn('total_penjualan', function ($row) {
-                    $actionBtn = 'Rp. ' . number_format($row->total_penjualan, 0, ".", ",");
+                ->addColumn('total_stand_meter', function ($row) {
+                    $actionBtn = $row->detail_penjualan()->count();
                     return $actionBtn;
                 })
                 ->addColumn('action', function ($row) {
@@ -69,7 +60,7 @@ class OpenPenjualanController extends Controller
      */
     public function create()
     {
-        $spbu = Spbu::select('spbu_id')->addSelect('nama_spbu')->addSelect('nomor_spbu')->get();
+        $spbu = Spbu::select('spbu_id')->addSelect('nama_spbu')->addSelect('nomor_spbu')->orderBy('nama_spbu', 'asc')->get();
         $jamKerja = JamKerja::orderBy('nama_jam_kerja', 'asc')->get();
         $nozzle = Nozzle::orderBy('nama_nozzle', 'asc')->get();
         return view('setoran/open_penjualan/create', compact('spbu', 'nozzle', 'jamKerja'));
@@ -81,23 +72,45 @@ class OpenPenjualanController extends Controller
     public function store(PenjualanRequest $penjualanRequest)
     {
         $spbu = Spbu::where('spbu_id', request('spbu_id'))->first();
-        $dispenser = Dispenser::where('dispenser_id', request('dispenser_id'))->first();
-        $harga = Produk::where('produk_id', request('produk_id'))->first()->harga()->where('is_default', true)->first();
+        $ss = StatusSetoran::where('nama_status', 'Open Penjualan')->first()->status_setoran_id;
 
         if (!is_null($spbu)) {
-            $penjualan = $spbu->penjualan()->create($this->openPenjualanData());
-            $total = str_replace(',', '', request('total_uang_kotak'));
-
-            if ($dispenser->nozzle()->select('nozzle.*')->addSelect('stand_meter.*')->leftJoin('stand_meter', 'stand_meter.nozzle_id', 'nozzle.nozzle_id')->where('nozzle.produk_id', request('produk_id'))->where('stand_meter.jam_kerja_id', request('jam_kerja_id'))->where('stand_meter.is_confirmation', true)->where('stand_meter.tanggal', request('tanggal'))->count() > 0) {
-                foreach ($dispenser->nozzle()->select('nozzle.*')->addSelect('stand_meter.*')->leftJoin('stand_meter', 'stand_meter.nozzle_id', 'nozzle.nozzle_id')->where('nozzle.produk_id', request('produk_id'))->where('stand_meter.jam_kerja_id', request('jam_kerja_id'))->where('stand_meter.is_confirmation', true)->where('stand_meter.tanggal', request('tanggal'))->get() as $detail) {
-                    $penjualan->detail_penjualan()->create($this->openPenjualanDetailData([$detail->noozlie_id, $harga->harga_id, $detail->stand_meter_id, $detail->stand_meter_akhir - $detail->stand_meter_awal, ($detail->stand_meter_akhir - $detail->stand_meter_awal) * $harga->harga_jual]));
-                    $total += ($detail->stand_meter_akhir - $detail->stand_meter_awal) * $harga->harga_jual;
-                }
-
-                $penjualan->update([
-                    'total_penjualan' => $total
+            if (is_null($spbu->penjualan()->where('status_setoran_id', $ss)->where('jam_kerja_id', request('jam_kerja_id'))->where('tanggal', request('tanggal'))->first())) {
+                $penjualan = $spbu->penjualan()->create([
+                    'status_setoran_id' => $ss,
+                    'spbu_id' => request('spbu_id'),
+                    'jam_kerja_id' => request('jam_kerja_id'),
+                    'tanggal' => request('tanggal'),
+                    'total_penjualan' => 0,
+                    'total_uang_kotak' => 0,
+                    'is_accepted_admin' => false,
+                    'is_accepted_top' => false,
                 ]);
             }
+            $total = 0;
+
+            foreach ($penjualanRequest->stand_meter_id as $smi) {
+                $sm = StandMeter::where('stand_meter_id', $smi)->first();
+                if (!is_null($sm)) {
+                    $harga = $sm->nozzle()->first()->produk()->first()->harga()->where('is_default', 'true')->first();
+
+                    if (is_null($penjualan->detail_penjualan()->where('stand_meter_id', $smi)->where('harga_id', $harga->harga_id)->where('liter', $sm->stand_meter_akhir - $sm->stand_meter_awal)->where('total_detail_jual', ($sm->stand_meter_akhir - $sm->stand_meter_awal) * $harga->harga_jual)->first())) {
+                        $penjualan->detail_penjualan()->create([
+                            'stand_meter_id' => $smi,
+                            'harga_id' => $harga->harga_id,
+                            'liter' => $sm->stand_meter_akhir - $sm->stand_meter_awal,
+                            'total_detail_jual' => ($sm->stand_meter_akhir - $sm->stand_meter_awal) * $harga->harga_jual
+                        ]);
+                        $total += ($sm->stand_meter_akhir - $sm->stand_meter_awal) * $harga->harga_jual;
+                    }
+                }
+            }
+            $penjualan->update(['total_penjualan' => $total]);
+            unset($spbu);
+            unset($ss);
+            unset($total);
+            unset($sm);
+            unset($harga);
 
             return redirect('/setoran/open-penjualan/' . $penjualan->penjualan_id)->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> Data Penjualan sudah ditambah.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
         } else {
@@ -119,8 +132,6 @@ class OpenPenjualanController extends Controller
     public function edit(Penjualan $penjualan)
     {
         $spbu = Spbu::select('spbu_id')->addSelect('nama_spbu')->addSelect('nomor_spbu')->get();
-        $produk = Produk::where('is_aktif', true)->get();
-        $dispenser = Dispenser::where('is_aktif', true)->get();
         $jamKerja = JamKerja::get();
         return view('setoran/open_penjualan/edit', compact('penjualan', 'spbu', 'produk', 'dispenser', 'jamKerja'));
     }
@@ -130,7 +141,10 @@ class OpenPenjualanController extends Controller
      */
     public function update(PenjualanRequest $penjualanRequest, Penjualan $penjualan)
     {
-        $penjualan->update($this->openPenjualanData());
+        $penjualan->update([
+            'jam_kerja_id' => request('jam_kerja_id'),
+            'tanggal' => request('tanggal'),
+        ]);
 
         return redirect('/setoran/open-penjualan/' . $penjualan->penjualan_id)->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> Data Penjualan sudah diubah.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
     }
@@ -153,32 +167,5 @@ class OpenPenjualanController extends Controller
         $penjualan->delete();
 
         return redirect('/setoran/open-penjualan')->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> Data Penjualan sudah dihapus.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
-    }
-
-    public function openPenjualanData()
-    {
-        return [
-            'status_setoran_id' => StatusSetoran::where('nama_status', 'Open Penjualan')->first()->status_setoran_id,
-            'spbu_id' => request('spbu_id'),
-            'produk_id' => request('produk_id'),
-            'dispenser_id' => request('dispenser_id'),
-            'jam_kerja_id' => request('jam_kerja_id'),
-            'tanggal' => request('tanggal'),
-            'total_penjualan' => str_replace(',', '', request('total_penjualan')),
-            'total_uang_kotak' => str_replace(',', '', request('total_uang_kotak')),
-            'is_accepted_admin' => false,
-            'is_accepted_top' => false,
-        ];
-    }
-
-    public function openPenjualanDetailData($data)
-    {
-        return [
-            'nozzle_id' => $data['0'],
-            'harga_id' => $data['1'],
-            'stand_meter_id' => $data['2'],
-            'liter' => $data['3'],
-            'total_detail_jual' => $data['4'],
-        ];
     }
 }

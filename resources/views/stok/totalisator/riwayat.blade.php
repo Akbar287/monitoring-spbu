@@ -41,10 +41,13 @@
                                 <table class="table table-hover table-totalisator">
                                     <thead>
                                         <tr>
-                                            <th>Tipe Dokumen</th>
+                                            <th>Nozzle</th>
                                             <th>Nama Produk</th>
                                             <th>Tanggal</th>
                                             <th>Jam Kerja</th>
+                                            <th>Stand Meter Awal</th>
+                                            <th>Stand Meter Akhir</th>
+                                            <th>Selisih</th>
                                             <th>Status</th>
                                             <th>Aksi</th>
                                         </tr>

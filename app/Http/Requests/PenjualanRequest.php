@@ -23,11 +23,9 @@ class PenjualanRequest extends FormRequest
     {
         return [
             'spbu_id' => ['required'],
-            'produk_id' => ['required'],
-            'dispenser_id' => ['required'],
             'jam_kerja_id' => ['required'],
             'tanggal' => ['required'],
-            'total_uang_kotak' => ['required']
+            'stand_meter_id' => ['required']
         ];
     }
 }

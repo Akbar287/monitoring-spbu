@@ -6,7 +6,7 @@ import { Chart, registerables } from "chart.js/auto";
 
 $(function () {
     let routeName = ($('meta[name=route]')[0].content);
-
+    let cdnDatatableIdn = 'https://cdn.datatables.net/plug-ins/1.10.24/i18n/Indonesian.json';
     console.log(routeName)
 
     if($('.thousand-style').toArray().length > 0) {
@@ -20,7 +20,7 @@ $(function () {
     if (document.location.pathname == '/konfigurasi/spbu') {
         $('.table-spbu').DataTable({
             language: {
-                url: "//cdn.datatables.net/plug-ins/1.10.24/i18n/Indonesian.json",
+                url: cdnDatatableIdn,
             },
             processing: true,
             serverSide: true,
@@ -37,7 +37,7 @@ $(function () {
     if (document.location.pathname == '/konfigurasi/divisi') {
         $('.table-divisi').DataTable({
             language: {
-                url: "//cdn.datatables.net/plug-ins/1.10.24/i18n/Indonesian.json",
+                url: cdnDatatableIdn,
             },
             processing: true,
             serverSide: true,
@@ -53,7 +53,7 @@ $(function () {
     if (document.location.pathname == '/konfigurasi/hari') {
         $('.table-hari').DataTable({
             language: {
-                url: "//cdn.datatables.net/plug-ins/1.10.24/i18n/Indonesian.json",
+                url: cdnDatatableIdn,
             },
             processing: true,
             serverSide: true,
@@ -69,7 +69,7 @@ $(function () {
     if (document.location.pathname == '/konfigurasi/jam_kerja') {
         $('.table-jam-kerja').DataTable({
             language: {
-                url: "//cdn.datatables.net/plug-ins/1.10.24/i18n/Indonesian.json",
+                url: cdnDatatableIdn,
             },
             processing: true,
             serverSide: true,
@@ -85,7 +85,7 @@ $(function () {
     if (document.location.pathname == '/master/aset') {
         $('.table-aset').DataTable({
             language: {
-                url: "//cdn.datatables.net/plug-ins/1.10.24/i18n/Indonesian.json",
+                url: cdnDatatableIdn,
             },
             processing: true,
             serverSide: true,
@@ -101,7 +101,7 @@ $(function () {
     if (document.location.pathname == '/master/fasilitas') {
         $('.table-fasilitas').DataTable({
             language: {
-                url: "//cdn.datatables.net/plug-ins/1.10.24/i18n/Indonesian.json",
+                url: cdnDatatableIdn,
             },
             processing: true,
             serverSide: true,
@@ -119,7 +119,7 @@ $(function () {
     if (document.location.pathname == '/master/produk') {
         $('.table-produk').DataTable({
             language: {
-                url: "//cdn.datatables.net/plug-ins/1.10.24/i18n/Indonesian.json",
+                url: cdnDatatableIdn,
             },
             processing: true,
             serverSide: true,
@@ -136,7 +136,7 @@ $(function () {
     if (document.location.pathname == '/master/dombak') {
         $('.table-dombak').DataTable({
             language: {
-                url: "//cdn.datatables.net/plug-ins/1.10.24/i18n/Indonesian.json",
+                url: cdnDatatableIdn,
             },
             processing: true,
             serverSide: true,
@@ -152,7 +152,7 @@ $(function () {
     if (document.location.pathname == '/master/payung') {
         $('.table-payung').DataTable({
             language: {
-                url: "//cdn.datatables.net/plug-ins/1.10.24/i18n/Indonesian.json",
+                url: cdnDatatableIdn,
             },
             processing: true,
             serverSide: true,
@@ -168,7 +168,7 @@ $(function () {
     if (document.location.pathname == '/master/dispenser') {
         $('.table-dispenser').DataTable({
             language: {
-                url: "//cdn.datatables.net/plug-ins/1.10.24/i18n/Indonesian.json",
+                url: cdnDatatableIdn,
             },
             processing: true,
             serverSide: true,
@@ -185,7 +185,7 @@ $(function () {
     if (document.location.pathname == '/master/nozzle') {
         $('.table-nozzle').DataTable({
             language: {
-                url: "//cdn.datatables.net/plug-ins/1.10.24/i18n/Indonesian.json",
+                url: cdnDatatableIdn,
             },
             processing: true,
             serverSide: true,
@@ -204,7 +204,7 @@ $(function () {
     if (routeName == 'harga.index' || routeName == 'harga.riwayat.index') {
         $('.table-harga').DataTable({
             language: {
-                url: "//cdn.datatables.net/plug-ins/1.10.24/i18n/Indonesian.json",
+                url: cdnDatatableIdn,
             },
             processing: true,
             serverSide: true,
@@ -222,7 +222,7 @@ $(function () {
     if (routeName == 'payung.dombak') {
         $('.table-payung-dombak').DataTable({
             language: {
-                url: "//cdn.datatables.net/plug-ins/1.10.24/i18n/Indonesian.json",
+                url: cdnDatatableIdn,
             },
             processing: true,
             serverSide: true,
@@ -237,7 +237,7 @@ $(function () {
     if (routeName == 'payung.dombak.create') {
         $('.table-payung-dombak-create').DataTable({
             language: {
-                url: "//cdn.datatables.net/plug-ins/1.10.24/i18n/Indonesian.json",
+                url: cdnDatatableIdn,
             },
             processing: true,
             serverSide: true,
@@ -253,7 +253,7 @@ $(function () {
     if (routeName == 'konversi.index') {
         $('.table-konversi').DataTable({
             language: {
-                url: "//cdn.datatables.net/plug-ins/1.10.24/i18n/Indonesian.json",
+                url: cdnDatatableIdn,
             },
             processing: true,
             serverSide: true,
@@ -268,7 +268,7 @@ $(function () {
     if (routeName == 'member.index') {
         $('.table-member').DataTable({
             language: {
-                url: "//cdn.datatables.net/plug-ins/1.10.24/i18n/Indonesian.json",
+                url: cdnDatatableIdn,
             },
             processing: true,
             serverSide: true,
@@ -285,7 +285,7 @@ $(function () {
     if (routeName == 'level.index') {
         $('.table-level').DataTable({
             language: {
-                url: "//cdn.datatables.net/plug-ins/1.10.24/i18n/Indonesian.json",
+                url: cdnDatatableIdn,
             },
             processing: true,
             serverSide: true,
@@ -302,7 +302,7 @@ $(function () {
     if (routeName == 'jabatan.index') {
         $('.table-jabatan').DataTable({
             language: {
-                url: "//cdn.datatables.net/plug-ins/1.10.24/i18n/Indonesian.json",
+                url: cdnDatatableIdn,
             },
             processing: true,
             serverSide: true,
@@ -319,7 +319,7 @@ $(function () {
     if (routeName == 'member.jabatan.index') {
         $('.table-jabatan-member').DataTable({
             language: {
-                url: "//cdn.datatables.net/plug-ins/1.10.24/i18n/Indonesian.json",
+                url: cdnDatatableIdn,
             },
             processing: true,
             serverSide: true,
@@ -336,7 +336,7 @@ $(function () {
     if (routeName == 'member.jabatan.create') {
         $('.table-jabatan-member-create').DataTable({
             language: {
-                url: "//cdn.datatables.net/plug-ins/1.10.24/i18n/Indonesian.json",
+                url: cdnDatatableIdn,
             },
             processing: true,
             serverSide: true,
@@ -352,7 +352,7 @@ $(function () {
     if (routeName == 'monitoring.index') {
         $('.table-monitoring').DataTable({
             language: {
-                url: "//cdn.datatables.net/plug-ins/1.10.24/i18n/Indonesian.json",
+                url: cdnDatatableIdn,
             },
             processing: true,
             serverSide: true,
@@ -367,7 +367,7 @@ $(function () {
     if(routeName == 'monitoring.show_riwayat') {
         $('.table-riwayat-monitoring').DataTable({
             language: {
-                url: "//cdn.datatables.net/plug-ins/1.10.24/i18n/Indonesian.json",
+                url: cdnDatatableIdn,
             },
             processing: true,
             serverSide: true,
@@ -385,7 +385,7 @@ $(function () {
     if (routeName == 'monitoring.dombak.index') {
         $('.table-monitoring-dombak').DataTable({
             language: {
-                url: "//cdn.datatables.net/plug-ins/1.10.24/i18n/Indonesian.json",
+                url: cdnDatatableIdn,
             },
             processing: true,
             serverSide: true,
@@ -401,7 +401,7 @@ $(function () {
     if (routeName == 'monitoring.dombak.create') {
         $('.table-monitoring-dombak').DataTable({
             language: {
-                url: "//cdn.datatables.net/plug-ins/1.10.24/i18n/Indonesian.json",
+                url: cdnDatatableIdn,
             },
             processing: true,
             serverSide: true,
@@ -510,7 +510,7 @@ $(function () {
     if(routeName == 'notifikasi') {
         $('.table-notifikasi').DataTable({
             language: {
-                url: "//cdn.datatables.net/plug-ins/1.10.24/i18n/Indonesian.json",
+                url: cdnDatatableIdn,
             },
             processing: true,
             serverSide: true,
@@ -526,7 +526,7 @@ $(function () {
     if (routeName == 'perencanaan.index' || routeName == 'perencanaan.ditolak' ) {
         $('.table-perencanaan').DataTable({
             language: {
-                url: "//cdn.datatables.net/plug-ins/1.10.24/i18n/Indonesian.json",
+                url: cdnDatatableIdn,
             },
             processing: true,
             serverSide: true,
@@ -544,7 +544,7 @@ $(function () {
     if (routeName == 'perencanaan.detail.index') {
         $('.table-detail-rencana').DataTable({
             language: {
-                url: "//cdn.datatables.net/plug-ins/1.10.24/i18n/Indonesian.json",
+                url: cdnDatatableIdn,
             },
             processing: true,
             serverSide: true,
@@ -561,7 +561,7 @@ $(function () {
     if (routeName == 'pembelian.index') {
         $('.table-pembelian').DataTable({
             language: {
-                url: "//cdn.datatables.net/plug-ins/1.10.24/i18n/Indonesian.json",
+                url: cdnDatatableIdn,
             },
             processing: true,
             serverSide: true,
@@ -578,7 +578,7 @@ $(function () {
     if (routeName == 'pembelian.detail.index') {
         $('.table-detail-pembelian').DataTable({
             language: {
-                url: "//cdn.datatables.net/plug-ins/1.10.24/i18n/Indonesian.json",
+                url: cdnDatatableIdn,
             },
             processing: true,
             serverSide: true,
@@ -606,7 +606,7 @@ $(function () {
     if (routeName == 'pembayaran.index') {
         $('.table-pembayaran').DataTable({
             language: {
-                url: "//cdn.datatables.net/plug-ins/1.10.24/i18n/Indonesian.json",
+                url: cdnDatatableIdn,
             },
             processing: true,
             serverSide: true,
@@ -623,7 +623,7 @@ $(function () {
     if (routeName == 'pembayaran.show') {
         $('.table-pembayaran-show').DataTable({
             language: {
-                url: "//cdn.datatables.net/plug-ins/1.10.24/i18n/Indonesian.json",
+                url: cdnDatatableIdn,
             },
             processing: true,
             serverSide: true,
@@ -641,7 +641,7 @@ $(function () {
     if (routeName == 'pembayaran.detail') {
         $('.table-pembayaran-file').DataTable({
             language: {
-                url: "//cdn.datatables.net/plug-ins/1.10.24/i18n/Indonesian.json",
+                url: cdnDatatableIdn,
             },
             processing: true,
             serverSide: true,
@@ -670,7 +670,7 @@ $(function () {
     if (routeName == 'pengiriman.index') {
         $('.table-pengiriman').DataTable({
             language: {
-                url: "//cdn.datatables.net/plug-ins/1.10.24/i18n/Indonesian.json",
+                url: cdnDatatableIdn,
             },
             processing: true,
             serverSide: true,
@@ -687,7 +687,7 @@ $(function () {
     if(routeName == 'pengiriman.show') {
         $('.table-pengiriman-lo').DataTable({
             language: {
-                url: "//cdn.datatables.net/plug-ins/1.10.24/i18n/Indonesian.json",
+                url: cdnDatatableIdn,
             },
             processing: true,
             serverSide: true,
@@ -704,7 +704,7 @@ $(function () {
     if (routeName == 'file_lo.index') {
         $('.table-file-lo').DataTable({
             language: {
-                url: "//cdn.datatables.net/plug-ins/1.10.24/i18n/Indonesian.json",
+                url: cdnDatatableIdn,
             },
             processing: true,
             serverSide: true,
@@ -722,7 +722,7 @@ $(function () {
     if (routeName == 'ms2.pengiriman.file_lo_show.lampiran.index') {
         $('.table-file-lampiran-lo').DataTable({
             language: {
-                url: "//cdn.datatables.net/plug-ins/1.10.24/i18n/Indonesian.json",
+                url: cdnDatatableIdn,
             },
             processing: true,
             serverSide: true,
@@ -738,7 +738,7 @@ $(function () {
     if (routeName == 'pengiriman.file_lo.show') {
         $('.table-file-lampiran-lo').DataTable({
             language: {
-                url: "//cdn.datatables.net/plug-ins/1.10.24/i18n/Indonesian.json",
+                url: cdnDatatableIdn,
             },
             columns: [
                 {data: 'nama_file', name: 'nama_file'},
@@ -751,7 +751,7 @@ $(function () {
     if (routeName == 'penerimaan.file.index') {
         $('.table-penerimaan').DataTable({
             language: {
-                url: "//cdn.datatables.net/plug-ins/1.10.24/i18n/Indonesian.json",
+                url: cdnDatatableIdn,
             },
             processing: true,
             serverSide: true,
@@ -767,7 +767,7 @@ $(function () {
     if (routeName == 'penerimaan.file.riwayat.index') {
         $('.table-penerimaan').DataTable({
             language: {
-                url: "//cdn.datatables.net/plug-ins/1.10.24/i18n/Indonesian.json",
+                url: cdnDatatableIdn,
             },
             processing: true,
             serverSide: true,
@@ -783,7 +783,7 @@ $(function () {
     if (routeName == 'stok-taking.index' || routeName == 'stok-taking.riwayat') {
         $('.table-stok-taking').DataTable({
             language: {
-                url: "//cdn.datatables.net/plug-ins/1.10.24/i18n/Indonesian.json",
+                url: cdnDatatableIdn,
             },
             processing: true,
             serverSide: true,
@@ -800,7 +800,7 @@ $(function () {
     if (routeName == 'stok-taking.file.index') {
         $('.table-stok-taking-file').DataTable({
             language: {
-                url: "//cdn.datatables.net/plug-ins/1.10.24/i18n/Indonesian.json",
+                url: cdnDatatableIdn,
             },
             processing: true,
             serverSide: true,
@@ -816,7 +816,7 @@ $(function () {
     if (routeName == 'stok-transfer.index' || routeName == 'stok-transfer.riwayat') {
         $('.table-stok-transfer').DataTable({
             language: {
-                url: "//cdn.datatables.net/plug-ins/1.10.24/i18n/Indonesian.json",
+                url: cdnDatatableIdn,
             },
             processing: true,
             serverSide: true,
@@ -835,7 +835,7 @@ $(function () {
     if (routeName == 'stok-transfer.file.index') {
         $('.table-stok-transfer-file').DataTable({
             language: {
-                url: "//cdn.datatables.net/plug-ins/1.10.24/i18n/Indonesian.json",
+                url: cdnDatatableIdn,
             },
             processing: true,
             serverSide: true,
@@ -1076,7 +1076,7 @@ $(function () {
     if (routeName == 'totalisator.index' || routeName == 'totalisator.riwayat') {
         $('.table-totalisator').DataTable({
             language: {
-                url: "//cdn.datatables.net/plug-ins/1.10.24/i18n/Indonesian.json",
+                url: cdnDatatableIdn,
             },
             processing: true,
             serverSide: true,
@@ -1191,7 +1191,7 @@ $(function () {
     if (routeName == 'totalisator.file.index' || routeName == 'totalisator.file.riwayat.index') {
         $('.table-stok-taking-file').DataTable({
             language: {
-                url: "//cdn.datatables.net/plug-ins/1.10.24/i18n/Indonesian.json",
+                url: cdnDatatableIdn,
             },
             processing: true,
             serverSide: true,
@@ -1279,7 +1279,7 @@ $(function () {
     if (routeName == 'financial.petty-cash') {
         $('.table-petty-cash').DataTable({
             language: {
-                url: "//cdn.datatables.net/plug-ins/1.10.24/i18n/Indonesian.json",
+                url: cdnDatatableIdn,
             },
             processing: true,
             serverSide: true,
@@ -1296,7 +1296,7 @@ $(function () {
     if (routeName == 'financial.petty-cash.file') {
         $('.table-petty-cash').DataTable({
             language: {
-                url: "//cdn.datatables.net/plug-ins/1.10.24/i18n/Indonesian.json",
+                url: cdnDatatableIdn,
             },
             processing: true,
             serverSide: true,
@@ -1311,7 +1311,7 @@ $(function () {
     if (routeName == 'penerimaan.index') {
         $('.table-penerimaan').DataTable({
             language: {
-                url: "//cdn.datatables.net/plug-ins/1.10.24/i18n/Indonesian.json",
+                url: cdnDatatableIdn,
             },
             processing: true,
             serverSide: true,
@@ -1328,7 +1328,7 @@ $(function () {
     if (routeName == 'penerimaan.verifikasi') {
         $('.table-verifikasi').DataTable({
             language: {
-                url: "//cdn.datatables.net/plug-ins/1.10.24/i18n/Indonesian.json",
+                url: cdnDatatableIdn,
             },
             processing: true,
             serverSide: true,
@@ -1347,7 +1347,7 @@ $(function () {
     if (routeName == 'penerimaan.riwayat') {
         $('.table-penerimaan-riwayat').DataTable({
             language: {
-                url: "//cdn.datatables.net/plug-ins/1.10.24/i18n/Indonesian.json",
+                url: cdnDatatableIdn,
             },
             processing: true,
             serverSide: true,
@@ -1444,7 +1444,7 @@ $(function () {
     if (routeName == 'setoran.open') {
         $('.table-open-setoran').DataTable({
             language: {
-                url: "//cdn.datatables.net/plug-ins/1.10.24/i18n/Indonesian.json",
+                url: cdnDatatableIdn,
             },
             processing: true,
             serverSide: true,
@@ -1462,7 +1462,7 @@ $(function () {
     if (routeName == 'setoran.open.detail') {
         $('.table-open-detail-setoran').DataTable({
             language: {
-                url: "//cdn.datatables.net/plug-ins/1.10.24/i18n/Indonesian.json",
+                url: cdnDatatableIdn,
             },
             processing: true,
             serverSide: true,
@@ -1520,7 +1520,7 @@ $(function () {
     if(routeName == 'setoran.penitipan') {
         $('.table-penitipan-setoran').DataTable({
             language: {
-                url: "//cdn.datatables.net/plug-ins/1.10.24/i18n/Indonesian.json",
+                url: cdnDatatableIdn,
             },
             processing: true,
             serverSide: true,
@@ -1538,7 +1538,7 @@ $(function () {
     if(routeName == 'setoran.penitipan.index_penitipan') {
         $('.table-penitipan-setoran-list').DataTable({
             language: {
-                url: "//cdn.datatables.net/plug-ins/1.10.24/i18n/Indonesian.json",
+                url: cdnDatatableIdn,
             },
             processing: true,
             serverSide: true,
@@ -1557,7 +1557,7 @@ $(function () {
     if(routeName == 'setoran.closing') {
         $('.table-closing-setoran').DataTable({
             language: {
-                url: "//cdn.datatables.net/plug-ins/1.10.24/i18n/Indonesian.json",
+                url: cdnDatatableIdn,
             },
             processing: true,
             serverSide: true,
@@ -1577,7 +1577,7 @@ $(function () {
     if(routeName == 'setoran.penitipan.file.index') {
         $('.table-file-penarikan').DataTable({
             language: {
-                url: "//cdn.datatables.net/plug-ins/1.10.24/i18n/Indonesian.json",
+                url: cdnDatatableIdn,
             },
             processing: true,
             serverSide: true,
@@ -1593,7 +1593,7 @@ $(function () {
     if(routeName == 'ms2.produk.index') {
         $('.table-ms2').DataTable({
             language: {
-                url: "//cdn.datatables.net/plug-ins/1.10.24/i18n/Indonesian.json",
+                url: cdnDatatableIdn,
             },
             processing: true,
             serverSide: true,
@@ -1609,7 +1609,7 @@ $(function () {
     if(routeName == 'ms2.produk.show') {
         $('.table-detail-produk').DataTable({
             language: {
-                url: "//cdn.datatables.net/plug-ins/1.10.24/i18n/Indonesian.json",
+                url: cdnDatatableIdn,
             },
             processing: true,
             serverSide: true,
@@ -1625,7 +1625,7 @@ $(function () {
     if(routeName == 'ms2.pengiriman') {
         $('.table-pengiriman').DataTable({
             language: {
-                url: "//cdn.datatables.net/plug-ins/1.10.24/i18n/Indonesian.json",
+                url: cdnDatatableIdn,
             },
             processing: true,
             serverSide: true,
@@ -1641,7 +1641,7 @@ $(function () {
     if(routeName == 'pajak_pembelian_lib.index') {
         $('.table-pajak-lib').DataTable({
             language: {
-                url: "//cdn.datatables.net/plug-ins/1.10.24/i18n/Indonesian.json",
+                url: cdnDatatableIdn,
             },
             processing: true,
             serverSide: true,
@@ -1671,7 +1671,7 @@ $(function () {
     if(routeName == 'kategori.index') {
         $('.table-kategori').DataTable({
             language: {
-                url: "//cdn.datatables.net/plug-ins/1.10.24/i18n/Indonesian.json",
+                url: cdnDatatableIdn,
             },
             processing: true,
             serverSide: true,
@@ -1685,7 +1685,7 @@ $(function () {
     if(routeName == 'tag.index') {
         $('.table-tag').DataTable({
             language: {
-                url: "//cdn.datatables.net/plug-ins/1.10.24/i18n/Indonesian.json",
+                url: cdnDatatableIdn,
             },
             processing: true,
             serverSide: true,
@@ -1699,7 +1699,7 @@ $(function () {
     if(routeName == 'post.index') {
         $('.table-post').DataTable({
             language: {
-                url: "//cdn.datatables.net/plug-ins/1.10.24/i18n/Indonesian.json",
+                url: cdnDatatableIdn,
             },
             processing: true,
             serverSide: true,
@@ -1720,7 +1720,7 @@ $(function () {
     if(routeName == 'rekap-pajak.index') {
         $('.table-rekap-pajak').DataTable({
             language: {
-                url: "//cdn.datatables.net/plug-ins/1.10.24/i18n/Indonesian.json",
+                url: cdnDatatableIdn,
             },
             processing: true,
             serverSide: true,
@@ -1739,7 +1739,7 @@ $(function () {
     if(routeName == 'file.post.index') {
         $('.table-file-post').DataTable({
             language: {
-                url: "//cdn.datatables.net/plug-ins/1.10.24/i18n/Indonesian.json",
+                url: cdnDatatableIdn,
             },
             processing: true,
             serverSide: true,
@@ -1753,7 +1753,7 @@ $(function () {
     if(routeName == 'ms2.pengiriman.show') {
         $('.table-produk-detail-ms2').DataTable({
             language: {
-                url: "//cdn.datatables.net/plug-ins/1.10.24/i18n/Indonesian.json",
+                url: cdnDatatableIdn,
             },
             processing: true,
             serverSide: true,
@@ -2028,7 +2028,7 @@ $(function () {
 
     $('.table-file-fasilitas').DataTable({
         language: {
-            url: "//cdn.datatables.net/plug-ins/1.10.24/i18n/Indonesian.json",
+            url: cdnDatatableIdn,
         },
         processing: true,
         serverSide: true,
@@ -2042,7 +2042,7 @@ $(function () {
     });
     $('.table-file-aset').DataTable({
         language: {
-            url: "//cdn.datatables.net/plug-ins/1.10.24/i18n/Indonesian.json",
+            url: cdnDatatableIdn,
         },
         processing: true,
         serverSide: true,
