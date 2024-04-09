@@ -42,8 +42,8 @@ class OpenPenjualanController extends Controller
                     return $actionBtn;
                 })
                 ->addColumn('total_stand_meter', function ($row) {
-                    $actionBtn = $row->detail_penjualan()->count();
-                    return $actionBtn;
+                    $actionBtn = array_column($row->detail_penjualan()->select('nozzle.nama_nozzle')->join('stand_meter', 'stand_meter.stand_meter_id', 'detail_penjualan.stand_meter_id')->join('nozzle', 'nozzle.nozzle_id', 'stand_meter.nozzle_id')->orderBy('nozzle.nama_nozzle', 'asc')->get()->toArray(), 'nama_nozzle');
+                    return count($actionBtn) == 0 ? '-' : (count($actionBtn) > 1 ? implode(', ', $actionBtn) : $actionBtn['0']);
                 })
                 ->addColumn('action', function ($row) {
                     $actionBtn = '<a href="' . route('setoran.open.show', $row->penjualan_id) . '" class="edit btn btn-success btn-sm">Detail</a>';
@@ -75,7 +75,8 @@ class OpenPenjualanController extends Controller
         $ss = StatusSetoran::where('nama_status', 'Open Penjualan')->first()->status_setoran_id;
 
         if (!is_null($spbu)) {
-            if (is_null($spbu->penjualan()->where('status_setoran_id', $ss)->where('jam_kerja_id', request('jam_kerja_id'))->where('tanggal', request('tanggal'))->first())) {
+            $penjualan = $spbu->penjualan()->where('status_setoran_id', $ss)->where('jam_kerja_id', request('jam_kerja_id'))->where('tanggal', request('tanggal'))->first();
+            if (is_null($penjualan)) {
                 $penjualan = $spbu->penjualan()->create([
                     'status_setoran_id' => $ss,
                     'spbu_id' => request('spbu_id'),
@@ -87,21 +88,27 @@ class OpenPenjualanController extends Controller
                     'is_accepted_top' => false,
                 ]);
             }
+
             $total = 0;
+            foreach ($penjualanRequest->nozzle_id as $smi) {
+                $nozzle = Nozzle::where('nozzle_id', $smi)->first();
+                if (!is_null($nozzle)) {
+                    $sm = $nozzle->stand_meter()->where('tanggal', request('tanggal'))->where('jam_kerja_id', request('jam_kerja_id'))->first();
+                    if (!is_null($sm)) {
+                        $harga = $sm->nozzle()->first()->produk()->first()->harga()->where('is_default', 'true')->first();
 
-            foreach ($penjualanRequest->stand_meter_id as $smi) {
-                $sm = StandMeter::where('stand_meter_id', $smi)->first();
-                if (!is_null($sm)) {
-                    $harga = $sm->nozzle()->first()->produk()->first()->harga()->where('is_default', 'true')->first();
+                        $totalDetailJual = ($sm->stand_meter_akhir - $sm->stand_meter_awal) * $harga->harga_jual;
+                        $total += $totalDetailJual;
 
-                    if (is_null($penjualan->detail_penjualan()->where('stand_meter_id', $smi)->where('harga_id', $harga->harga_id)->where('liter', $sm->stand_meter_akhir - $sm->stand_meter_awal)->where('total_detail_jual', ($sm->stand_meter_akhir - $sm->stand_meter_awal) * $harga->harga_jual)->first())) {
-                        $penjualan->detail_penjualan()->create([
-                            'stand_meter_id' => $smi,
-                            'harga_id' => $harga->harga_id,
-                            'liter' => $sm->stand_meter_akhir - $sm->stand_meter_awal,
-                            'total_detail_jual' => ($sm->stand_meter_akhir - $sm->stand_meter_awal) * $harga->harga_jual
-                        ]);
-                        $total += ($sm->stand_meter_akhir - $sm->stand_meter_awal) * $harga->harga_jual;
+                        if ($penjualan->detail_penjualan()->where('stand_meter_id', $sm->stand_meter_id)->where('harga_id', $harga->harga_id)->where('liter', $sm->stand_meter_akhir - $sm->stand_meter_awal)->where('total_detail_jual', $totalDetailJual)->count() == 0) {
+                            $penjualan->detail_penjualan()->create([
+                                'stand_meter_id' => $sm->stand_meter_id,
+                                'harga_id' => $harga->harga_id,
+                                'liter' => $sm->stand_meter_akhir - $sm->stand_meter_awal,
+                                'total_detail_jual' => $totalDetailJual
+                            ]);
+                            $total += ($sm->stand_meter_akhir - $sm->stand_meter_awal) * $harga->harga_jual;
+                        }
                     }
                 }
             }
@@ -127,29 +134,6 @@ class OpenPenjualanController extends Controller
     }
 
     /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(Penjualan $penjualan)
-    {
-        $spbu = Spbu::select('spbu_id')->addSelect('nama_spbu')->addSelect('nomor_spbu')->get();
-        $jamKerja = JamKerja::get();
-        return view('setoran/open_penjualan/edit', compact('penjualan', 'spbu', 'produk', 'dispenser', 'jamKerja'));
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(PenjualanRequest $penjualanRequest, Penjualan $penjualan)
-    {
-        $penjualan->update([
-            'jam_kerja_id' => request('jam_kerja_id'),
-            'tanggal' => request('tanggal'),
-        ]);
-
-        return redirect('/setoran/open-penjualan/' . $penjualan->penjualan_id)->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> Data Penjualan sudah diubah.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
-    }
-
-    /**
      * Remove the specified resource from storage.
      */
     public function update_status(Penjualan $penjualan)
@@ -167,5 +151,47 @@ class OpenPenjualanController extends Controller
         $penjualan->delete();
 
         return redirect('/setoran/open-penjualan')->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> Data Penjualan sudah dihapus.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
+    }
+
+    public function api(Request $request)
+    {
+        $request->validate([
+            'spbu_id' => ['required'],
+            'tanggal' => ['required'],
+            'jam_kerja_id' => ['required'],
+            'nozzle_id' => ['required'],
+        ]);
+
+        $nozzle = Nozzle::where('nozzle_id', $request->nozzle_id)->first();
+
+        if (!is_null($nozzle)) {
+            $sm = $nozzle->stand_meter()->where('tanggal', request('tanggal'))->where('jam_kerja_id', request('jam_kerja_id'))->where('is_confirmation', true)->first();
+
+            if (!is_null($sm)) {
+                return response()->json([
+                    'data' => [
+                        'stand_meter_awal' => number_format($sm->stand_meter_awal, 0, ".", ","),
+                        'stand_meter_akhir' => number_format($sm->stand_meter_akhir, 0, ".", ","),
+                    ],
+                    'message' => 'Stand Meter has been catched',
+                    'status' => 'success'
+                ], 200);
+                exit;
+            } else {
+                return response()->json([
+                    'data' => [],
+                    'message' => 'Stand Meter not found',
+                    'status' => 'error'
+                ], 200);
+                exit;
+            }
+        } else {
+            return response()->json([
+                'data' => [],
+                'message' => 'Nozzle not found',
+                'status' => 'error'
+            ], 200);
+            exit;
+        }
     }
 }

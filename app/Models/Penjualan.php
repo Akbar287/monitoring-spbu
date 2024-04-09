@@ -25,8 +25,6 @@ class Penjualan extends Model
     protected $fillable = [
         'status_setoran_id',
         'spbu_id',
-        'produk_id',
-        'dispenser_id',
         'jam_kerja_id',
         'tanggal',
         'total_penjualan',
@@ -45,16 +43,6 @@ class Penjualan extends Model
         return $this->belongsTo(Spbu::class, 'spbu_id', 'spbu_id');
     }
 
-    public function produk()
-    {
-        return $this->belongsTo(Produk::class, 'produk_id', 'produk_id');
-    }
-
-    public function dispenser()
-    {
-        return $this->belongsTo(Dispenser::class, 'dispenser_id', 'dispenser_id');
-    }
-
     public function jam_kerja()
     {
         return $this->belongsTo(JamKerja::class, 'jam_kerja_id', 'jam_kerja_id');
@@ -68,5 +56,10 @@ class Penjualan extends Model
     public function detail_penjualan()
     {
         return $this->hasMany(DetailPenjualan::class, 'penjualan_id', 'penjualan_id');
+    }
+
+    public function pj_operasional_setoran()
+    {
+        return $this->hasMany(PjOperasionalSetoran::class, 'penjualan_id', 'penjualan_id');
     }
 }

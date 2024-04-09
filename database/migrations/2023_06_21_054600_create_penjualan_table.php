@@ -15,8 +15,6 @@ return new class extends Migration
             $table->uuid('penjualan_id')->primary();
             $table->uuid('status_setoran_id');
             $table->uuid('spbu_id');
-            $table->uuid('produk_id');
-            $table->uuid('dispenser_id');
             $table->uuid('jam_kerja_id');
             $table->date('tanggal');
             $table->decimal('total_penjualan', 16, 2);
@@ -27,8 +25,6 @@ return new class extends Migration
 
             $table->foreign('status_setoran_id')->references('status_setoran_id')->on('status_setoran')->cascadeOnDelete();
             $table->foreign('spbu_id')->references('spbu_id')->on('spbu')->cascadeOnDelete();
-            $table->foreign('produk_id')->references('produk_id')->on('produk')->cascadeOnDelete();
-            $table->foreign('dispenser_id')->references('dispenser_id')->on('dispenser')->cascadeOnDelete();
             $table->foreign('jam_kerja_id')->references('jam_kerja_id')->on('jam_kerja')->cascadeOnDelete();
         });
     }

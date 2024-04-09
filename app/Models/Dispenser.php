@@ -34,11 +34,8 @@ class Dispenser extends Model
         return $this->belongsTo(Payung::class, 'payung_id', 'payung_id');
     }
 
-    public function nozzle () {
+    public function nozzle()
+    {
         return $this->hasMany(Nozzle::class, 'dispenser_id', 'dispenser_id');
-    }
-
-    public function penjualan () {
-        return $this->hasMany(Penjualan::class, 'penjualan_id', 'penjualan_id');
     }
 }

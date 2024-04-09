@@ -25,7 +25,6 @@ class PenjualanRequest extends FormRequest
             'spbu_id' => ['required'],
             'jam_kerja_id' => ['required'],
             'tanggal' => ['required'],
-            'stand_meter_id' => ['required']
         ];
     }
 }

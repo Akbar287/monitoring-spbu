@@ -47,9 +47,7 @@
                                         <tr>
                                             <th>Tanggal</th>
                                             <th>Jam Kerja</th>
-                                            <th>Nozzle</th>
-                                            <th>Stand Meter Awal</th>
-                                            <th>Stand Meter Akhir</th>
+                                            <th>Stand Meter</th>
                                             <th>Aksi</th>
                                         </tr>
                                     </thead>

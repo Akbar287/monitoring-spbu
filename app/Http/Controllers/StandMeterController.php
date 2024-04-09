@@ -98,6 +98,9 @@ class StandMeterController extends Controller
                 ->addColumn('jam_kerja', function ($row) {
                     return $row->jam_kerja()->first()->nama_jam_kerja;
                 })
+                ->addColumn('selisih', function ($row) {
+                    return number_format($row->stand_meter_akhir - $row->stand_meter_awal, 2, ".", ",");
+                })
                 ->addColumn('status', function ($row) {
                     return $row->is_confirmation ? '<div class="badge badge-success">Terkonfirmasi</div>' : '<div class="badge badge-danger">Belum Dikonfirmasi</div>';
                 })

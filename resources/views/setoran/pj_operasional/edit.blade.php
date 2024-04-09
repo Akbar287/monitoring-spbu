@@ -2,29 +2,31 @@
 
 @section('content')
 <div class="section-header">
-    <h1>Open Penjualan</h1>
+    <h1>Ubah Detail Open Penjualan</h1>
     <div class="section-header-breadcrumb">
         <div class="breadcrumb-item"><a href="{{ route('home') }}">Dashboard</a></div>
         <div class="breadcrumb-item"><a href="{{ route('menu.setoran') }}">Setoran</a></div>
         <div class="breadcrumb-item"><a href="{{ route('setoran.open') }}">Open Penjualan</a></div>
         <div class="breadcrumb-item"><a href="{{ route('setoran.open.show', $penjualan->penjualan_id) }}">Detail</a></div>
+        <div class="breadcrumb-item"><a href="{{ route('setoran.open.detail', $penjualan->penjualan_id) }}">Detail Open Penjualan</a></div>
+        <div class="breadcrumb-item"><a href="{{ route('setoran.open.detail.show', [$penjualan->penjualan_id, $detail->detail_penjualan_id]) }}">Detail Open Penjualan</a></div>
         <div class="breadcrumb-item">Ubah</div>
     </div>
 </div>
 <div class="section-body">
-    <h2 class="section-title">Ubah Open Penjualan</h2>
+    <h2 class="section-title">Ubah Detail Open Penjualan</h2>
     <p class="section-lead">
-        Ubah data Open Penjualan anda.
+        Ubah data Detail Open Penjualan anda.
     </p>
     <div class="row justify-content-center">
         <div class="col-md-12">
             <div class="card">
                 <div class="card-header">
-                    <h4>{{ __('Ubah Open Penjualan') }}</h4>
+                    <h4>{{ __('Ubah Detail Open Penjualan') }}</h4>
                 </div>
                 <div class="card-body">
                     @if(session('msg')){!! session('msg') !!} @endif
-                    <form action="{{ route('setoran.open.update', $penjualan->penjualan_id) }}" method="post" enctype="multipart/form-data">@csrf @method('put')
+                    <form action="{{ route('setoran.open.detail.update', $penjualan->penjualan_id) }}" method="post" enctype="multipart/form-data">@csrf @method('put')
                         <div class="row">
                             <div class="col-md-12">
                                 <div class="row mb-3 justify-content-center">
@@ -173,7 +175,7 @@
 
                                 <div class="row mb-0">
                                     <div class="col-md-6 offset-md-4 d-flex align-items-end">
-                                        <a type="button" href="{{ route('setoran.open.show', $penjualan->penjualan_id) }}" class="btn btn-primary mr-2"><i class="fas fa-arrow-left"></i> Kembali</a>
+                                        <a type="button" href="{{ route('setoran.open.detail.show', [$penjualan->penjualan_id, $detail->detail_penjualan_id]) }}" class="btn btn-primary mr-2"><i class="fas fa-arrow-left"></i> Kembali</a>
                                         <button type="submit" class="btn mx-2 btn-success"><i class="fas fa-pen"></i> Simpan</button>
                                     </div>
                                 </div>

@@ -1450,14 +1450,73 @@ $(function () {
             serverSide: true,
             ajax: document.location.href,
             columns: [
-                {data: 'produk', name: 'produk'},
-                {data: 'dispenser', name: 'dispenser'},
                 {data: 'tanggal', name: 'tanggal'},
                 {data: 'jam_kerja', name: 'jam_kerja'},
-                {data: 'total_penjualan', name: 'total_penjualan'},
+                {data: 'total_stand_meter', name: 'total_stand_meter'},
                 {data: 'action', name: 'action', orderable: false, searchable: false},
             ]
         });
+    }
+    if (routeName == 'setoran.open.create') {
+        $(document).on('change', 'select.nozzle_id', function(e) {
+            if($(this).children().first().attr('value') == '0') {
+                $(this).children().first().remove();
+            }
+
+            $.ajax({
+                url: document.location.origin + '/api/setoran/open-penjualan/create',
+                method: 'get',
+                data: {
+                    nozzle_id: $(this).val(),
+                    tanggal: $('input[name=tanggal]').val(),
+                    spbu_id: $('select[name=spbu_id]').val(),
+                    jam_kerja_id: $('select[name=jam_kerja_id]').val(),
+                    '_token': $('meta[name="csrf-token"]').attr('content'),
+                },
+                dataType: 'json',
+                success: function(data) {
+                    $(this).removeAttr('disabled')
+                    let que = $(e)[0].currentTarget.dataset.que;
+                        if(data.status == 'success'){
+                            $('.alert-success.alert-sm-1.que' + que).addClass('d-none');
+                            $('.alert-danger.alert-sm-2.que-' + que).addClass('d-none');
+                            $('.alert-danger.alert-sm-1.que-' + que).addClass('d-none');
+                            $('.stand_meter_awal.que-' + que).val(data.data.stand_meter_awal ?? '0')
+                            $('.stand_meter_akhir.que-' + que).val(data.data.stand_meter_akhir ?? '0')
+                        } else {
+                            $('.stand_meter_awal.que-' + que).val('0')
+                            $('.stand_meter_akhir.que-' + que).val('0')
+                            if(data.message == 'Stand Meter not found') {
+                                $('.alert-success.alert-sm-1.que' + que).addClass('d-none');
+                                $('.alert-danger.alert-sm-2.que-' + que).addClass('d-none');
+                                $('.alert-danger.alert-sm-1.que-' + que).removeClass('d-none');
+                            }
+                            if(data.message == 'Nozzle not found') {
+                                $('.alert-success.alert-sm-1.que' + que).addClass('d-none');
+                                $('.alert-danger.alert-sm-1.que-' + que).addClass('d-none');
+                                $('.alert-danger.alert-sm-2.que-' + que).removeClass('d-none');
+                            }
+                        }
+                },
+                error: function(err) {$(this).removeAttr('disabled');console.error(err)}
+            });
+        });
+
+        $('.sm-plus').on('click', function() {
+            let que = $('.que-main').children().length + 1;
+
+            let nozzle = $('input[name=nozzle]').val().split('||').map(x =>  x.split('|').map(y => y.trim()));
+            let nozzleWrapper = '<select class="custom-select nozzle_id" name="nozzle_id[]" id="nozzle_id" data-que="'+ que +'"><option value="0">Silakan Pilih Nozzle</option>';
+            nozzle.pop();
+            nozzle.forEach(x => {
+                nozzleWrapper += '<option value="'+ x[0] +'">'+ x[1] +'</option>';
+            })
+            nozzleWrapper += '</select>';
+            $('.que-main').append('<div class="card que-'+ que +'"><div class="card-header"><h4>Stand Meter #'+ que +'</h4><div class="card-header-action"><button class="btn btn-danger btn-erase-sm" data-que="'+ que +'" type="button" title="Hapus"><i class="fas fa-minus"></i></button></div></div><div class="card-body"><div class="row"><div class="col-12"><div class="alert alert-success alert-sm-1 que-'+ que +' d-none"> Stand Meter Sudah Dicatat </div><div class="alert alert-danger alert-sm-1 que-'+ que +' d-none"> Stand Meter Belum Dicatat. Silakan anda buat dan konfirmasi di menu Totalisator</div><div class="alert alert-danger alert-sm-2 que-'+ que +' d-none"> Nozzle Tidak ditemukan.</div></div></div><div class="row mb-3 justify-content-center"><label for="nozzle_id" class="col-md-4 col-form-label text-md-end">Nozzle</label><div class="col-md-6">'+ nozzleWrapper +'</div></div><div class="row mb-3 justify-content-center sm-1"><label for="stand_meter_awal" class="col-md-4 col-form-label text-md-end">Stand Meter Awal</label><div class="col-md-6"><div class="input-group"><input id="stand_meter_awal" type="text" readonly class="form-control stand_meter_awal thousand-style que-'+ que +'" name="stand_meter_awal" value="0" /></div></div></div><div class="row mb-3 justify-content-center sm-2"><label for="stand_meter_akhir" class="col-md-4 col-form-label text-md-end">Stand Meter Akhir</label><div class="col-md-6"><div class="input-group"><input id="stand_meter_akhir" type="text" readonly class="form-control stand_meter_akhir thousand-style que-'+ que +'" name="stand_meter_akhir" value="0" /></div></div></div></div></div>');
+        });
+        $(document).on('click', '.btn-erase-sm', function() {
+            console.log($(this).parent().parent().parent().remove())
+        })
     }
     if (routeName == 'setoran.open.detail') {
         $('.table-open-detail-setoran').DataTable({
@@ -1713,7 +1772,6 @@ $(function () {
         });
     }
     if(routeName == 'post.create') {
-        console.log("Jai")
         $('select#tag').select2();
         $('select#kategori').select2();
     }
@@ -2023,6 +2081,60 @@ $(function () {
                     error: function() {}
                 })
             }
+        })
+    }
+    if(routeName == 'setoran.open.pj') {
+        $('.table-open-pj-setoran').DataTable({
+            language: {
+                url: cdnDatatableIdn,
+            },
+            processing: true,
+            serverSide: true,
+            ajax: document.location.href,
+            columns: [
+                {data: 'nama_jabatan', name: 'nama_jabatan'},
+                {data: 'nama', name: 'nama'},
+                {data: 'action', name: 'action', orderable: false, searchable: false},
+            ]
+        });
+    }
+    if(routeName == 'setoran.open.pj.create') {
+        $('select#jabatan_id').on('change', function() {
+            if($(this).children().first()['0'].value == '0') {
+                $(this).children().first().remove();
+            }
+            $.ajax({
+                url: document.location.origin + '/api/setoran/open-penjualan/pj/create',
+                method: 'get',
+                data: {
+                    jabatan_id: $('select#jabatan_id').val(),
+                },
+                dataType: 'json',
+                beforeSend: function() {
+                    $('.custom-checkbox').addClass('d-none');
+                    $('.custom-control-input').attr('checked', false);
+                    $('.msg-pj').removeClass('d-none');
+                    $('.msg-pj').text('Loading... ');
+                },
+                success: function(data) {
+                    if(data.message == 'Member has been catched'){
+                        if(data.data.length > 0) {
+                            $('.msg-pj').addClass('d-none');
+                            $('.custom-control.custom-checkbox').map((index, el) => {
+                                if($.inArray(el.dataset.id, data.data) != -1) {
+                                    el.classList.remove('d-none')
+                                }
+                            })
+                        } else {
+                            $('.msg-pj').text("Pegawai Tidak ada di Jabatan yang dipilih");
+                        }
+                    }
+                    else {
+                        $('.msg-pj').text("Jabatan Salah");
+                    }
+                },
+                error: function(err) {console.error(err)}
+            });
         })
     }
 

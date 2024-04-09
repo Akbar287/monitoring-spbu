@@ -46,4 +46,9 @@ class Jabatan extends Model
     {
         return $this->belongsToMany(Member::class, 'jabatan_member', 'jabatan_id', 'member_id');
     }
+
+    public function pj_operasional_setoran()
+    {
+        return $this->hasMany(PjOperasionalSetoran::class, 'jabatan_id', 'jabatan_id');
+    }
 }

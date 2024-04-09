@@ -57,11 +57,6 @@ class Produk extends Model
         return $this->hasMany(FileLo::class, 'produk_id', 'produk_id');
     }
 
-    public function penjualan()
-    {
-        return $this->hasMany(Penjualan::class, 'produk_id', 'produk_id');
-    }
-
     public function nozzle()
     {
         return $this->hasMany(Nozzle::class, 'produk_id', 'produk_id');

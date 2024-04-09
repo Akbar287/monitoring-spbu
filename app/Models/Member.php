@@ -103,4 +103,8 @@ class Member extends Model
     {
         return $this->hasMany(Penjadwalan::class, 'member_id', 'member_id');
     }
+    public function pj_operasional_setoran()
+    {
+        return $this->hasMany(PjOperasionalSetoran::class, 'member_id', 'member_id');
+    }
 }

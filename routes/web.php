@@ -52,6 +52,7 @@ use App\Http\Controllers\PengirimanController;
 use App\Http\Controllers\PenitipanSetoranController;
 use App\Http\Controllers\PerubahanModalController;
 use App\Http\Controllers\PettyCashController;
+use App\Http\Controllers\PjOperasionalSetoranController;
 use App\Http\Controllers\PostController;
 use App\Http\Controllers\ProcurementController;
 use App\Http\Controllers\ProdukController;
@@ -439,8 +440,6 @@ Route::middleware(['auth', 'cache.header'])->group(function ($route) {
     $route->get('/setoran/open-penjualan/create', [OpenPenjualanController::class, 'create'])->name('setoran.open.create');
     $route->post('/setoran/open-penjualan', [OpenPenjualanController::class, 'store'])->name('setoran.open.store');
     $route->get('/setoran/open-penjualan/{penjualan}', [OpenPenjualanController::class, 'show'])->name('setoran.open.show');
-    $route->get('/setoran/open-penjualan/{penjualan}/edit', [OpenPenjualanController::class, 'edit'])->name('setoran.open.edit');
-    $route->put('/setoran/open-penjualan/{penjualan}', [OpenPenjualanController::class, 'update'])->name('setoran.open.update');
     $route->put('/setoran/open-penjualan/{penjualan}/status', [OpenPenjualanController::class, 'update_status'])->name('setoran.open.update.status');
     $route->delete('/setoran/open-penjualan/{penjualan}', [OpenPenjualanController::class, 'destroy'])->name('setoran.open.delete');
 
@@ -452,6 +451,13 @@ Route::middleware(['auth', 'cache.header'])->group(function ($route) {
     $route->get('/setoran/open-penjualan/{penjualan}/detail/{detail}/edit', [OpenPenjualanDetailController::class, 'edit'])->name('setoran.open.detail.edit');
     $route->put('/setoran/open-penjualan/{penjualan}/detail/{detail}', [OpenPenjualanDetailController::class, 'update'])->name('setoran.open.detail.update');
     $route->delete('/setoran/open-penjualan/{penjualan}/detail/{detail}', [OpenPenjualanDetailController::class, 'destroy'])->name('setoran.open.detail.delete');
+
+    $route->get('/setoran/open-penjualan/{penjualan}/pj', [PjOperasionalSetoranController::class, 'index'])->name('setoran.open.pj');
+    $route->get('/setoran/open-penjualan/{penjualan}/pj/create', [PjOperasionalSetoranController::class, 'create'])->name('setoran.open.pj.create');
+    $route->get('/setoran/open-penjualan/{penjualan}/pj/create/api', [PjOperasionalSetoranController::class, 'create_api'])->name('setoran.open.pj.create.api');
+    $route->post('/setoran/open-penjualan/{penjualan}/pj', [PjOperasionalSetoranController::class, 'store'])->name('setoran.open.pj.store');
+    $route->get('/setoran/open-penjualan/{penjualan}/pj/{jabatan}', [PjOperasionalSetoranController::class, 'show'])->name('setoran.open.pj.show');
+    $route->delete('/setoran/open-penjualan/{penjualan}/pj/{jabatan}', [PjOperasionalSetoranController::class, 'destroy'])->name('setoran.open.pj.delete');
 
     $route->get('/setoran/penitipan-setoran', [PenitipanSetoranController::class, 'index_open_penjualan'])->name('setoran.penitipan');
     $route->get('/setoran/penitipan-setoran/{penjualan}', [PenitipanSetoranController::class, 'show_open_penjualan'])->name('setoran.penitipan.show');
