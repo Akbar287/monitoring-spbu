@@ -25,17 +25,17 @@ class StokController extends Controller
                 "color" => "info"
             ],
             [
-                "nama" => "Totalisator",
-                "icon" => "flask",
-                "url" => route('totalisator.index'),
-                "color" => "success"
-            ],
-            [
                 "nama" => "Stok Taking",
                 "icon" => "thermometer-full",
                 "url" => route('stok-taking.index'),
                 "color" => "danger"
-            ]
+            ],
+            [
+                "nama" => "Stok Transfer",
+                "icon" => "flask",
+                "url" => route('stok-transfer.index'),
+                "color" => "success"
+            ],
         ];
         return view('stok/index', compact('allMenu'));
     }

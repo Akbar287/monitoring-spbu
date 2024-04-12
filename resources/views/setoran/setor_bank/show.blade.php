@@ -6,9 +6,9 @@
     <div class="section-header-breadcrumb">
         <div class="breadcrumb-item"><a href="{{ route('home') }}">Dashboard</a></div>
         <div class="breadcrumb-item"><a href="{{ route('menu.setoran') }}">Setoran</a></div>
-        <div class="breadcrumb-item"><a href="{{ route('setoran.penitipan') }}">Penitipan Setoran</a></div>
-        <div class="breadcrumb-item"><a href="{{ route('setoran.penitipan.show', $penjualan->penjualan_id) }}">Detail</a></div>
-        <div class="breadcrumb-item"><a href="{{ route('setoran.penitipan.index_penitipan', $penjualan->penjualan_id) }}">List</a></div>
+        <div class="breadcrumb-item"><a href="{{ route('setoran.setoran_bank.index_setoran_bank_penjualan') }}">Setoran Bank</a></div>
+        <div class="breadcrumb-item"><a href="{{ route('setoran.setoran_bank.show_setoran_bank_penjualan', $penjualan->penjualan_id) }}">Detail</a></div>
+        <div class="breadcrumb-item"><a href="{{ route('setoran.setoran_bank.bank.index', $penjualan->penjualan_id) }}">Bank</a></div>
         <div class="breadcrumb-item">Detail</div>
     </div>
 </div>
@@ -28,7 +28,7 @@
                         @else
                         <div class="badge badge-danger">Tidak Konfirmasi</div>
                         @endif
-                        <a href="{{ route('setoran.penitipan.file.index', [$penjualan->penjualan_id, $penitipan->penarikan_id]) }}" class="btn btn-primary">File</a>
+                        <a href="{{ route('setoran.setoran_bank.file.index', [$penjualan->penjualan_id, $penitipan->penarikan_id]) }}" class="btn btn-primary">File</a>
                     </div>
                 </div>
                 <div class="card-body">
@@ -98,20 +98,22 @@
 
                             <div class="row mb-0">
                                 <div class="col-md-8 offset-md-4 d-flex align-items-end">
-                                    <a type="button" href="{{ route('setoran.penitipan.index_penitipan', $penjualan->penjualan_id) }}" class="btn btn-primary mr-2"><i class="fas fa-arrow-left"></i> Kembali</a>
-                                    <a type="button" href="{{ route('setoran.penitipan.edit', [$penjualan->penjualan_id, $penitipan->penarikan_id]) }}" class="btn mx-2 btn-success"><i class="fas fa-pen"></i> Ubah</a>
+                                    <a type="button" href="{{ route('setoran.setoran_bank.bank.index', $penjualan->penjualan_id) }}" class="btn btn-primary mr-2"><i class="fas fa-arrow-left"></i> Kembali</a>
                                     @if(Auth::user()->member()->first()->jabatan()->first()->nama_jabatan == 'Admin')
-                                    <form action="{{ route('setoran.penitipan.update_confirmation', [$penjualan->penjualan_id, $penitipan->penarikan_id]) }}" method="POST">@csrf @method('put')
-                                        @if($penitipan->is_accepted)
-                                        <button type="submit" onclick="return confirm('Penitipan Setoran akan di batalkan konfirmasi!\n Lanjutkan?')" title="Batalkan Konfirmasi Data" class="btn btn-danger mr-2"><i class="fas fa-times"></i> Batalkan Konfirmasi</button>
-                                        @else
-                                        <button type="submit" onclick="return confirm('Penitipan Setoran akan di konfirmasi!\n Lanjutkan?')" title="Konfirmasi Data" class="btn btn-info mr-2"><i class="fas fa-check"></i> Konfirmasi</button>
-                                        @endif
+                                    @if($penitipan->is_accepted)
+                                    <form action="{{ route('setoran.setoran_bank.bank.update_confirmation_0x002', [$penjualan->penjualan_id, $penitipan->penarikan_id]) }}" method="POST">@csrf @method('put')
+                                        <button type="submit" onclick="return confirm('Bank akan di batalkan konfirmasi!\n Lanjutkan?')" title="Batalkan Konfirmasi Data" class="btn btn-danger mr-2"><i class="fas fa-times"></i> Batalkan Konfirmasi</button>
+                                    </form>
+                                    @else
+                                    <a type="button" href="{{ route('setoran.setoran_bank.bank.edit', [$penjualan->penjualan_id, $penitipan->penarikan_id]) }}" class="btn mx-2 btn-success"><i class="fas fa-pen"></i> Ubah</a>
+                                    <form action="{{ route('setoran.setoran_bank.bank.update_confirmation_0x003', [$penjualan->penjualan_id, $penitipan->penarikan_id]) }}" method="POST">@csrf @method('put')
+                                        <button type="submit" onclick="return confirm('Bank akan di konfirmasi!\n Lanjutkan?')" title="Konfirmasi Data" class="btn btn-info mr-2"><i class="fas fa-check"></i> Konfirmasi</button>
+                                    </form>
+                                    <form action="{{ route('setoran.setoran_bank.bank.destroy', [$penjualan->penjualan_id, $penitipan->penarikan_id]) }}" method="POST">@csrf @method('delete')
+                                        <button type="submit" onclick="return confirm('Bank akan dihapus!\n Lanjutkan?')" title="Hapus Data" class="btn btn-danger"><i class="fas fa-trash"></i> Hapus</button>
                                     </form>
                                     @endif
-                                    <form action="{{ route('setoran.penitipan.delete', [$penjualan->penjualan_id, $penitipan->penarikan_id]) }}" method="POST">@csrf @method('delete')
-                                        <button type="submit" onclick="return confirm('Penitipan Setoran akan dihapus!\n Lanjutkan?')" title="Hapus Data" class="btn btn-danger"><i class="fas fa-trash"></i> Hapus</button>
-                                    </form>
+                                    @endif
                                 </div>
                             </div>
                         </div>

@@ -21,7 +21,7 @@
                     <h4>{{ __('List Closing Pembayaran') }}</h4>
                 </div>
                 <div class="card-body">
-                    <form action="{{ route('setoran.open') }}" method="get"> @csrf
+                    <form action="{{ route('setoran.closing') }}" method="get"> @csrf
                         <div class="row mb-4">
                             <div class="col-12 col-sm-12 col-md-5">
                                 <input type="date" name="waktu_mulai" id="waktuMulai" class="form-control" value="{{ $waktuMulai }}" />
@@ -40,12 +40,9 @@
                                 <table class="table table-hover table-closing-setoran">
                                     <thead>
                                         <tr>
-                                            <th>Produk</th>
-                                            <th>Dispenser</th>
                                             <th>Tanggal</th>
                                             <th>Jam Kerja</th>
-                                            <th>Status Admin</th>
-                                            <th>Status Top</th>
+                                            <th>Stand Meter</th>
                                             <th>Total Penjualan</th>
                                             <th>Aksi</th>
                                         </tr>

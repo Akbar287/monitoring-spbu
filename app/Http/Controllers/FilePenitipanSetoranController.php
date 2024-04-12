@@ -30,7 +30,7 @@ class FilePenitipanSetoranController extends Controller
                     return $actionBtn;
                 })
                 ->addColumn('action', function ($row) {
-                    $actionBtn = '<div class="row"><div class="col-12 d-flex"><a href="' . asset('storage/file_penarikan/' . $row->nama_file) . '" target="_blank" class="btn btn-success btn-sm"><i class="fas fa fa-download"></i> Unduh</a>&nbsp;&nbsp;<form action="' . route('setoran.penitipan.file.delete', [$row->penarikan()->first()->penjualan()->first()->penjualan_id, $row->penarikan()->first()->penarikan_id, $row->file_penarikan_id]) . '" method="POST"><input type="hidden" name="_token" value="' . csrf_token() . '"><input type="hidden" name="_method" value="delete" /> <button type="submit" onclick="return confirm(\'Penitipan Setoran akan dihapus!\n Lanjutkan?\')" title="Hapus Data" class="btn btn-danger"><i class="fas fa-trash"></i> Hapus</button></form></div></div>';
+                    $actionBtn = '<div class="row"><div class="col-12 d-flex"><a href="' . asset('storage/file_penarikan/' . $row->nama_file) . '" target="_blank" class="btn btn-success btn-sm"><i class="fas fa fa-download"></i> Unduh</a>&nbsp;&nbsp;<form action="' . route('setoran.setoran_bank.file.delete', [$row->penarikan()->first()->penjualan()->first()->penjualan_id, $row->penarikan()->first()->penarikan_id, $row->file_penarikan_id]) . '" method="POST"><input type="hidden" name="_token" value="' . csrf_token() . '"><input type="hidden" name="_method" value="delete" /> <button type="submit" onclick="return confirm(\'Penitipan Setoran akan dihapus!\n Lanjutkan?\')" title="Hapus Data" class="btn btn-danger"><i class="fas fa-trash"></i> Hapus</button></form></div></div>';
                     return $actionBtn;
                 })
                 ->rawColumns(['action', 'gambar'])
@@ -63,9 +63,13 @@ class FilePenitipanSetoranController extends Controller
             $request->file('gambar')->storeAs('public/file_penarikan', $foto);
         }
 
-        $file = $penitipan->file_penarikan()->create($this->filePenarikanData($foto, $filenameWithExt));
+        $file = $penitipan->file_penarikan()->where('nama_file', $foto)->where('nama_dokumen', $filenameWithExt)->where('tanggal', date('Y-m-d'))->first();
 
-        return redirect('/setoran/penitipan-setoran/' . $penjualan->penjualan_id . '/penitipan/' . $penitipan->penarikan_id . '/file')->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> File Penarikan sudah ditambah.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
+        if (is_null($file)) {
+            $file = $penitipan->file_penarikan()->create($this->filePenarikanData($foto, $filenameWithExt));
+        }
+
+        return redirect('/setoran/setoran-bank/' . $penjualan->penjualan_id . '/bank/' . $penitipan->penarikan_id . '/file')->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> File Penarikan sudah ditambah.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
     }
 
     /**
@@ -105,7 +109,7 @@ class FilePenitipanSetoranController extends Controller
         }
         $file->update($this->filePenarikanData($foto, $filenameWithExt));
 
-        return redirect('/setoran/penitipan-setoran/' . $penjualan->penjualan_id . '/penitipan/' . $penitipan->penarikan_id . '/file')->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> File Penarikan sudah diubah.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
+        return redirect('/setoran/setoran-bank/' . $penjualan->penjualan_id . '/bank/' . $penitipan->penarikan_id . '/file')->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> File Penarikan sudah diubah.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
     }
 
     /**
@@ -115,7 +119,7 @@ class FilePenitipanSetoranController extends Controller
     {
         $file->delete();
 
-        return redirect('/setoran/penitipan-setoran/' . $penjualan->penjualan_id . '/penitipan/' . $penitipan->penarikan_id . '/file')->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> File Penarikan sudah dihapus.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
+        return redirect('/setoran/setoran-bank/' . $penjualan->penjualan_id . '/bank/' . $penitipan->penarikan_id . '/file')->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> File Penarikan sudah dihapus.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
     }
 
     public function filePenarikanData($file, $dokumen)

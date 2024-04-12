@@ -2,30 +2,30 @@
 
 @section('content')
 <div class="section-header">
-    <h1>List Penitipan Setoran</h1>
+    <h1>List Bank</h1>
     <div class="section-header-breadcrumb">
         <div class="breadcrumb-item"><a href="{{ route('home') }}">Dashboard</a></div>
         <div class="breadcrumb-item"><a href="{{ route('menu.setoran') }}">Setoran</a></div>
-        <div class="breadcrumb-item"><a href="{{ route('setoran.penitipan') }}">Penitipan Setoran</a></div>
-        <div class="breadcrumb-item"><a href="{{ route('setoran.penitipan.show', $penjualan->penjualan_id) }}">Detail</a></div>
-        <div class="breadcrumb-item">List Penitipan Setoran</div>
+        <div class="breadcrumb-item"><a href="{{ route('setoran.setoran_bank.index_setoran_bank_penjualan') }}">Setoran Bank</a></div>
+        <div class="breadcrumb-item"><a href="{{ route('setoran.setoran_bank.show_setoran_bank_penjualan', $penjualan->penjualan_id) }}">Detail</a></div>
+        <div class="breadcrumb-item">List Bank</div>
     </div>
 </div>
 <div class="section-body">
-    <h2 class="section-title">List Penitipan Setoran</h2>
+    <h2 class="section-title">List Bank</h2>
     <p class="section-lead">
-        Kelola List Penitipan Setoran.
+        Kelola List Bank.
     </p>
     <div class="row justify-content-center">
         <div class="col-md-12">
             <div class="card">
                 <div class="card-header">
-                    <h4>{{ __('List Penitipan Setoran') }}</h4>
+                    <h4>{{ __('List Bank') }}</h4>
                     <div class="card-header-action">
                         <div class="badge badge-success">
                             {{ 'Rp. ' . number_format($penjualan->total_penjualan + $penjualan->total_uang_kotak, 0, ".", ",") }}
                         </div>
-                        <a href="{{ route('setoran.penitipan.create', $penjualan->penjualan_id) }}" class="btn btn-primary">
+                        <a href="{{ route('setoran.setoran_bank.bank.create', $penjualan->penjualan_id) }}" class="btn btn-primary">
                             Tambah
                         </a>
                     </div>
@@ -34,7 +34,7 @@
                     <div class="row">
                         <div class="col-12">
                             <div class="table-responsive">
-                                <table class="table table-hover table-penitipan-setoran-list">
+                                <table class="table table-hover table-bank-setoran-list">
                                     <thead>
                                         <tr>
                                             <th>Tanggal</th>
@@ -50,7 +50,7 @@
                                     </tbody>
                                 </table>
                             </div>
-                            <a href="{{ route('setoran.penitipan.show', $penjualan->penjualan_id) }}" class="btn btn-primary">Kembali</a>
+                            <a href="{{ route('setoran.setoran_bank.show_setoran_bank_penjualan', $penjualan->penjualan_id) }}" class="btn btn-primary">Kembali</a>
                         </div>
                     </div>
                 </div>

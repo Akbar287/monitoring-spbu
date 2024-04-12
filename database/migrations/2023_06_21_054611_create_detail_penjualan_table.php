@@ -18,6 +18,7 @@ return new class extends Migration
             $table->uuid('harga_id');
             $table->decimal('liter', 16, 2);
             $table->decimal('total_detail_jual', 16, 2);
+            $table->boolean('is_confirmed')->default(false);
             $table->timestamps();
 
             $table->foreign('penjualan_id')->references('penjualan_id')->on('penjualan')->cascadeOnDelete();

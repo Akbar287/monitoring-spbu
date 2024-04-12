@@ -28,6 +28,7 @@ class DetailPenjualan extends Model
         'harga_id',
         'liter',
         'total_detail_jual',
+        'is_confirmed',
     ];
 
     public function penjualan()

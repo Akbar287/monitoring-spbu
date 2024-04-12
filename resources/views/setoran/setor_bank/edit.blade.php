@@ -2,26 +2,27 @@
 
 @section('content')
 <div class="section-header">
-    <h1>Penitipan Setoran</h1>
+    <h1>Setoran Bank</h1>
     <div class="section-header-breadcrumb">
         <div class="breadcrumb-item"><a href="{{ route('home') }}">Dashboard</a></div>
         <div class="breadcrumb-item"><a href="{{ route('menu.setoran') }}">Setoran</a></div>
-        <div class="breadcrumb-item"><a href="{{ route('setoran.penitipan') }}">Penitipan Setoran</a></div>
-        <div class="breadcrumb-item"><a href="{{ route('setoran.penitipan.show', $penjualan->penjualan_id) }}">Detail</a></div>
-        <div class="breadcrumb-item"><a href="{{ route('setoran.penitipan.index_penitipan', $penjualan->penjualan_id) }}">List</a></div>
+        <div class="breadcrumb-item"><a href="{{ route('setoran.setoran_bank.index_setoran_bank_penjualan') }}">Setoran Bank</a></div>
+        <div class="breadcrumb-item"><a href="{{ route('setoran.setoran_bank.show_setoran_bank_penjualan', $penjualan->penjualan_id) }}">Detail</a></div>
+        <div class="breadcrumb-item"><a href="{{ route('setoran.setoran_bank.bank.index', $penjualan->penjualan_id) }}">Bank</a></div>
+        <div class="breadcrumb-item"><a href="{{ route('setoran.setoran_bank.bank.show', [$penjualan->penjualan_id, $penitipan->penarikan_id]) }}">Detail Bank</a></div>
         <div class="breadcrumb-item">Detail</div>
     </div>
 </div>
 <div class="section-body">
-    <h2 class="section-title">Detail Penitipan Setoran</h2>
+    <h2 class="section-title">Detail Setoran Bank</h2>
     <p class="section-lead">
-        Detail data Penitipan Setoran anda.
+        Detail data Setoran Bank anda.
     </p>
     <div class="row justify-content-center">
         <div class="col-md-12">
             <div class="card">
                 <div class="card-header">
-                    <h4>{{ __('Detail Penitipan Setoran') }}</h4>
+                    <h4>{{ __('Detail Setoran Bank') }}</h4>
                     <div class="card-header-action">
                         @if($penitipan->is_accepted)
                         <div class="badge badge-success">Konfirmasi</div>
@@ -32,7 +33,7 @@
                 </div>
                 <div class="card-body">
                     @if(session('msg')){!! session('msg') !!} @endif
-                    <form action="{{ route('setoran.penitipan.update', [$penjualan->penjualan_id, $penitipan->penarikan_id]) }}" method="post" enctype="multipart/form-data">@csrf @method('put')
+                    <form action="{{ route('setoran.setoran_bank.bank.update', [$penjualan->penjualan_id, $penitipan->penarikan_id]) }}" method="post" enctype="multipart/form-data">@csrf @method('put')
                         <div class="row">
                             <div class="col-md-12">
                                 <div class="row mb-3 justify-content-center">
@@ -138,7 +139,7 @@
 
                                 <div class="row mb-0">
                                     <div class="col-md-6 offset-md-4 d-flex align-items-end">
-                                        <a type="button" href="{{ route('setoran.penitipan.show_penitipan', [$penjualan->penjualan_id, $penitipan->penarikan_id]) }}" class="btn btn-primary mr-2"><i class="fas fa-arrow-left"></i> Kembali</a>
+                                        <a type="button" href="{{ route('setoran.setoran_bank.bank.show', [$penjualan->penjualan_id, $penitipan->penarikan_id]) }}" class="btn btn-primary mr-2"><i class="fas fa-arrow-left"></i> Kembali</a>
                                         <button type="submit" class="btn mx-2 btn-success"><i class="fas fa-pen"></i> Simpan</button>
                                     </div>
                                 </div>

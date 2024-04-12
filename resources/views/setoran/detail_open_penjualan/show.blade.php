@@ -28,7 +28,7 @@
                     <div class="row">
                         <div class="col-md-12">
                             <div class="row mb-3 justify-content-center">
-                                <label for="stand_meter_id" class="col-md-4 col-form-label text-md-end">{{ __('Nama Nozzle, Stand Meter')
+                                <label for="stand_meter_id" class="col-md-4 col-form-label text-md-end">{{ __('Nama Nozzle')
                                     }}</label>
 
                                 <div class="col-md-6">

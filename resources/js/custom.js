@@ -1538,23 +1538,16 @@ $(function () {
         });
     }
     if(routeName == 'setoran.open.detail.create') {
-        $('select[id=stand_meter_id]').on('change', function(e) {
-            $.ajax({
-                url: document.location.href + '/api',
-                dataType:'json',
-                method: 'get',
-                data: {
-                    stand_meter_id: $('select[id=stand_meter_id]').val()
-                },
-                success: function(res) {
-                    console.log(res)
-                    $('input[name=stand_meter_awal]').val(res.data.stand_meter_awal)
-                    $('input[name=stand_meter_akhir]').val(res.data.stand_meter_akhir)
-                    $('input[name=harga_jual]').val(res.data.harga_jual)
-                    $('input[name=total_detail_jual]').val(res.data.total_penjualan)
-                },
-                error: function(err) {console.error(err);}
-            });
+        $('select[id=nozzle_id]').on('change', function(e) {
+            if($(this).children()[0].value == '0') {
+                $(this).children().first().remove();
+            }
+            let r = $(this).children().filter((index, el) => el.value == e.target.value);
+
+            $('input[name=stand_meter_awal]').val(r[0].dataset.smaw)
+            $('input[name=stand_meter_akhir]').val(r[0].dataset.smak)
+            $('input[name=harga_jual]').val(r[0].dataset.hj)
+            $('input[name=total_detail_jual]').val(r[0].dataset.thj)
         });
     }
     if(routeName == 'pembayaran.pajak_edit') {
@@ -1585,17 +1578,33 @@ $(function () {
             serverSide: true,
             ajax: document.location.href,
             columns: [
-                {data: 'produk', name: 'produk'},
-                {data: 'dispenser', name: 'dispenser'},
                 {data: 'tanggal', name: 'tanggal'},
                 {data: 'jam_kerja', name: 'jam_kerja'},
-                {data: 'total_penjualan', name: 'total_penjualan'},
+                {data: 'stand_meter', name: 'stand_meter'},
                 {data: 'action', name: 'action', orderable: false, searchable: false},
             ]
         });
     }
-    if(routeName == 'setoran.penitipan.index_penitipan') {
-        $('.table-penitipan-setoran-list').DataTable({
+    if(routeName == 'setoran.setoran_bank.index_setoran_bank_penjualan') {
+        $('.table-setoran-bank').DataTable({
+            language: {
+                url: cdnDatatableIdn,
+            },
+            processing: true,
+            serverSide: true,
+            ajax: document.location.href,
+            columns: [
+                {data: 'status', name: 'status'},
+                {data: 'tanggal', name: 'tanggal'},
+                {data: 'jam_kerja', name: 'jam_kerja'},
+                {data: 'stand_meter', name: 'stand_meter'},
+                {data: 'total_uang_penjualan', name: 'total_uang_penjualan'},
+                {data: 'action', name: 'action', orderable: false, searchable: false},
+            ]
+        });
+    }
+    if(routeName == 'setoran.setoran_bank.bank.index') {
+        $('.table-bank-setoran-list').DataTable({
             language: {
                 url: cdnDatatableIdn,
             },
@@ -1622,18 +1631,15 @@ $(function () {
             serverSide: true,
             ajax: document.location.href,
             columns: [
-                {data: 'produk', name: 'produk'},
-                {data: 'dispenser', name: 'dispenser'},
                 {data: 'tanggal', name: 'tanggal'},
                 {data: 'jam_kerja', name: 'jam_kerja'},
-                {data: 'status_admin', name: 'status_admin'},
-                {data: 'status_top', name: 'status_top'},
-                {data: 'total_uang', name: 'total_uang'},
+                {data: 'stand_meter', name: 'stand_meter'},
+                {data: 'total_uang_penjualan', name: 'total_uang_penjualan'},
                 {data: 'action', name: 'action', orderable: false, searchable: false},
             ]
         });
     }
-    if(routeName == 'setoran.penitipan.file.index') {
+    if(routeName == 'setoran.setoran_bank.file.index') {
         $('.table-file-penarikan').DataTable({
             language: {
                 url: cdnDatatableIdn,

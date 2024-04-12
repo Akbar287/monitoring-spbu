@@ -75,10 +75,18 @@
                                         <th>Nama</th>
                                     </thead>
                                     <tbody>
-                                        @foreach($penjualan->pj_operasional_setoran()->get() as $pj)
+                                        @foreach($penjualan->pj_operasional_setoran()->distinct('jabatan_id')->get() as $pj)
                                         <tr>
                                             <td>{{ $pj->jabatan()->first()->nama_jabatan }}</td>
-                                            <td>{{ $pj->member()->first()->ktp()->first()->nama }}</td>
+                                            <td>
+                                                @if($pj->penjualan()->first()->pj_operasional_setoran()->where('jabatan_id', $pj->jabatan_id)->count() > 0)
+                                                <ul>
+                                                @foreach($pj->penjualan()->first()->pj_operasional_setoran()->where('jabatan_id', $pj->jabatan_id)->get() as $m)
+                                                    <li>{{ $m->member()->first()->ktp()->first()->nama }}</li>
+                                                @endforeach
+                                                </ul>
+                                                @endif
+                                            </td>
                                         </tr>
                                         @endforeach
                                     </tbody>
@@ -154,10 +162,16 @@
                 </div>
                 <div class="card-body">
                     <div class="row mb-0">
-                        <div class="col-md-6 offset-md-4 d-flex align-items-end">
+                        <div class="col-md-8 offset-md-2 d-flex align-items-end">
+                            <div class="alert alert-warning">Pastikan Stand Meter dan PJ Operasional sudah terisi dengan benar. Karena di Fase berikutnya kedua data tersebut tidak dapat diubah/dihapus</div>
+                        </div>
+                        <div class="col-md-8 offset-md-2 d-flex align-items-end">
                             <a type="button" href="{{ route('setoran.open') }}" class="btn btn-primary mr-2"><i class="fas fa-arrow-left"></i> Kembali</a>
                             <a href="{{ route('setoran.open.pj', $penjualan->penjualan_id) }}" class="btn mr-2 btn-info"><i class="fas fa-users"></i> PJ Operasional</a>
-                            <a href="{{ route('setoran.open.detail', $penjualan->penjualan_id) }}" class="btn mr-2 btn-success"><i class="fas fa-thermometer-full"></i> Stand Meter</a>
+                            <a href="{{ route('setoran.open.detail', $penjualan->penjualan_id) }}" class="btn mr-2 btn-warning"><i class="fas fa-thermometer-full"></i> Stand Meter</a>
+                            <form action="{{ route('setoran.open.update.status_to', $penjualan->penjualan_id) }}" method="POST">@csrf @method('put')
+                                <button type="submit" class="btn mr-2 btn-success"><i class="fas fa-arrow-right"></i> Konfirmasi</button>
+                            </form>
                             <form action="{{ route('setoran.open.delete', $penjualan->penjualan_id) }}" method="POST">@csrf @method('delete')
                                 <button type="submit" onclick="return confirm('Open Penjualan akan dihapus!\n Lanjutkan?')" title="Hapus Data" class="btn btn-danger"><i class="fas fa-trash"></i> Hapus</button>
                             </form>

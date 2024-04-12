@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\PenjualanDetailRequest;
 use App\Models\DetailPenjualan;
+use App\Models\Nozzle;
 use App\Models\Penjualan;
 use App\Models\StandMeter;
 use Illuminate\Http\Request;
@@ -50,9 +51,9 @@ class OpenPenjualanDetailController extends Controller
      */
     public function create(Penjualan $penjualan)
     {
-        $standMeter = $penjualan->dispenser()->first()->nozzle()->join('stand_meter', 'stand_meter.nozzle_id', 'nozzle.nozzle_id')->where('stand_meter.is_confirmation', true)->where('stand_meter.tanggal', $penjualan->tanggal)->where('stand_meter.jam_kerja_id', $penjualan->jam_kerja_id)->get();
-        $harga = $penjualan->produk()->first()->harga()->where('is_default', true)->first();
-        return view('setoran/detail_open_penjualan/create', compact('penjualan', 'standMeter', 'harga'));
+        $nozzle = Nozzle::select('nozzle.nozzle_id', 'nozzle.nama_nozzle', 'stand_meter.stand_meter_awal', 'stand_meter.stand_meter_akhir', 'harga.harga_jual')->join('stand_meter', 'stand_meter.nozzle_id', 'nozzle.nozzle_id')->join('produk', 'produk.produk_id', 'nozzle.produk_id')->join('harga', 'harga.produk_id', 'produk.produk_id')->whereNotIn('stand_meter_id', $penjualan->detail_penjualan->pluck('stand_meter_id'))->where('stand_meter.tanggal', $penjualan->tanggal)->where('stand_meter.jam_kerja_id', $penjualan->jam_kerja_id)->where('harga.is_default', true)->orderBy('nozzle.nama_nozzle')->get();
+
+        return view('setoran/detail_open_penjualan/create', compact('penjualan', 'nozzle'));
     }
 
     public function create_api(Request $request, Penjualan $penjualan)
@@ -90,16 +91,25 @@ class OpenPenjualanDetailController extends Controller
      */
     public function store(PenjualanDetailRequest $penjualanDetailRequest, Penjualan $penjualan)
     {
-        $detail = $penjualan->detail_penjualan()->where('stand_meter_id', $penjualanDetailRequest->stand_meter_id)->first();
-        if (!is_null($detail)) {
-            return redirect('/setoran/open-penjualan/' . $penjualan->penjualan_id . '/detail/' . $detail->detail_penjualan_id)->with('msg', '<div class="alert alert-secondary alert-dismissible fade show" role="alert"><strong>Gagal!</strong> Data Detail Penjualan sudah ditambahkan sebelumnya. Tidak ada perubahan yang terjadi<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
-        } else {
-            $standMeter = StandMeter::where('stand_meter_id', $penjualanDetailRequest->stand_meter_id)->first();
-            $harga = $penjualan->produk()->first()->harga()->where('is_default', true)->first();
+        $sm = Nozzle::where('nozzle_id', $penjualanDetailRequest->nozzle_id)->first()->stand_meter()->where('tanggal', $penjualan->tanggal)->where('jam_kerja_id', $penjualan->jam_kerja_id)->first();
 
-            $detail = $penjualan->detail_penjualan()->create($this->openPenjualanDetailData([$standMeter->stand_meter_id, $harga->harga_id, $standMeter->stand_meter_akhir - $standMeter->stand_meter_awal, ($standMeter->stand_meter_akhir - $standMeter->stand_meter_awal) * $harga->harga_jual]));
+        if (!is_null($sm)) {
+            $detail = $penjualan->detail_penjualan()->where('stand_meter_id', $sm->stand_meter_id)->first();
+            if (is_null($detail)) {
+                $harga = $sm->nozzle()->first()->produk()->first()->harga()->where('is_default', true)->first();
+
+                $detail = $penjualan->detail_penjualan()->create($this->openPenjualanDetailData([$sm->stand_meter_id, $harga->harga_id, $sm->stand_meter_akhir - $sm->stand_meter_awal, ($sm->stand_meter_akhir - $sm->stand_meter_awal) * $harga->harga_jual]));
+            }
+
+            $total = 0;
+            foreach ($penjualan->detail_penjualan()->select('total_detail_jual')->get() as $dp) {
+                $total += $dp->total_detail_jual ?? 0;
+            }
+            $penjualan->update(['total_penjualan' => $total]);
 
             return redirect('/setoran/open-penjualan/' . $penjualan->penjualan_id . '/detail/' . $detail->detail_penjualan_id)->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> Data Detail Penjualan sudah ditambah.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
+        } else {
+            return redirect('/setoran/open-penjualan/' . $penjualan->penjualan_id . '/detail/create')->with('msg', '<div class="alert alert-danger alert-dismissible fade show" role="alert"><strong>Gagal!</strong> Buat Stand Meter Terlebih dahulu sebelum di tambahkan ke open penjualan.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
         }
     }
 
@@ -112,31 +122,17 @@ class OpenPenjualanDetailController extends Controller
     }
 
     /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(Penjualan $penjualan, DetailPenjualan $detail)
-    {
-        return view('setoran/detail_open_penjualan/edit', compact('penjualan', 'detail'));
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(PenjualanDetailRequest $penjualanDetailRequest, Penjualan $penjualan, DetailPenjualan $detail)
-    {
-        $standMeter = StandMeter::where('stand_meter_id', $penjualanDetailRequest->stand_meter_id)->first();
-        $harga = $penjualan->produk()->first()->harga()->where('is_default', true)->first();
-        $detail->update($this->openPenjualanDetailData([$standMeter->stand_meter_id, $harga->harga_id, $standMeter->stand_meter_akhir - $standMeter->stand_meter_awal, ($standMeter->stand_meter_akhir - $standMeter->stand_meter_awal) * $harga->harga_jual]));
-
-        return redirect('/setoran/open-penjualan/' . $penjualan->penjualan_id . '/detail/' . $detail->detail_penjualan_id)->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> Data Detail Penjualan sudah diubah.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
-    }
-
-    /**
      * Remove the specified resource from storage.
      */
     public function destroy(Penjualan $penjualan, DetailPenjualan $detail)
     {
         $detail->delete();
+
+        $total = 0;
+        foreach ($penjualan->detail_penjualan()->select('total_detail_jual')->get() as $dp) {
+            $total += $dp->total_detail_jual ?? 0;
+        }
+        $penjualan->update(['total_penjualan' => $total]);
 
         return redirect('/setoran/open-penjualan/' . $penjualan->penjualan_id . '/detail')->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> Data Detail Penjualan sudah dihapus.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
     }
@@ -148,6 +144,7 @@ class OpenPenjualanDetailController extends Controller
             'harga_id' => $data['1'],
             'liter' => $data['2'],
             'total_detail_jual' => $data['3'],
+            'is_confirmed' => false
         ];
     }
 }

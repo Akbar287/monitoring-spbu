@@ -7,7 +7,6 @@ use App\Models\JamKerja;
 use App\Models\Nozzle;
 use App\Models\Penjualan;
 use App\Models\Spbu;
-use App\Models\StandMeter;
 use App\Models\StatusSetoran;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -105,7 +104,8 @@ class OpenPenjualanController extends Controller
                                 'stand_meter_id' => $sm->stand_meter_id,
                                 'harga_id' => $harga->harga_id,
                                 'liter' => $sm->stand_meter_akhir - $sm->stand_meter_awal,
-                                'total_detail_jual' => $totalDetailJual
+                                'total_detail_jual' => $totalDetailJual,
+                                'is_confirmed' => false
                             ]);
                             $total += ($sm->stand_meter_akhir - $sm->stand_meter_awal) * $harga->harga_jual;
                         }
@@ -136,15 +136,21 @@ class OpenPenjualanController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function update_status(Penjualan $penjualan)
+    public function update_status_to(Penjualan $penjualan)
     {
-        if ($penjualan->status_setoran()->first()->nama_status == 'Open Penjualan') {
-            $penjualan->update(['status_setoran_id' => StatusSetoran::where('nama_status', 'Penitipan Setoran')->first()->status_setoran_id]);
-            return redirect('/setoran/open-penjualan/' . $penjualan->penjualan_id)->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> Data Penjualan sudah dipindahkan ke Penitipan Setoran.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
-        } else {
-            $penjualan->update(['status_setoran_id' => StatusSetoran::where('nama_status', 'Open Penjualan')->first()->status_setoran_id]);
-            return redirect('/setoran/open-penjualan/' . $penjualan->penjualan_id)->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> Data Penjualan sudah dipindahkan kembali ke Open Penjualan.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
-        }
+
+        $penjualan->update(['status_setoran_id' => StatusSetoran::where('nama_status', 'Penitipan Setoran')->first()->status_setoran_id]);
+
+        return redirect('/setoran/penitipan-setoran/' . $penjualan->penjualan_id)->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> Data Penjualan sudah dipindahkan ke Penitipan Setoran.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
+        exit;
+    }
+    public function update_status_from(Penjualan $penjualan)
+    {
+
+        $penjualan->update(['status_setoran_id' => StatusSetoran::where('nama_status', 'Open Penjualan')->first()->status_setoran_id]);
+
+        return redirect('/setoran/open-penjualan/' . $penjualan->penjualan_id)->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> Data Penjualan sudah dipindahkan kembali ke Open Penjualan.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
+        exit;
     }
     public function destroy(Penjualan $penjualan)
     {

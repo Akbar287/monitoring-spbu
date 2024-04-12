@@ -26,6 +26,12 @@ class StatusSetoranSeeder extends Seeder
                 [
                     'nama_status' => 'Closing Penjualan'
                 ],
+                [
+                    'nama_status' => 'Setoran Ke Bank'
+                ],
+                [
+                    'nama_status' => 'Selesai'
+                ]
             ];
 
             foreach ($temp as $t) {

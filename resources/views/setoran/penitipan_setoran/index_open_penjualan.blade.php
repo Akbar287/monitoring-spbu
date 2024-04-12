@@ -26,7 +26,7 @@
                     </div>
                 </div>
                 <div class="card-body">
-                    <form action="{{ route('setoran.open') }}" method="get"> @csrf
+                    <form action="{{ route('setoran.penitipan') }}" method="get"> @csrf
                         <div class="row mb-4">
                             <div class="col-12 col-sm-12 col-md-5">
                                 <input type="date" name="waktu_mulai" id="waktuMulai" class="form-control" value="{{ $waktuMulai }}" />
@@ -45,11 +45,9 @@
                                 <table class="table table-hover table-penitipan-setoran">
                                     <thead>
                                         <tr>
-                                            <th>Produk</th>
-                                            <th>Dispenser</th>
                                             <th>Tanggal</th>
                                             <th>Jam Kerja</th>
-                                            <th>Total Penjualan</th>
+                                            <th>Stand Meter</th>
                                             <th>Aksi</th>
                                         </tr>
                                     </thead>

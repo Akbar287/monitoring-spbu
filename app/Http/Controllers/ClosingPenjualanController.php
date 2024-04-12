@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\DetailPenjualan;
 use App\Models\Penjualan;
 use App\Models\StatusSetoran;
 use Carbon\Carbon;
@@ -29,14 +30,6 @@ class ClosingPenjualanController extends Controller
             $data = StatusSetoran::where('nama_status', 'Closing Penjualan')->first()->penjualan()->whereBetween('penjualan.tanggal', [$waktuMulai, $waktuSelesai])->get();
             return DataTables::of($data)
                 ->addIndexColumn()
-                ->addColumn('produk', function ($row) {
-                    $actionBtn =  $row->produk()->first()->nama_produk;
-                    return $actionBtn;
-                })
-                ->addColumn('dispenser', function ($row) {
-                    $actionBtn =  $row->dispenser()->first()->nama_dispenser;
-                    return $actionBtn;
-                })
                 ->addColumn('tanggal', function ($row) {
                     return Carbon::createFromFormat('Y-m-d', $row->tanggal)->format('d F Y');
                 })
@@ -44,16 +37,12 @@ class ClosingPenjualanController extends Controller
                     $actionBtn =  $row->jam_kerja()->first()->nama_jam_kerja;
                     return $actionBtn;
                 })
-                ->addColumn('total_uang', function ($row) {
+                ->addColumn('stand_meter', function ($row) {
+                    $actionBtn = array_column($row->detail_penjualan()->select('nozzle.nama_nozzle')->join('stand_meter', 'stand_meter.stand_meter_id', 'detail_penjualan.stand_meter_id')->join('nozzle', 'nozzle.nozzle_id', 'stand_meter.nozzle_id')->orderBy('nozzle.nama_nozzle', 'asc')->get()->toArray(), 'nama_nozzle');
+                    return count($actionBtn) == 0 ? '-' : (count($actionBtn) > 1 ? implode(', ', $actionBtn) : $actionBtn['0']);
+                })
+                ->addColumn('total_uang_penjualan', function ($row) {
                     $actionBtn = 'Rp. ' . number_format($row->total_penjualan, 0, ".", ",");
-                    return $actionBtn;
-                })
-                ->addColumn('status_admin', function ($row) {
-                    $actionBtn = $row->is_accepted_admin ? '<div class="badge badge-success">Konfirmasi</div>' : '<div class="badge badge-danger">Tidak Terkonfirmasi</div>';
-                    return $actionBtn;
-                })
-                ->addColumn('status_top', function ($row) {
-                    $actionBtn = $row->is_accepted_top ? '<div class="badge badge-success">Konfirmasi</div>' : '<div class="badge badge-danger">Tidak Terkonfirmasi</div>';
                     return $actionBtn;
                 })
                 ->addColumn('action', function ($row) {
@@ -74,21 +63,37 @@ class ClosingPenjualanController extends Controller
         return view('setoran/closing_penjualan/show', compact('penjualan'));
     }
 
-    public function update(Request $request, Penjualan $penjualan)
+    public function confirmed_to(Penjualan $penjualan, DetailPenjualan $detail)
     {
-        $request->validate([
-            'type' => ['required']
+        $detail->update([
+            'is_confirmed' => true
         ]);
 
-        if ($request->type == 'admin') {
-            $penjualan->update(['is_accepted_admin' => ($penjualan->is_accepted_admin ? false : true)]);
+        return redirect('/setoran/closing-penjualan/' . $penjualan->penjualan_id)->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> Penjualan Stand Meter sudah dikonfirmasi.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
+    }
 
-            return redirect('/setoran/closing-penjualan/' . $penjualan->penjualan_id)->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> Data Penjualan ' . (!$penjualan->is_accepted_admin ? 'Tidak Dikonfirmasi' : 'Dikonfirmasi') . '.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
-        }
-        if ($request->type == 'top') {
-            $penjualan->update(['is_accepted_top' => ($penjualan->is_accepted_top ? false : true)]);
+    public function confirmed_from(Penjualan $penjualan, DetailPenjualan $detail)
+    {
+        $detail->update([
+            'is_confirmed' => false
+        ]);
 
-            return redirect('/setoran/closing-penjualan/' . $penjualan->penjualan_id)->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> Data Penjualan ' . (!$penjualan->is_accepted_top ? 'Tidak Dikonfirmasi' : 'Dikonfirmasi') . '.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
-        }
+        return redirect('/setoran/closing-penjualan/' . $penjualan->penjualan_id)->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> Penjualan Stand Meter sudah dibatalkan.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
+    }
+    public function confirmed_to_setoran(Penjualan $penjualan)
+    {
+        $status_setoran = StatusSetoran::where('nama_status', 'Setoran Ke Bank')->first();
+        $penjualan->update([
+            'status_setoran_id' => $status_setoran->status_setoran_id
+        ]);
+        return redirect('/setoran/setoran-bank/' . $penjualan->penjualan_id)->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> Status sudah dipindahkan ke Setoran Bank.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
+    }
+    public function confirmed_from_setoran(Penjualan $penjualan)
+    {
+        $status_setoran = StatusSetoran::where('nama_status', 'Closing Penjualan')->first();
+        $penjualan->update([
+            'status_setoran_id' => $status_setoran->status_setoran_id
+        ]);
+        return redirect('/setoran/closing-penjualan/' . $penjualan->penjualan_id)->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> Status Setoran Bank sudah dipindahkan ke Closing.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
     }
 }

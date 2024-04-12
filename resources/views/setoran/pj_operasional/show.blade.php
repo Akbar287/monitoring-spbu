@@ -53,7 +53,7 @@
                             <div class="row mb-0">
                                 <div class="col-md-6 offset-md-4 d-flex align-items-end">
                                     <a type="button" href="{{ route('setoran.open.pj', $penjualan->penjualan_id) }}" class="btn btn-primary mr-2"><i class="fas fa-arrow-left"></i> Kembali</a>
-                                    <form action="{{ route('setoran.open.pj.delete', [$penjualan->penjualan_id, $pj->pj_operasional_setoran_id]) }}" method="POST">@csrf @method('delete')
+                                    <form action="{{ route('setoran.open.pj.delete', [$penjualan->penjualan_id, $jabatan->jabatan_id]) }}" method="POST">@csrf @method('delete')
                                         <button type="submit" onclick="return confirm('Pj Operasional akan dihapus!\n Lanjutkan?')" title="Hapus Data" class="btn btn-danger"><i class="fas fa-trash"></i> Hapus</button>
                                     </form>
                                 </div>

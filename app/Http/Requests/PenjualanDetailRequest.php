@@ -22,7 +22,7 @@ class PenjualanDetailRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'stand_meter_id' =>  ['required'],
+            'nozzle_id' =>  ['required'],
         ];
     }
 }

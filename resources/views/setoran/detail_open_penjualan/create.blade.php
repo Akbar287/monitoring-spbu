@@ -29,17 +29,18 @@
                         <div class="row">
                             <div class="col-md-12">
                                 <div class="row mb-3 justify-content-center">
-                                    <label for="stand_meter_id" class="col-md-4 col-form-label text-md-end">{{ __('Nama Nozzle, Stand Meter')
+                                    <label for="nozzle_id" class="col-md-4 col-form-label text-md-end">{{ __('Nama Nozzle')
                                         }}</label>
 
                                     <div class="col-md-6">
-                                        <select class="custom-select @error('stand_meter_id') is-invalid @enderror" name="stand_meter_id" id="stand_meter_id">
-                                            @foreach($standMeter as $s)
-                                            <option {{ old('stand_meter_id') == $s->stand_meter_id ? 'selected' : '' }} value="{{ $s->stand_meter_id }}">{{ $s->nama_nozzle . ' (' . $s->stand_meter_awal . ' - '.$s->stand_meter_akhir .')' }}</option>
+                                        <select class="custom-select @error('nozzle_id') is-invalid @enderror" name="nozzle_id" id="nozzle_id">
+                                            <option value="0">Silakan Pilih Nozzle</option>
+                                            @foreach($nozzle as $s)
+                                            <option {{ old('nozzle_id') == $s->nozzle_id ? 'selected' : '' }} data-smaw="{{ number_format($s->stand_meter_awal, 0, ".", ",") }}" data-smak="{{ number_format($s->stand_meter_akhir, 0, ".", ",") }}" data-hj="{{ number_format($s->harga_jual, 2, ".", ",") }}" data-thj="{{ number_format(($s->stand_meter_akhir - $s->stand_meter_awal) * $s->harga_jual, 2, ".", ",") }}" value="{{ $s->nozzle_id }}">{{ $s->nama_nozzle . ' (' . $s->stand_meter_awal . ' - '.$s->stand_meter_akhir .')' }}</option>
                                             @endforeach
                                         </select>
 
-                                        @error('stand_meter_id')
+                                        @error('nozzle_id')
                                         <span class="invalid-feedback" role="alert">
                                             <strong>{{ $message }}</strong>
                                         </span>
@@ -52,7 +53,7 @@
                                         }}</label>
 
                                     <div class="col-md-6">
-                                        <input type="text" readonly name="stand_meter_awal" id="stand_meter_awal" class="thousand-style form-control @error('stand_meter_awal') is-invalid @enderror" value="{{ number_format($standMeter->first()->stand_meter_awal, 0, ".", ",") }}" />
+                                        <input type="text" readonly name="stand_meter_awal" id="stand_meter_awal" class="thousand-style form-control @error('stand_meter_awal') is-invalid @enderror" value="0" />
 
                                         @error('stand_meter_awal')
                                         <span class="invalid-feedback" role="alert">
@@ -67,7 +68,7 @@
                                         }}</label>
 
                                     <div class="col-md-6">
-                                        <input type="text" readonly name="stand_meter_akhir" id="stand_meter_akhir" class="thousand-style form-control @error('stand_meter_akhir') is-invalid @enderror" value="{{ number_format($standMeter->first()->stand_meter_akhir, 0, ".", ",") }}" />
+                                        <input type="text" readonly name="stand_meter_akhir" id="stand_meter_akhir" class="thousand-style form-control @error('stand_meter_akhir') is-invalid @enderror" value="0" />
 
                                         @error('stand_meter_akhir')
                                         <span class="invalid-feedback" role="alert">
@@ -88,7 +89,7 @@
                                                     Rp
                                                 </div>
                                             </div>
-                                            <input type="text" readonly name="harga_jual" id="harga_jual" class="form-control thousand-style @error('harga_jual') is-invalid @enderror" value="{{ number_format($harga->harga_jual, 0, ".", ",") }}" />
+                                            <input type="text" readonly name="harga_jual" id="harga_jual" class="form-control thousand-style @error('harga_jual') is-invalid @enderror" value="0" />
                                         </div>
 
                                         @error('harga_jual')
@@ -110,7 +111,7 @@
                                                     Rp
                                                 </div>
                                             </div>
-                                            <input type="text" readonly name="total_detail_jual" id="total_detail_jual" class="thousand-style form-control @error('total_detail_jual') is-invalid @enderror" value="{{ number_format(($standMeter->first()->stand_meter_akhir - $standMeter->first()->stand_meter_awal) * $harga->harga_jual, 0, ".", ",") }}" />
+                                            <input type="text" readonly name="total_detail_jual" id="total_detail_jual" class="thousand-style form-control @error('total_detail_jual') is-invalid @enderror" value="0" />
                                         </div>
 
                                         @error('total_detail_jual')
