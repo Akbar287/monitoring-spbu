@@ -21,13 +21,13 @@ class JadwalAbsensiController extends Controller
             [
                 "nama" => "Absensi",
                 "icon" => "users",
-                "url" => route('rekap-pajak.index'),
+                "url" => route('absensi.index'),
                 "color" => "info"
             ],
             [
                 "nama" => "Laporan Absensi",
                 "icon" => "file",
-                "url" => route('margin.index'),
+                "url" => route('laporan-absensi.index'),
                 "color" => "success"
             ]
         ];

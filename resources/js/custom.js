@@ -497,6 +497,25 @@ $(function () {
             error: function(err) {console.error(err)}
         })
     }
+    if (routeName == 'absensi.index') {
+        $('.table-absensi').DataTable({
+            language: {
+                url: cdnDatatableIdn,
+            },
+            processing: true,
+            serverSide: true,
+            ajax: document.location.href,
+            columns: [
+                {data: 'status_kehadiran', name: 'status_kehadiran'},
+                {data: 'tanggal', name: 'tanggal'},
+                {data: 'jam_kerja', name: 'jam_kerja'},
+                {data: 'jabatan', name: 'jabatan'},
+                {data: 'is_attended', name: 'is_attended'},
+                {data: 'is_confirm', name: 'is_confirm'},
+                {data: 'action', name: 'action', orderable: false, searchable: false},
+            ]
+        });
+    }
     if(routeName == 'profil.edit_password') {
         $('button.see_password').on('click', function() {
             if($(this).parent().siblings().attr('type') == 'password') {

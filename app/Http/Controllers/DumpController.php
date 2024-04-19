@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Dombak;
+use App\Models\Nozzle;
 use App\Models\PajakPembelianLib;
 use App\Models\Pengiriman;
 use App\Models\Produk;
@@ -278,213 +280,212 @@ class DumpController extends Controller
     public function uploadDataTotalisator()
     {
         // Totalisator
-        // $pertaliteN1 = [
-        //     [
-        //         2294, 0, 0, 1858, 2581, 1830, 1431, 2017, 1706, 1784, 1574, 1855, 1518, 1724, 1622, 1490, 1641, 1158, 1515, 944, 2090, 486, 1649, 1748, 2400, 1453, 1921, 1854, 1534, 1427
-        //     ],
-        //     [
-        //         3000, 0, 0, 2517, 555, 1336, 542, 1276, 951, 932, 1217, 1002, 1423, 1098, 1085, 1004, 1071, 1289, 1427, 1024, 1700, 1432, 1104, 1517, 1574, 2773, 944, 2004, 1584, 1494
-        //     ],
-        //     [
-        //         0, 0, 0, 0, 0, 1287, 880, 2084, 3321, 1912, 1567, 0, 0, 0, 0, 0, 0, 0, 1100, 0, 70, 1986, 1064, 0, 0, 0, 0, 0, 1864, 0
-        //     ]
-        // ];
-        // $pertaliteN2 = [
-        //     [
-        //         4565, 0, 0, 3760, 3421, 3927, 2612, 3000, 3229, 3513, 2661, 2937, 3637, 3274, 2842, 2736, 3537, 3116, 3200, 1755, 3310, 1456, 3521, 2999, 3782, 2813, 2855, 3566, 3521, 3011
-        //     ],
-        //     [
-        //         4428, 0, 0, 4143, 925, 2337, 1570, 2254, 1447, 1275, 1821, 2055, 2055, 1895, 2298, 2461, 978, 2197, 1687, 1569, 4019, 3517, 2251, 2532, 2833, 2427, 1121, 3195, 2308, 2509
-        //     ],
-        //     [
-        //         0, 0, 0, 0, 0, 1683, 1100, 4319, 4320, 2339, 2699, 0, 0, 0, 0, 0, 0, 0, 1100, 0, 280, 3889, 2096, 0, 0, 0, 0, 0, 2641, 0
-        //     ]
-        // ];
-        // $bioSolar = [
-        //     [
-        //         1446, 4516, 4725, 0, 4251, 3406, 3149, 4994, 3959, 3519, 4187, 0, 0, 0, 0, 3953, 0, 11, 0, 2280, 2497, 2463, 2097, 1477, 2052, 5136, 4311, 4004, 3778, 5576, 4139
-        //     ],
-        //     [
-        //         2052, 3881, 473, 0, 2183, 1478, 0, 3170, 3833, 3859, 0, 0, 0, 0, 0, 46, 0, 0, 0, 0, 0, 0, 0, 29, 0, 3956, 1207, 2804, 4743, 4876, 2187
-        //     ],
-        //     [
-        //         0, 2910, 0, 0, 0, 0, 22, 1376, 3238, 0, 3406, 0, 1740, 12936, 0, 16001, 7496, 1605, 10074, 2363, 7916, 2127, 10921, 990, 0, 0, 0, 0, 0, 22, 10204
-        //     ]
-        // ];
-        // $pertamax = [
-        //     [
-        //         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
-        //     ],
-        //     [
-        //         0, 0, 63, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
-        //     ],
-        //     [
-        //         0, 0, 0, 3.312, 0, 0, 0, 0, 0, 0, 0, 0, 2.751, 1.641, 0, 5.130, 3.165, 1.020, 1.530, 3.369, 2.881, 4.806, 0, 0, 0, 0, 0, 0, 0, 0, 0
-        //     ]
-        // ];
-        // $pertadex = [
-        //     [
-        //         0, 0, 0, 0, 0, 0, 0, 0, 39, 0, 23, 0, 61, 0, 7, 0, 6, 0, 12, 0, 44, 0, 0, 23, 0, 0, 13, 0, 0, 0, 19
-        //     ],
-        //     [
-        //         0, 0, 0, 0, 0, 0, 0, 52, 24, 0, 0, 0, 0, 13, 0, 0, 26, 53, 0, 0, 3, 0, 0, 27, 0, 0, 8, 26, 0, 0, 0
-        //     ],
-        //     [
-        //         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
-        //     ]
-        // ];
+        $pertaliteN1 = [
+            [
+                2294, 0, 0, 1858, 2581, 1830, 1431, 2017, 1706, 1784, 1574, 1855, 1518, 1724, 1622, 1490, 1641, 1158, 1515, 944, 2090, 486, 1649, 1748, 2400, 1453, 1921, 1854, 1534, 1427
+            ],
+            [
+                3000, 0, 0, 2517, 555, 1336, 542, 1276, 951, 932, 1217, 1002, 1423, 1098, 1085, 1004, 1071, 1289, 1427, 1024, 1700, 1432, 1104, 1517, 1574, 2773, 944, 2004, 1584, 1494
+            ],
+            [
+                0, 0, 0, 0, 0, 1287, 880, 2084, 3321, 1912, 1567, 0, 0, 0, 0, 0, 0, 0, 1100, 0, 70, 1986, 1064, 0, 0, 0, 0, 0, 1864, 0
+            ]
+        ];
+        $pertaliteN2 = [
+            [
+                4565, 0, 0, 3760, 3421, 3927, 2612, 3000, 3229, 3513, 2661, 2937, 3637, 3274, 2842, 2736, 3537, 3116, 3200, 1755, 3310, 1456, 3521, 2999, 3782, 2813, 2855, 3566, 3521, 3011
+            ],
+            [
+                4428, 0, 0, 4143, 925, 2337, 1570, 2254, 1447, 1275, 1821, 2055, 2055, 1895, 2298, 2461, 978, 2197, 1687, 1569, 4019, 3517, 2251, 2532, 2833, 2427, 1121, 3195, 2308, 2509
+            ],
+            [
+                0, 0, 0, 0, 0, 1683, 1100, 4319, 4320, 2339, 2699, 0, 0, 0, 0, 0, 0, 0, 1100, 0, 280, 3889, 2096, 0, 0, 0, 0, 0, 2641, 0
+            ]
+        ];
+        $bioSolar = [
+            [
+                1446, 4516, 4725, 0, 4251, 3406, 3149, 4994, 3959, 3519, 4187, 0, 0, 0, 0, 3953, 0, 11, 0, 2280, 2497, 2463, 2097, 1477, 2052, 5136, 4311, 4004, 3778, 5576, 4139
+            ],
+            [
+                2052, 3881, 473, 0, 2183, 1478, 0, 3170, 3833, 3859, 0, 0, 0, 0, 0, 46, 0, 0, 0, 0, 0, 0, 0, 29, 0, 3956, 1207, 2804, 4743, 4876, 2187
+            ],
+            [
+                0, 2910, 0, 0, 0, 0, 22, 1376, 3238, 0, 3406, 0, 1740, 12936, 0, 16001, 7496, 1605, 10074, 2363, 7916, 2127, 10921, 990, 0, 0, 0, 0, 0, 22, 10204
+            ]
+        ];
+        $pertamax = [
+            [
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+            ],
+            [
+                0, 0, 63, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+            ],
+            [
+                0, 0, 0, 3.312, 0, 0, 0, 0, 0, 0, 0, 0, 2.751, 1.641, 0, 5.130, 3.165, 1.020, 1.530, 3.369, 2.881, 4.806, 0, 0, 0, 0, 0, 0, 0, 0, 0
+            ]
+        ];
+        $pertadex = [
+            [
+                0, 0, 0, 0, 0, 0, 0, 0, 39, 0, 23, 0, 61, 0, 7, 0, 6, 0, 12, 0, 44, 0, 0, 23, 0, 0, 13, 0, 0, 0, 19
+            ],
+            [
+                0, 0, 0, 0, 0, 0, 0, 52, 24, 0, 0, 0, 0, 13, 0, 0, 26, 53, 0, 0, 3, 0, 0, 27, 0, 0, 8, 26, 0, 0, 0
+            ],
+            [
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+            ]
+        ];
 
         // BioSolar
-        // $dombakBs1 = Dombak::where('nama_dombak', 'DM4-BS')->first();
-        // // $dombakBs2 = Dombak::where('nama_dombak', 'DM5-BS')->first();
+        $dombakBs1 = Dombak::where('nama_dombak', 'DM4-BS')->first();
+        // $dombakBs2 = Dombak::where('nama_dombak', 'DM5-BS')->first();
 
-        // // Nozzle
-        // $nozzleN1 = Nozzle::where('nama_nozzle', 'N-3A BS')->first();
+        // Nozzle
+        $nozzleN1 = Nozzle::where('nama_nozzle', 'N-3A BS')->first();
 
-        // // Jadwal Kerja
-        // $jadwalKerja = [
-        //     'd61ddc4b-f97c-4361-935a-26718af856d7',
-        //     '2d377da7-19fd-4459-8a1b-fd5bf5b390a3',
-        //     'ddcfd64a-dae4-4044-a58f-ae7035108a92',
-        // ];
+        // Jadwal Kerja
+        $jadwalKerja = [
+            'd61ddc4b-f97c-4361-935a-26718af856d7',
+            '2d377da7-19fd-4459-8a1b-fd5bf5b390a3',
+            'ddcfd64a-dae4-4044-a58f-ae7035108a92',
+        ];
 
-        // $tgl = 1;
-        // $bioSolarFlip = $this->flip_row_col_array($bioSolar);
-        // $standMeterLast = 13748394;
-        // for ($i = 0; $i < count($bioSolarFlip); $i++) {
-        //     for ($j = 0; $j < count($bioSolarFlip[$i]); $j++) {
+        $tgl = 1;
+        $bioSolarFlip = $this->flip_row_col_array($bioSolar);
+        $standMeterLast = 13748394;
+        for ($i = 0; $i < count($bioSolarFlip); $i++) {
+            for ($j = 0; $j < count($bioSolarFlip[$i]); $j++) {
+                $nozzleN1->stand_meter()->create([
+                    'dombak_id' => $dombakBs1->dombak_id,
+                    'jam_kerja_id' => $jadwalKerja[$j],
+                    'tanggal' => '2024-01-' . ($tgl + $i),
+                    'stand_meter_awal' => $standMeterLast,
+                    'stand_meter_akhir' => $standMeterLast + $bioSolarFlip[$i][$j],
+                    'is_confirmation' => false
+                ]);
 
-        //         $nozzleN1->stand_meter()->create([
-        //             'dombak_id' => $dombakBs1->dombak_id,
-        //             'jam_kerja_id' => $jadwalKerja[$j],
-        //             'tanggal' => '2024-01-' . ($tgl + $i),
-        //             'stand_meter_awal' => $standMeterLast,
-        //             'stand_meter_akhir' => $standMeterLast + $bioSolarFlip[$i][$j],
-        //             'is_confirmation' => false
-        //         ]);
-
-        //         $standMeterLast += $bioSolarFlip[$i][$j];
-        //     }
-        // }
+                $standMeterLast += $bioSolarFlip[$i][$j];
+            }
+        }
 
 
-        //Pertalite
-        // $dombakPl = Dombak::where('nama_dombak', 'DM2-PL')->first();
+        // Pertalite
+        $dombakPl = Dombak::where('nama_dombak', 'DM2-PL')->first();
 
-        // // Nozzle
-        // $nozzleN1 = Nozzle::where('nama_nozzle', 'N-2A PL')->first();
-        // $nozzleN2 = Nozzle::where('nama_nozzle', 'N-2B PL')->first();
+        // Nozzle
+        $nozzleN1 = Nozzle::where('nama_nozzle', 'N-2A PL')->first();
+        $nozzleN2 = Nozzle::where('nama_nozzle', 'N-2B PL')->first();
 
-        // // Jadwal Kerja
-        // $jadwalKerja = [
-        //     'd61ddc4b-f97c-4361-935a-26718af856d7',
-        //     '2d377da7-19fd-4459-8a1b-fd5bf5b390a3',
-        //     'ddcfd64a-dae4-4044-a58f-ae7035108a92',
-        // ];
+        // Jadwal Kerja
+        $jadwalKerja = [
+            'd61ddc4b-f97c-4361-935a-26718af856d7',
+            '2d377da7-19fd-4459-8a1b-fd5bf5b390a3',
+            'ddcfd64a-dae4-4044-a58f-ae7035108a92',
+        ];
 
-        // $tgl = 2;
-        // $pertaliteN1Flip = $this->flip_row_col_array($pertaliteN1);
-        // $standMeterLast = 7701156.00;
-        // for ($i = 0; $i < count($pertaliteN1Flip); $i++) {
-        //     for ($j = 0; $j < count($pertaliteN1Flip[$i]); $j++) {
+        $tgl = 2;
+        $pertaliteN1Flip = $this->flip_row_col_array($pertaliteN1);
+        $standMeterLast = 7701156.00;
+        for ($i = 0; $i < count($pertaliteN1Flip); $i++) {
+            for ($j = 0; $j < count($pertaliteN1Flip[$i]); $j++) {
 
-        //         $nozzleN1->stand_meter()->create([
-        //             'dombak_id' => $dombakPl->dombak_id,
-        //             'jam_kerja_id' => $jadwalKerja[$j],
-        //             'tanggal' => '2024-01-' . ($tgl + $i),
-        //             'stand_meter_awal' => $standMeterLast,
-        //             'stand_meter_akhir' => $standMeterLast + $pertaliteN1Flip[$i][$j],
-        //             'is_confirmation' => false
-        //         ]);
+                $nozzleN1->stand_meter()->create([
+                    'dombak_id' => $dombakPl->dombak_id,
+                    'jam_kerja_id' => $jadwalKerja[$j],
+                    'tanggal' => '2024-01-' . ($tgl + $i),
+                    'stand_meter_awal' => $standMeterLast,
+                    'stand_meter_akhir' => $standMeterLast + $pertaliteN1Flip[$i][$j],
+                    'is_confirmation' => false
+                ]);
 
-        //         $standMeterLast += $pertaliteN1Flip[$i][$j];
-        //     }
-        // }
+                $standMeterLast += $pertaliteN1Flip[$i][$j];
+            }
+        }
 
-        // $tgl = 2;
-        // $pertaliteN2Flip = $this->flip_row_col_array($pertaliteN2);
-        // $standMeterLast = 8351384.00;
-        // for ($i = 0; $i < count($pertaliteN2Flip); $i++) {
-        //     for ($j = 0; $j < count($pertaliteN2Flip[$i]); $j++) {
+        $tgl = 2;
+        $pertaliteN2Flip = $this->flip_row_col_array($pertaliteN2);
+        $standMeterLast = 8351384.00;
+        for ($i = 0; $i < count($pertaliteN2Flip); $i++) {
+            for ($j = 0; $j < count($pertaliteN2Flip[$i]); $j++) {
 
-        //         $nozzleN2->stand_meter()->create([
-        //             'dombak_id' => $dombakPl->dombak_id,
-        //             'jam_kerja_id' => $jadwalKerja[$j],
-        //             'tanggal' => '2024-01-' . ($tgl + $i),
-        //             'stand_meter_awal' => $standMeterLast,
-        //             'stand_meter_akhir' => $standMeterLast + $pertaliteN2Flip[$i][$j],
-        //             'is_confirmation' => false
-        //         ]);
+                $nozzleN2->stand_meter()->create([
+                    'dombak_id' => $dombakPl->dombak_id,
+                    'jam_kerja_id' => $jadwalKerja[$j],
+                    'tanggal' => '2024-01-' . ($tgl + $i),
+                    'stand_meter_awal' => $standMeterLast,
+                    'stand_meter_akhir' => $standMeterLast + $pertaliteN2Flip[$i][$j],
+                    'is_confirmation' => false
+                ]);
 
-        //         $standMeterLast += $pertaliteN2Flip[$i][$j];
-        //     }
-        // }
+                $standMeterLast += $pertaliteN2Flip[$i][$j];
+            }
+        }
 
         // Pertamax
 
-        // $dombakPl = Dombak::where('nama_dombak', 'DM1-PX')->first();
+        $dombakPl = Dombak::where('nama_dombak', 'DM1-PX')->first();
 
-        // // Nozzle
-        // $nozzleN1 = Nozzle::where('nama_nozzle', 'N-1B PX')->first();
+        // Nozzle
+        $nozzleN1 = Nozzle::where('nama_nozzle', 'N-1B PX')->first();
 
-        // // Jadwal Kerja
-        // $jadwalKerja = [
-        //     'd61ddc4b-f97c-4361-935a-26718af856d7',
-        //     '2d377da7-19fd-4459-8a1b-fd5bf5b390a3',
-        //     'ddcfd64a-dae4-4044-a58f-ae7035108a92',
-        // ];
+        // Jadwal Kerja
+        $jadwalKerja = [
+            'd61ddc4b-f97c-4361-935a-26718af856d7',
+            '2d377da7-19fd-4459-8a1b-fd5bf5b390a3',
+            'ddcfd64a-dae4-4044-a58f-ae7035108a92',
+        ];
 
-        // $tgl = 1;
-        // $pertamaxN1 = $this->flip_row_col_array($pertamax);
-        // $standMeterLast = 3.00;
-        // for ($i = 0; $i < count($pertamaxN1); $i++) {
-        //     for ($j = 0; $j < count($pertamaxN1[$i]); $j++) {
+        $tgl = 1;
+        $pertamaxN1 = $this->flip_row_col_array($pertamax);
+        $standMeterLast = 3.00;
+        for ($i = 0; $i < count($pertamaxN1); $i++) {
+            for ($j = 0; $j < count($pertamaxN1[$i]); $j++) {
 
-        //         $nozzleN1->stand_meter()->create([
-        //             'dombak_id' => $dombakPl->dombak_id,
-        //             'jam_kerja_id' => $jadwalKerja[$j],
-        //             'tanggal' => '2024-01-' . ($tgl + $i),
-        //             'stand_meter_awal' => $standMeterLast,
-        //             'stand_meter_akhir' => $standMeterLast + $pertamaxN1[$i][$j],
-        //             'is_confirmation' => false
-        //         ]);
+                $nozzleN1->stand_meter()->create([
+                    'dombak_id' => $dombakPl->dombak_id,
+                    'jam_kerja_id' => $jadwalKerja[$j],
+                    'tanggal' => '2024-01-' . ($tgl + $i),
+                    'stand_meter_awal' => $standMeterLast,
+                    'stand_meter_akhir' => $standMeterLast + $pertamaxN1[$i][$j],
+                    'is_confirmation' => false
+                ]);
 
-        //         $standMeterLast += $pertamaxN1[$i][$j];
-        //     }
-        // }
+                $standMeterLast += $pertamaxN1[$i][$j];
+            }
+        }
 
 
         // Pertamina Dex
-        // $dombakPl = Dombak::where('nama_dombak', 'DM6-PX')->first();
+        $dombakPl = Dombak::where('nama_dombak', 'DM6-PX')->first();
 
-        // // Nozzle
-        // $nozzleN1 = Nozzle::where('nama_nozzle', 'N-3B PX')->first();
+        // Nozzle
+        $nozzleN1 = Nozzle::where('nama_nozzle', 'N-3B PX')->first();
 
-        // // Jadwal Kerja
-        // $jadwalKerja = [
-        //     'd61ddc4b-f97c-4361-935a-26718af856d7',
-        //     '2d377da7-19fd-4459-8a1b-fd5bf5b390a3',
-        //     'ddcfd64a-dae4-4044-a58f-ae7035108a92',
-        // ];
+        // Jadwal Kerja
+        $jadwalKerja = [
+            'd61ddc4b-f97c-4361-935a-26718af856d7',
+            '2d377da7-19fd-4459-8a1b-fd5bf5b390a3',
+            'ddcfd64a-dae4-4044-a58f-ae7035108a92',
+        ];
 
-        // $tgl = 1;
-        // $pertaminaDex = $this->flip_row_col_array($pertadex);
-        // $standMeterLast = 134082;
-        // for ($i = 0; $i < count($pertaminaDex); $i++) {
-        //     for ($j = 0; $j < count($pertaminaDex[$i]); $j++) {
+        $tgl = 1;
+        $pertaminaDex = $this->flip_row_col_array($pertadex);
+        $standMeterLast = 134082;
+        for ($i = 0; $i < count($pertaminaDex); $i++) {
+            for ($j = 0; $j < count($pertaminaDex[$i]); $j++) {
 
-        //         $nozzleN1->stand_meter()->create([
-        //             'dombak_id' => $dombakPl->dombak_id,
-        //             'jam_kerja_id' => $jadwalKerja[$j],
-        //             'tanggal' => '2024-01-' . ($tgl + $i),
-        //             'stand_meter_awal' => $standMeterLast,
-        //             'stand_meter_akhir' => $standMeterLast + $pertaminaDex[$i][$j],
-        //             'is_confirmation' => false
-        //         ]);
+                $nozzleN1->stand_meter()->create([
+                    'dombak_id' => $dombakPl->dombak_id,
+                    'jam_kerja_id' => $jadwalKerja[$j],
+                    'tanggal' => '2024-01-' . ($tgl + $i),
+                    'stand_meter_awal' => $standMeterLast,
+                    'stand_meter_akhir' => $standMeterLast + $pertaminaDex[$i][$j],
+                    'is_confirmation' => false
+                ]);
 
-        //         $standMeterLast += $pertaminaDex[$i][$j];
-        //     }
-        // }
+                $standMeterLast += $pertaminaDex[$i][$j];
+            }
+        }
 
         return response()->json([
             'data' => [],

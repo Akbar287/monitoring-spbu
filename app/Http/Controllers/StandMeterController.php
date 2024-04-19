@@ -6,6 +6,7 @@ use App\Http\Requests\StandMeterRequest;
 use App\Models\Dombak;
 use App\Models\JamKerja;
 use App\Models\Nozzle;
+use App\Models\Produk;
 use App\Models\StandMeter;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -22,6 +23,8 @@ class StandMeterController extends Controller
      */
     public function index(Request $request)
     {
+        $produk = Produk::select()->orderBy('nama_produk', 'asc')->get();
+        $produkSelected = $request->produk_id ??  'all';
         $waktuMulai = $request->has('waktu_mulai') ? Carbon::createFromFormat('Y-m-d', $request->waktu_mulai) : Carbon::now()->firstOfMonth();
         $waktuSelesai = $request->has('waktu_selesai') ? Carbon::createFromFormat('Y-m-d', $request->waktu_selesai) : Carbon::now()->endOfMonth();
         if ($waktuMulai->gt($waktuSelesai)) {
@@ -33,7 +36,7 @@ class StandMeterController extends Controller
         $waktuSelesai = $waktuSelesai->format('Y-m-d');
 
         if ($request->ajax()) {
-            $data = StandMeter::where('stand_meter_akhir', null)->orWhere('is_confirmation', false)->whereBetween('tanggal', [$waktuMulai, $waktuSelesai])->get();
+            $data = $produkSelected === 'all' ?  StandMeter::where('stand_meter_akhir', null)->orWhere('is_confirmation', false)->whereBetween('tanggal', [$waktuMulai, $waktuSelesai])->join('nozzle', 'nozzle.nozzle_id', 'stand_meter.nozzle_id')->get() : StandMeter::where('stand_meter_akhir', null)->orWhere('is_confirmation', false)->whereBetween('tanggal', [$waktuMulai, $waktuSelesai])->where('nozzle.produk_id', $produkSelected)->join('nozzle', 'nozzle.nozzle_id', 'stand_meter.nozzle_id')->get();
             return DataTables::of($data)
                 ->addIndexColumn()
                 ->addColumn('nozzle', function ($row) {
@@ -67,7 +70,7 @@ class StandMeterController extends Controller
                 ->rawColumns(['action', 'status'])
                 ->make(true);
         }
-        return view('stok/totalisator/index', compact('waktuMulai', 'waktuSelesai'));
+        return view('stok/totalisator/index', compact('waktuMulai', 'waktuSelesai', 'produk', 'produkSelected'));
     }
 
     public function riwayat(Request $request)
