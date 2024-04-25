@@ -30,7 +30,7 @@ class MemberRequest extends FormRequest
             'no_hp' => ['string'],
             'no_wa' => ['string'],
             'bergabung_sejak' => ['date', 'required'],
-            'username' => ['string', 'required'],
+            'username' => ['string', 'required', 'unique:userlogin,username'],
             'password' => ['string', 'required'],
         ];
     }

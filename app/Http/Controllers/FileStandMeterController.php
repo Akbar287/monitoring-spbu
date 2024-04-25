@@ -52,7 +52,10 @@ class FileStandMeterController extends Controller
             $request->file('gambar')->storeAs('public/file_stand_meter', $foto);
         }
 
-        $file = $standMeter->file_stand_meter()->create($this->fileStandMeterData($foto, $filenameWithExt));
+        $file = $standMeter->file_stand_meter()->where('nama_file', $foto)->where('nama_dokumen', $filenameWithExt)->where('tanggal_upload', date('Y-m-d'))->first();
+        if (is_null($file)) {
+            $file = $standMeter->file_stand_meter()->create($this->fileStandMeterData($foto, $filenameWithExt));
+        }
 
         return redirect('/stok/totalisator/' . $standMeter->stand_meter_id . '/file/' . $file->file_stand_meter_id)->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> Data File Stand Meter sudah ditambah.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
     }
@@ -160,7 +163,10 @@ class FileStandMeterController extends Controller
             $request->file('gambar')->storeAs('public/file_stand_meter', $foto);
         }
 
-        $file = $standMeter->file_stand_meter()->create($this->fileStandMeterData($foto, $filenameWithExt));
+        $file = $standMeter->file_stand_meter()->where('nama_file', $foto)->where('nama_dokumen', $filenameWithExt)->where('tanggal_upload', date('Y-m-d'))->first();
+        if (is_null($file)) {
+            $file = $standMeter->file_stand_meter()->create($this->fileStandMeterData($foto, $filenameWithExt));
+        }
 
         return redirect('/stok/totalisator/riwayat/' . $standMeter->stand_meter_id . '/file/' . $file->file_stand_meter_id)->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> Data File Stand Meter sudah ditambah.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
     }

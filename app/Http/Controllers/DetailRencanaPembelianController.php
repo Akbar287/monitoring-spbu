@@ -57,10 +57,14 @@ class DetailRencanaPembelianController extends Controller
             "satuan_jumlah" => ["required"],
         ]);
 
-        $detail = $rencana->detail_rencana_pembelian()->create($this->detailData());
-
         $harga = $this->getHargaSatuanProduk(request('produk_id'));
-        $rencana->update(['grand_total' => $rencana->grand_total + ($harga * str_replace(',', '', request('jumlah')))]);
+
+        $detail = $rencana->detail_rencana_pembelian()->where("produk_id", request('produk_id'))->where("jumlah", str_replace(',', '', request('jumlah')))->where("satuan_jumlah", request('satuan_jumlah'))->where("rit", $this->checkRecommendedRit(str_replace(',', '', request('jumlah'))))->where("harga", $harga)->where("total_harga", $harga * str_replace(',', '', request('jumlah')))->where("is_confirmation", false)->where("ms2", false)->where("delivery", false)->first();
+        if (is_null($detail)) {
+            $detail = $rencana->detail_rencana_pembelian()->create($this->detailData());
+            $rencana->update(['grand_total' => $rencana->grand_total + ($harga * str_replace(',', '', request('jumlah')))]);
+        }
+
 
         return redirect('/procurement/perencanaan/' . $rencana->rencana_pembelian_id . '/produk/' . $detail->detail_rencana_pembelian_id)->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> Data Produk Rencana Pembelian sudah ditambah.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
     }

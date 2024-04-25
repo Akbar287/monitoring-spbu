@@ -56,11 +56,27 @@ class MemberController extends Controller
      */
     public function store(MemberRequest $memberRequest)
     {
-        $ktp = Ktp::create($this->ktpData());
-        $member = $ktp->member()->create($this->memberData());
-        $userlogin = $member->user_login()->create($this->userloginData());
+        $ktp = Ktp::where('nik', request('nik'),)->where('nama', request('nama'))->where('tempat_lahir', request('tempat_lahir'))->where('tanggal_lahir', request('tanggal_lahir'))->where('jenis_kelamin', request('jenis_kelamin'))->where('verified', request('verified'))->first();
+        if (is_null($ktp)) {
+            $ktp = Ktp::create($this->ktpData());
+        }
 
-        return redirect('/master/member/' . $member->member_id)->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> Data Member sudah ditambah.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
+        $member = $ktp->member()->where('status_member_id', request('status_member_id'))->where('email', request('email'))->where('no_hp', request('no_hp'))->where('no_wa', request('no_wa'))->where('avatar', request('avatar') != null ? request('avatar') : 'default.png')->where('bergabung_sejak', request('bergabung_sejak'))->first();
+        if (is_null($member)) {
+            $member = $ktp->member()->create($this->memberData());
+        }
+
+        $userlogin = $member->user_login()->where('username', request('username'))->where('is_aktif', request('is_aktif') != null ? request('is_aktif') : false)->first();
+        if (is_null($userlogin)) {
+            $userlogin = $member->user_login()->create($this->userloginData());
+        }
+
+        if (is_null($member)) {
+            $member = $userlogin->member()->first();
+            return redirect('/master/member/' . $userlogin->member()->first()->member_id)->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> Data Member sudah ditambah.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
+        } else {
+            return redirect('/master/member/' . $member->member_id)->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> Data Member sudah ditambah.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
+        }
     }
 
     /**
@@ -87,7 +103,7 @@ class MemberController extends Controller
     {
         $member->update($this->memberData());
         $member->ktp()->update($this->ktpData());
-        $member->user_login()->update($this->userloginData($memberRequest->password != null || $memberRequest->password != '' ? $memberRequest->password : $member->user_login()->first()->password));
+        $member->user_login()->update($this->userloginData($memberRequest->password != null || $memberRequest->password != '' ? Hash::create($memberRequest->password) : $member->user_login()->first()->password));
 
         return redirect('/master/member/' . $member->member_id)->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> Data Member sudah diubah.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
     }
@@ -166,14 +182,22 @@ class MemberController extends Controller
     public function member_jabatan_create(Request $request, Member $member)
     {
         if ($request->ajax()) {
-            $data = Jabatan::select('jabatan.*');
+            $data = Jabatan::get();
             return DataTables::of($data)
                 ->addIndexColumn()
                 ->addColumn('nama_divisi', function ($row) {
-                    return $row->level()->first()->divisi()->first()->nama_divisi;
+                    if (is_null($row->level()->first())) {
+                        return 'No Level';
+                    } else {
+                        if (is_null($row->level()->first()->divisi()->first())) {
+                            return 'No Level';
+                        } else {
+                            return $row->level()->first()->divisi()->first()->nama_divisi ?? 'Tidak ada Data';
+                        }
+                    }
                 })
                 ->addColumn('nama_level', function ($row) {
-                    return $row->level()->first()->nama_level;
+                    return $row->level()->first()->nama_level ?? '-';
                 })
                 ->addColumn('action', function ($row) {
                     $actionBtn = $row->member()->where('member.member_id', Route::getCurrentRoute()->originalParameters()['member'])->count() > 0 ? 'Sudah'  : '<form action="' . url('/master/member/' . Route::getCurrentRoute()->originalParameters()['member'] . '/jabatan/' . $row->jabatan_id) . '" method="POST">' . csrf_field() . '<button class="edit btn btn-success btn-sm" title="Pilih" type="submit">Pilih</button></form>';

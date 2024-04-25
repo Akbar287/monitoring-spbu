@@ -44,7 +44,11 @@ class AsetController extends Controller
     public function store(AsetRequest $asetRequest)
     {
         $spbu = Spbu::find($asetRequest->spbu_id);
-        $aset = $spbu->aset()->create($this->asetData());
+
+        $aset = $spbu->aset()->where('nama_aset', request('nama_aset'))->where('jumlah', request('jumlah'))->where('tanggal_digunakan', request('tanggal_digunakan'))->where('harga', str_replace(',', '', request('harga')))->where('penyusutan_per_hari', str_replace(',', '', request('penyusutan_per_hari')))->first();
+        if (is_null($aset)) {
+            $aset = $spbu->aset()->create($this->asetData());
+        }
 
         return redirect('/master/aset/' . $aset->aset_id)->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> Data Aset sudah ditambah.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
     }

@@ -11,8 +11,7 @@ Auth::routes([
 
 // Route::get('/hash', function () {return hash('sha512', 'BARBIE_SPBU2434520_20240406_38271517-f3e7-4d21-92cc-a114e3f37eaa_f2837222-44c8-4deb-8d6b-c9458b0514ce');})->name('uploadTest');
 // Route::get('/upload', [App\Http\Controllers\WelcomeController::class, 'uploadTest'])->name('uploadTest');
-
-Route::get('/upload', [App\Http\Controllers\DumpController::class, 'uploadDataTotalisator'])->name('uploadDataTotalisator');
+Route::get('/upload', [App\Http\Controllers\DumpController::class, 'uploadDataStokTaking'])->name('uploadDataStokTaking');
 
 Route::middleware(['auth', 'cache.header'])->group(function ($route) {
     $route->get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
@@ -195,7 +194,12 @@ Route::middleware(['auth', 'cache.header'])->group(function ($route) {
     $route->get('/procurement/pembayaran/{rencana}/{pembayaran}', [App\Http\Controllers\PembayaranController::class, 'detail'])->name('pembayaran.detail');
     $route->get('/procurement/pembayaran/{rencana}/{pembayaran}/edit', [App\Http\Controllers\PembayaranController::class, 'edit'])->name('pembayaran.edit');
     $route->put('/procurement/pembayaran/{rencana}/{pembayaran}', [App\Http\Controllers\PembayaranController::class, 'update'])->name('pembayaran.update');
-    $route->put('/procurement/pembayaran/{rencana}/{pembayaran}/confirmation', [App\Http\Controllers\PembayaranController::class, 'update_confirmation'])->name('pembayaran.update.confirmation');
+
+    $route->put('/procurement/pembayaran/{rencana}/{pembayaran}/confirmation_admin_ok', [App\Http\Controllers\PembayaranController::class, 'update_confirmation_admin_ok'])->name('pembayaran.update.confirmation_admin_ok');
+    $route->put('/procurement/pembayaran/{rencana}/{pembayaran}/confirmation_admin_no', [App\Http\Controllers\PembayaranController::class, 'update_confirmation_admin_no'])->name('pembayaran.update.confirmation_admin_no');
+    $route->put('/procurement/pembayaran/{rencana}/{pembayaran}/confirmation_top_ok', [App\Http\Controllers\PembayaranController::class, 'update_confirmation_top_ok'])->name('pembayaran.update.confirmation_top_ok');
+    $route->put('/procurement/pembayaran/{rencana}/{pembayaran}/confirmation_top_no', [App\Http\Controllers\PembayaranController::class, 'update_confirmation_top_no'])->name('pembayaran.update.confirmation_top_no');
+
     $route->delete('/procurement/pembayaran/{rencana}/{pembayaran}', [App\Http\Controllers\PembayaranController::class, 'destroy'])->name('pembayaran.destroy');
 
     $route->get('/procurement/pembayaran/{rencana}/{pembayaran}/tambah', [App\Http\Controllers\PembayaranController::class, 'file_create'])->name('pembayaran.file.create');

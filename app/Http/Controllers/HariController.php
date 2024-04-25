@@ -45,7 +45,10 @@ class HariController extends Controller
      */
     public function store(HariRequest $hariRequest)
     {
-        $hari = Hari::create($this->hariData());
+        $hari = Hari::where('nama_hari', request('nama_hari'))->where('hari_kerja', request('hari_kerja') == 'true' ? true : false)->where('keterangan', request('keterangan'))->first();
+        if (is_null($hari)) {
+            $hari = Hari::create($this->hariData());
+        }
 
         return redirect('/konfigurasi/hari/' . $hari->hari_id)->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> Data Hari sudah ditambah.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
     }

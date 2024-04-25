@@ -72,12 +72,23 @@ class FileLoController extends Controller
 
         $detailRencana = DetailRencanaPembelian::where('detail_rencana_pembelian_id', $fileLoRequest->detail_rencana_pembelian_id)->first();
 
-        $file_lo = $pengiriman->file_lo()->create($this->fileLoData($detailRencana, $filenameWithExt, $foto));
+        $file_lo = $pengiriman->file_lo()->where('produk_id', $detailRencana->produk_id)->where('jumlah', str_replace(',', '', request('jumlah')))->where('satuan_jumlah', $detailRencana->satuan_jumlah)->where('no_faktur', request('no_faktur'))->where('no_lo', request('no_lo'))->where('tanggal_upload', date('Y-m-d'))->where('nama_dokumen', $filenameWithExt)->where('nama_file', $foto)->first();
+        if (is_null($file_lo)) {
+            $file_lo = $pengiriman->file_lo()->create($this->fileLoData($detailRencana, $filenameWithExt, $foto));
+        }
 
-        DB::table('detail_rencana_file')->insert([
-            'detail_rencana_pembelian_id' => request('detail_rencana_pembelian_id'),
-            'file_lo_id' => $file_lo->file_lo_id
-        ]);
+        if (DB::table('detail_rencana_file')->where(
+            'detail_rencana_pembelian_id',
+            request('detail_rencana_pembelian_id')
+        )->where(
+            'file_lo_id',
+            $file_lo->file_lo_id
+        )->count() == 0) {
+            DB::table('detail_rencana_file')->insert([
+                'detail_rencana_pembelian_id' => request('detail_rencana_pembelian_id'),
+                'file_lo_id' => $file_lo->file_lo_id
+            ]);
+        }
 
         return redirect('/procurement/delivery/' . $rencana->rencana_pembelian_id . '/' . $pengiriman->pengiriman_id . '/' . $file_lo->file_lo_id)->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> Data File LO sudah ditambah.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
     }

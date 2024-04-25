@@ -42,7 +42,10 @@ class SpbuController extends Controller
      */
     public function store(SpbuRequest $spbuRequest)
     {
-        $spbu = Spbu::create($this->spbuData());
+        $spbu = Spbu::where('nama_spbu', request('nama_spbu'))->where('nomor_spbu', request('nomor_spbu'))->where('tanggal_pendirian', request('tanggal_pendirian'))->where('luas_lahan', request('luas_lahan'))->where('satuan_luas', request('satuan_luas'))->where('alamat', request('alamat'))->first();
+        if (is_null($spbu)) {
+            $spbu = Spbu::create($this->spbuData());
+        }
 
         return redirect('/konfigurasi/spbu/' . $spbu->spbu_id)->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> Data Spbu sudah ditambah.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
     }

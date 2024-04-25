@@ -48,7 +48,11 @@ class LevelController extends Controller
     public function store(LevelRequest $levelRequest)
     {
         $divisi = Divisi::find($levelRequest->divisi_id);
-        $level = $divisi->level()->create($this->levelData());
+
+        $level = $divisi->level()->where('nama_level', request('nama_level'))->where('keterangan', request('keterangan'))->where('is_aktif', request('is_aktif') == 'true' ? true : false)->first();
+        if (is_null($level)) {
+            $level = $divisi->level()->create($this->levelData());
+        }
 
         return redirect('/konfigurasi/level/' . $level->level_id)->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> Data Level sudah ditambah.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
     }

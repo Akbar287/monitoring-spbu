@@ -58,7 +58,10 @@ class FileLampiranLoController extends Controller
             $request->file('gambar')->storeAs('public/file_lampiran_lo', $foto);
         }
 
-        $fileLampiranLo = $file_lo->file_lampiran_lo()->create($this->fileLampiranLo($foto, $filenameWithExt));
+        $fileLampiranLo = $file_lo->file_lampiran_lo()->where('nama_file', $foto)->where('nama_dokumen', $filenameWithExt)->where('tanggal_upload', date('Y-m-d'))->first();
+        if (is_null($fileLampiranLo)) {
+            $fileLampiranLo = $file_lo->file_lampiran_lo()->create($this->fileLampiranLo($foto, $filenameWithExt));
+        }
 
         return redirect('/procurement/ms2/pengiriman/' . $pengiriman->pengiriman_id . '/file_lo_show/' . $file_lo->file_lo_id . '/lampiran/' . $fileLampiranLo->file_lampiran_lo)->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> File Lampiran Lo sudah ditambahkan.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
     }

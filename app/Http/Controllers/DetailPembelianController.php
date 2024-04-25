@@ -88,7 +88,10 @@ class DetailPembelianController extends Controller
         if ($pembelian->pajak_pembelian()->count() > 0) {
             $pembelian->pajak_pembelian()->delete();
         }
-        $pembelian->pajak_pembelian()->create($pajak);
+
+        if ($pembelian->pajak_pembelian()->where('pajak_pembelian_lib_id', $pajakLib->pajak_pembelian_lib_id)->where('ppn', ($pajakLib->ppn / 100) * $grandTotal)->where('pph', ($pajakLib->pph / 100) * $grandTotal)->where('ppbkb', ($pajakLib->ppbkb / 100) * $grandTotal)->where('net_price', $grandTotal)->where('total_amount', $grandTotal + (($pajakLib->ppn / 100) * $grandTotal) + (($pajakLib->pph / 100) * $grandTotal) + (($pajakLib->ppbkb / 100) * $grandTotal))->first()) {
+            $pembelian->pajak_pembelian()->create($pajak);
+        }
 
         return redirect('/procurement/pembelian/' . $pembelian->rencana_pembelian_id . '/produk/' . $detail->detail_rencana_pembelian_id)->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> Data Produk Rencana Pembelian sudah diubah.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
     }

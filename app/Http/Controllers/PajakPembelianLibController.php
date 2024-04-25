@@ -49,7 +49,10 @@ class PajakPembelianLibController extends Controller
      */
     public function store(PajakPembelianLibRequest $pajakPembelianLibRequest)
     {
-        $pajakPembelianLib = PajakPembelianLib::create($this->pajakPembelianLibData());
+        $pajakPembelianLib = PajakPembelianLib::where('ppn', request('ppn'))->where('ppbkb', request('ppbkb'))->where('pph', request('pph'))->where('is_aktif', request('is_aktif'))->first();
+        if (is_null($pajakPembelianLib)) {
+            $pajakPembelianLib = PajakPembelianLib::create($this->pajakPembelianLibData());
+        }
 
         return redirect('/konfigurasi/pajak/' . $pajakPembelianLib->pajak_pembelian_lib_id)->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> Data Pajak Pembelian Library sudah ditambah.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
     }

@@ -128,9 +128,26 @@ class RencanaPembelianController extends Controller
         $spbu = Spbu::find($request->spbu_id);
         $statusPurchase = StatusPurchase::where("nama_status", "Rencana")->first();
 
-        $rencana = Auth::user()->member()->first()->rencana_pembelian()->create($this->rencanaData($spbu, $statusPurchase, null));
+        $kode = $this->generateKodePembelian();
+        $rencana = Auth::user()->member()->first()->rencana_pembelian()->where("status_purchase_id", $statusPurchase->status_purchase_id)->where("spbu_id", $spbu->spbu_id)->where("grand_total", 0)->where('kode_pembelian', $kode)->where("pembelian_id", null)->where("tanggal_pembelian", null)->where("keterangan", request('keterangan'))->where("keterangan_denied", null)->where("is_confirmation", false)->where("is_denied", false)->first();
 
-        return redirect('/procurement/perencanaan/' . $rencana->rencana_pembelian_id)->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> Data Rencana Pembelian sudah ditambah.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
+        if (is_null($rencana)) {
+            $rencana = RencanaPembelian::firstOrCreate([
+                "status_purchase_id" => $statusPurchase->status_purchase_id,
+                "spbu_id" => $spbu->spbu_id,
+                'member_id' => Auth::user()->member_id,
+                "grand_total" => 0,
+                'kode_pembelian' => $kode,
+                "pembelian_id" => null,
+                "tanggal_pembelian" => null,
+                "keterangan" => request('keterangan'),
+                "keterangan_denied" => null,
+                "is_confirmation" => false,
+                "is_denied" => false,
+            ]);
+        }
+
+        return redirect()->route('perencanaan.show', $rencana->rencana_pembelian_id)->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> Data Rencana Pembelian sudah ditambah.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
     }
 
     /**
@@ -234,14 +251,18 @@ class RencanaPembelianController extends Controller
 
         $lib = PajakPembelianLib::where('is_aktif', true)->first();
 
-        $rencana->pajak_pembelian()->create([
-            'pajak_pembelian_lib_id' => $lib->pajak_pembelian_lib_id,
-            'net_price' => $rencana->grand_total,
-            'ppn' => $rencana->grand_total * ($lib->ppn / 100),
-            'ppbkb' => $rencana->grand_total * ($lib->ppbkb / 100),
-            'pph' => $rencana->grand_total * ($lib->pph / 100),
-            'total_amount' => $rencana->grand_total + $rencana->grand_total * ($lib->ppn / 100) + $rencana->grand_total * ($lib->ppbkb / 100) + $rencana->grand_total * ($lib->pph / 100)
-        ]);
+        $total = $rencana->grand_total + $rencana->grand_total * ($lib->ppn / 100) + $rencana->grand_total * ($lib->ppbkb / 100) + $rencana->grand_total * ($lib->pph / 100);
+
+        if (is_null($rencana->pajak_pembelian()->where('pajak_pembelian_lib_id', $lib->pajak_pembelian_lib_i)->where('net_price', $rencana->grand_total)->where('ppn', $rencana->grand_total * ($lib->ppn / 100))->where('ppbkb', $rencana->grand_total * ($lib->ppbkb / 100))->where('pph', $rencana->grand_total * ($lib->pph / 100))->where('total_amount', $total)->first())) {
+            $rencana->pajak_pembelian()->create([
+                'pajak_pembelian_lib_id' => $lib->pajak_pembelian_lib_id,
+                'net_price' => $rencana->grand_total,
+                'ppn' => $rencana->grand_total * ($lib->ppn / 100),
+                'ppbkb' => $rencana->grand_total * ($lib->ppbkb / 100),
+                'pph' => $rencana->grand_total * ($lib->pph / 100),
+                'total_amount' => $total
+            ]);
+        }
 
         return redirect('/procurement/perencanaan/' . $rencana->rencana_pembelian_id)->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> Data Rencana Pembelian sudah terkonfirmasi.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
     }

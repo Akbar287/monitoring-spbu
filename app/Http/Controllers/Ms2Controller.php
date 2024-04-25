@@ -93,7 +93,10 @@ class Ms2Controller extends Controller
     }
     public function store_pengiriman(Request $request)
     {
-        $pengiriman = Pengiriman::create($this->pengirimanData());
+        $pengiriman = Pengiriman::where('member_id', request('member_id'))->where('no_do', request('no_do'))->where('no_pol', request('no_pol'))->where('tanggal', request('tanggal'))->where('is_confirmation_admin', false)->where('is_done', false)->where('ms2', true)->where('catatan', request('catatan'))->first();
+        if (is_null($pengiriman)) {
+            $pengiriman = Pengiriman::create($this->pengirimanData());
+        }
 
         return redirect('/procurement/ms2/pengiriman/' . $pengiriman->pengiriman_id)->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> Data Pengiriman sudah ditambah.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
     }
@@ -216,21 +219,25 @@ class Ms2Controller extends Controller
             'ms2' => false
         ]);
 
-        $file_lo = $pengiriman->file_lo()->create([
-            'produk_id' => $detail_rencana_pembelian->produk_id,
-            'jumlah' => $detail_rencana_pembelian->jumlah,
-            'satuan_jumlah' => $detail_rencana_pembelian->satuan_jumlah,
-            'no_faktur' => request('no_faktur'),
-            'no_lo' => request('no_lo'),
-            'nama_dokumen' => $filenameWithExt,
-            'nama_file' => $foto,
-            'tanggal_upload' => date('Y-m-d'),
-        ]);
+        $file_lo = $pengiriman->file_lo()->where('produk_id', $detail_rencana_pembelian->produk_id)->where('jumlah', $detail_rencana_pembelian->jumlah)->where('satuan_jumlah', $detail_rencana_pembelian->satuan_jumlah)->where('no_faktur', request('no_faktur'))->where('no_lo', request('no_lo'))->where('nama_dokumen', $filenameWithExt)->where('nama_file', $foto)->where('tanggal_upload', date('Y-m-d'))->first();
+        if (is_null($file_lo)) {
+            $file_lo = $pengiriman->file_lo()->create([
+                'produk_id' => $detail_rencana_pembelian->produk_id,
+                'jumlah' => $detail_rencana_pembelian->jumlah,
+                'satuan_jumlah' => $detail_rencana_pembelian->satuan_jumlah,
+                'no_faktur' => request('no_faktur'),
+                'no_lo' => request('no_lo'),
+                'nama_dokumen' => $filenameWithExt,
+                'nama_file' => $foto,
+                'tanggal_upload' => date('Y-m-d'),
+            ]);
 
-        DB::table('detail_rencana_file')->insert([
-            'detail_rencana_pembelian_id' => request('detail_rencana_pembelian_id'),
-            'file_lo_id' => $file_lo->file_lo_id
-        ]);
+            DB::table('detail_rencana_file')->insert([
+                'detail_rencana_pembelian_id' => request('detail_rencana_pembelian_id'),
+                'file_lo_id' => $file_lo->file_lo_id
+            ]);
+        }
+
 
         return redirect('/procurement/ms2/pengiriman/' . $pengiriman->pengiriman_id . '/file_lo_show/' . $file_lo->file_lo_id)->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> Data File LO sudah Di simpan.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
     }

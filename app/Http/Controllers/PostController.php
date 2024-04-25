@@ -53,7 +53,11 @@ class PostController extends Controller
      */
     public function store(PostRequest $postRequest)
     {
-        $post = Post::create($this->postData());
+        $post = Post::where('member_id', Auth::user()->member_id)->where('title', request('title'))->where('content', request('content'))->where('active', request('active') == 'true')->first();
+        if (is_null($post)) {
+            $post = Post::create($this->postData());
+        }
+
         if (count($postRequest->tag) > 0) {
             foreach ($postRequest->tag as $t) {
                 DB::table('tag_post')->insert([

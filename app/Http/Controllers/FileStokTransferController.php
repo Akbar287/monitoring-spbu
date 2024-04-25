@@ -61,7 +61,11 @@ class FileStokTransferController extends Controller
             $request->file('gambar')->storeAs('public/file_dokumen_stok', $foto);
         }
 
-        $file = $dokumenStok->file_dokumen_stok()->create($this->fileDokumenStokData($filenameWithExt, $foto));
+        $file = $dokumenStok->file_dokumen_stok()->where('tanggal_upload', date('Y-m-d'))->where('nama_dokumen', $filenameWithExt)->where('nama_file', $foto)->first();
+        if (is_null($file)) {
+            $file = $dokumenStok->file_dokumen_stok()->create($this->fileDokumenStokData($filenameWithExt, $foto));
+        }
+
         return redirect('/stok/stok-transfer/' . $dombakTransfer->dombak_transfer_id . '/stok/' . $dokumenStok->dokumen_stok_id . '/file/' . $file->file_dokumen_stok_id)->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> File Dombak Transfer sudah ditambahkan.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
     }
 

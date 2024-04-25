@@ -49,7 +49,10 @@ class PettyCashController extends Controller
     {
         $spbu = Spbu::where('spbu_id', $pettyCashRequest->spbu_id)->first();
 
-        $pettyCash = $spbu->petty_cash()->create($this->pettyCashData());
+        $pettyCash = $spbu->petty_cash()->where('no_kode', request('no_kode'))->where('no_bukti', request('no_bukti'))->where('keterangan', request('keterangan'))->where('jumlah', str_replace(',', '', request('jumlah')))->where('jenis', request('jenis'))->where('tanggal', request('tanggal'))->first();
+        if (is_null($pettyCash)) {
+            $pettyCash = $spbu->petty_cash()->create($this->pettyCashData());
+        }
 
         return redirect('/financial/petty-cash/' . $pettyCash->petty_cash_id)->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> Data Petty Cash sudah ditambah.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
     }

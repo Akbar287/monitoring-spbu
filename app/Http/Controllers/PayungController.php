@@ -51,7 +51,11 @@ class PayungController extends Controller
     public function store(PayungRequest $payungRequest)
     {
         $spbu = Spbu::find($payungRequest->spbu_id);
-        $payung = $spbu->payung()->create($this->payungData());
+
+        $payung = $spbu->payung()->where('nama_payung', request('nama_payung'))->where('keterangan', request('keterangan'))->where('is_aktif', request('is_aktif'))->first();
+        if (is_null($payung)) {
+            $payung = $spbu->payung()->create($this->payungData());
+        }
 
         return redirect('/master/payung/' . $payung->payung_id)->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> Data Payung sudah ditambah.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
     }

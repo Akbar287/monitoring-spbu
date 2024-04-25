@@ -44,7 +44,10 @@ class FasilitasController extends Controller
     public function store(FasilitasRequest $fasilitasRequest)
     {
         $spbu = Spbu::find($fasilitasRequest->spbu_id);
-        $fasilitas = $spbu->fasilitas()->create($this->fasilitasData());
+        $fasilitas = $spbu->fasilitas()->where('nama_fasilitas', request('nama_fasilitas'))->where('jumlah', request('jumlah'))->where('tanggal_digunakan', request('tanggal_digunakan'))->where('keterangan', request('keterangan'))->first();
+        if (is_null($fasilitas)) {
+            $fasilitas = $spbu->fasilitas()->create($this->fasilitasData());
+        }
 
         return redirect('/master/fasilitas/' . $fasilitas->fasilitas_id)->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> Data Fasilitas sudah ditambah.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
     }

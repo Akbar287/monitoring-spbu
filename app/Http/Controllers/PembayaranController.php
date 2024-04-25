@@ -125,7 +125,11 @@ class PembayaranController extends Controller
     }
     public function store(PembayaranRequest $pembayaranRequest, RencanaPembelian $rencana)
     {
-        $pembayaran = $rencana->pembayaran()->create($this->pembayaranData());
+
+        $pembayaran = $rencana->pembayaran()->where("member_id", request('member_id'))->where("no_cek_bg", request('no_cek_bg'))->where("no_rekening", request('no_rekening'))->where("nama_rekening", request('nama_rekening'))->where("total_setoran", str_replace(',', '', request('total_setoran')))->where("is_confirmation_top", false)->where("is_confirmation_admin", false)->where("tanggal", request('tanggal'))->first();
+        if (is_null($pembayaran)) {
+            $pembayaran = $rencana->pembayaran()->create($this->pembayaranData());
+        }
 
         return redirect('/procurement/pembayaran/' . $rencana->rencana_pembelian_id . '/' . $pembayaran->pembayaran_id)->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> Berhasil Menulis Data Pembayaran.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
     }
@@ -158,32 +162,38 @@ class PembayaranController extends Controller
 
         return redirect('/procurement/pembayaran/' . $rencana->rencana_pembelian_id . '/' . $pembayaran->pembayaran_id)->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> Berhasil Mengubah Data Pembayaran.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
     }
-    public function update_confirmation(Request $request, RencanaPembelian $rencana, Pembayaran $pembayaran)
+    public function update_confirmation_admin_ok(Request $request, RencanaPembelian $rencana, Pembayaran $pembayaran)
     {
-        if (Auth::user()->member()->first()->jabatan()->first()->level()->first()->divisi()->first()->nama_divisi == 'Top Manajemen') {
-            if ($pembayaran->is_confirmation_top) {
-                $pembayaran->update(['is_confirmation_top' => false]);
-
-                return redirect('/procurement/pembayaran/' . $rencana->rencana_pembelian_id . '/' . $pembayaran->pembayaran_id)->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> Berhasil Membatalkan Konfirmasi Pembayaran - Top Manajemen.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
-            } else {
-                $pembayaran->update(['is_confirmation_top' => true]);
-
-                return redirect('/procurement/pembayaran/' . $rencana->rencana_pembelian_id . '/' . $pembayaran->pembayaran_id)->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> Berhasil Konfirmasi Pembayaran - Top Manajemen.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
-            }
-        }
-
         if (Auth::user()->member()->first()->jabatan()->first()->nama_jabatan == 'Admin') {
-            if ($pembayaran->is_confirmation_admin) {
-                $pembayaran->update(['is_confirmation_admin' => false]);
-
-                return redirect('/procurement/pembayaran/' . $rencana->rencana_pembelian_id . '/' . $pembayaran->pembayaran_id)->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> Berhasil Membatalkan Konfirmasi Pembayaran - Admin.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
-            } else {
-                $pembayaran->update(['is_confirmation_admin' => true]);
-
-                return redirect('/procurement/pembayaran/' . $rencana->rencana_pembelian_id . '/' . $pembayaran->pembayaran_id)->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> Berhasil Konfirmasi Pembayaran - Admin.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
-            }
+            $pembayaran->update(['is_confirmation_admin' => true]);
+            return redirect('/procurement/pembayaran/' . $rencana->rencana_pembelian_id . '/' . $pembayaran->pembayaran_id)->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> Berhasil Konfirmasi Pembayaran - Admin.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
         }
     }
+    public function update_confirmation_admin_no(Request $request, RencanaPembelian $rencana, Pembayaran $pembayaran)
+    {
+        if (Auth::user()->member()->first()->jabatan()->first()->nama_jabatan == 'Admin') {
+            $pembayaran->update(['is_confirmation_admin' => false]);
+
+            return redirect('/procurement/pembayaran/' . $rencana->rencana_pembelian_id . '/' . $pembayaran->pembayaran_id)->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> Berhasil Membatalkan Konfirmasi Pembayaran - Admin.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
+        }
+    }
+    public function update_confirmation_top_ok(Request $request, RencanaPembelian $rencana, Pembayaran $pembayaran)
+    {
+        if (Auth::user()->member()->first()->jabatan()->first()->level()->first()->divisi()->first()->nama_divisi == 'Top Manajemen') {
+            $pembayaran->update(['is_confirmation_top' => true]);
+
+            return redirect('/procurement/pembayaran/' . $rencana->rencana_pembelian_id . '/' . $pembayaran->pembayaran_id)->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> Berhasil Konfirmasi Pembayaran - Top Manajemen.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
+        }
+    }
+    public function update_confirmation_top_no(Request $request, RencanaPembelian $rencana, Pembayaran $pembayaran)
+    {
+        if (Auth::user()->member()->first()->jabatan()->first()->level()->first()->divisi()->first()->nama_divisi == 'Top Manajemen') {
+            $pembayaran->update(['is_confirmation_top' => false]);
+
+            return redirect('/procurement/pembayaran/' . $rencana->rencana_pembelian_id . '/' . $pembayaran->pembayaran_id)->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> Berhasil Membatalkan Konfirmasi Pembayaran - Top Manajemen.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
+        }
+    }
+
     public function destroy(RencanaPembelian $rencana, Pembayaran $pembayaran)
     {
         $files = $pembayaran->file_pembayaran()->get();
@@ -225,7 +235,10 @@ class PembayaranController extends Controller
             $foto = $filename . '_' . time() . '.' . $extension;
             $request->file('file')->storeAs('public/pembayaran', $foto);
         }
-        $file = $pembayaran->file_pembayaran()->create($this->filePembayaranData($foto, $foto));
+        $file = $pembayaran->file_pembayaran()->where("nama_file", $foto)->where("nama_dokumen", $filenameWithExt)->where("tanggal_upload", date('Y-m-d'))->first();
+        if (is_null($file)) {
+            $file = $pembayaran->file_pembayaran()->create($this->filePembayaranData($foto, $filenameWithExt));
+        }
 
         return redirect('/procurement/pembayaran/' . $rencana->rencana_pembelian_id . '/' . $pembayaran->pembayaran_id . '/' . $file->file_pembayaran_id)->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> Berhasil menambah Data File Pembayaran.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
     }
@@ -252,7 +265,7 @@ class PembayaranController extends Controller
             $request->file('file')->storeAs('public/pembayaran', $foto);
         }
 
-        $file->update($this->filePembayaranData($foto, $foto));
+        $file->update($this->filePembayaranData($foto, $filenameWithExt));
 
         return redirect('/procurement/pembayaran/' . $rencana->rencana_pembelian_id . '/' . $pembayaran->pembayaran_id . '/' . $file->file_pembayaran_id)->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> Berhasil Mengubah Data File Pembayaran.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
     }

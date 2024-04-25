@@ -41,7 +41,10 @@ class TagController extends Controller
      */
     public function store(TagRequest $tagRequest)
     {
-        $tag = Tag::create($this->tagData());
+        $tag = Tag::where('nama_tag', request('nama_tag'))->first();
+        if (is_null($tag)) {
+            $tag = Tag::create($this->tagData());
+        }
 
         return redirect('/artikel/tag/' . $tag->tag_id)->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> Data Tag sudah ditambah.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
     }

@@ -11,6 +11,7 @@ use App\Models\RencanaPembelian;
 use App\Models\Spbu;
 use App\Models\StatusPurchase;
 use App\Models\Supir;
+use App\Models\TypeDokumenStok;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
@@ -19,6 +20,80 @@ class DumpController extends Controller
     public function __construct()
     {
         date_default_timezone_set('Asia/Jakarta');
+    }
+
+    public function uploadDataStokTaking()
+    {
+        $spbu = Spbu::where('nama_spbu', 'SPBU 2434520')->first();
+        $jadwalKerja = [
+            'd61ddc4b-f97c-4361-935a-26718af856d7',
+            '2d377da7-19fd-4459-8a1b-fd5bf5b390a3',
+            'ddcfd64a-dae4-4044-a58f-ae7035108a92',
+        ];
+        $type_dokumen_stock = TypeDokumenStok::select('type_dokumen_stok_id')->where('type_movement', 'Stok Taking')->first();
+
+        $dombakRaw = Dombak::select('nama_dombak', 'dombak_id')->orderBy('nama_dombak', 'asc')->get()->toArray();
+        $dombak = [];
+        foreach ($dombakRaw as $item) {
+            $dombak[$item["nama_dombak"]] = $item["dombak_id"];
+        }
+        unset($dombakRaw);
+        // dd($dombak);
+        // [
+        //     "DM1-PX" => "7ba4e9f2-0e71-402f-8199-4d21f20eea48"
+        //     "DM2-PL" => "8fd5fafd-5add-4688-9b0a-76a8f6e237c4"
+        //     "DM3-DX" => "0e3b3f9c-92fe-452f-9c7e-8d663217315e"
+        //     "DM4-BS" => "67f1255b-3b89-4164-bd0e-ea9279a1b640"
+        //     "DM5-BS" => "b812ee18-7f60-4232-801f-f635bf765dcd"
+        //     "DM6-PDX" => "6affaa45-f173-4605-8a84-08cee72fdf98"
+        // ]
+
+
+        // BioSolar 1
+
+        $stok_inventory = Dombak::where('dombak_id', $dombak['DM4-BS'])->first()->stok_inventory_dombak()->first()->stok_inventory()->first();
+        $dokumenStok = $type_dokumen_stock->dokumen_stok()->create([
+            'stok_inventory_id' => $stok_inventory->stok_inventory_id,
+            'jam_kerja_id' => $request->jam_kerja_id,
+            'member_id' => Auth::user()->member_id,
+            'dombak_id' => $dombak['DM4-BS'],
+            'tanggal' => $request->tanggal,
+            'stok_awal' => $awal,
+            'stok_akhir' => $akhir,
+            'is_confirmation' => false
+        ]);
+
+        DB::table('konversi_dokumen_stok')->insert([
+            'konversi_id' => $tinggiDombak->konversi_id,
+            'dokumen_stok_id' => $dokumenStok->dokumen_stok_id
+        ]);
+
+        $type_losses = JenisLosses::where('jenis_loss', 'Stok Taking')->first();
+        if ($akhir - $awal < 0) {
+            // Loss
+            if (is_null(
+                $dokumenStok->losses()->where('jenis_losses_id', $type_losses->jenis_losses_id)->where('tanggal', $request->tanggal)->where('simbol', 'kurang')->where('jumlah', ($akhir - $awal) * -1)->first()
+            )) {
+                $dokumenStok->losses()->create([
+                    'jenis_losses_id' => $type_losses->jenis_losses_id,
+                    'tanggal' => $request->tanggal,
+                    'simbol' => 'kurang',
+                    'jumlah' => ($akhir - $awal) * -1
+                ]);
+            }
+        } else {
+            // Profit
+            if (is_null(
+                $dokumenStok->losses()->where('jenis_losses_id', $type_losses->jenis_losses_id)->where('tanggal', $request->tanggal)->where('simbol', 'lebih')->where('jumlah', $akhir - $awal)->first()
+            )) {
+                $dokumenStok->losses()->create([
+                    'jenis_losses_id' => $type_losses->jenis_losses_id,
+                    'tanggal' => $request->tanggal,
+                    'simbol' => 'lebih',
+                    'jumlah' => $akhir - $awal
+                ]);
+            }
+        }
     }
 
     public function generatePembelian()
@@ -282,57 +357,42 @@ class DumpController extends Controller
         // Totalisator
         $pertaliteN1 = [
             [
-                2294, 0, 0, 1858, 2581, 1830, 1431, 2017, 1706, 1784, 1574, 1855, 1518, 1724, 1622, 1490, 1641, 1158, 1515, 944, 2090, 486, 1649, 1748, 2400, 1453, 1921, 1854, 1534, 1427
+                3685, 3333, 3447, 0, 3281, 4894, 572, 3477, 4633, 3096, 8192, 4570, 3782, 4115, 3722, 1684, 3773, 3318
             ],
             [
-                3000, 0, 0, 2517, 555, 1336, 542, 1276, 951, 932, 1217, 1002, 1423, 1098, 1085, 1004, 1071, 1289, 1427, 1024, 1700, 1432, 1104, 1517, 1574, 2773, 944, 2004, 1584, 1494
-            ],
-            [
-                0, 0, 0, 0, 0, 1287, 880, 2084, 3321, 1912, 1567, 0, 0, 0, 0, 0, 0, 0, 1100, 0, 70, 1986, 1064, 0, 0, 0, 0, 0, 1864, 0
+                2247, 0, 3614, 3525, 2093, 2998, 3607, 3584, 2136, 0, 0, 3825, 5428, 3149, 3130, 4464, 2425, 3354
             ]
         ];
         $pertaliteN2 = [
             [
-                4565, 0, 0, 3760, 3421, 3927, 2612, 3000, 3229, 3513, 2661, 2937, 3637, 3274, 2842, 2736, 3537, 3116, 3200, 1755, 3310, 1456, 3521, 2999, 3782, 2813, 2855, 3566, 3521, 3011
+                5293, 4937, 4534, 0, 4019, 6172, 552, 4504, 6507, 4875, 11133, 7346, 5273, 6911, 4966, 2093, 5797, 5741
             ],
             [
-                4428, 0, 0, 4143, 925, 2337, 1570, 2254, 1447, 1275, 1821, 2055, 2055, 1895, 2298, 2461, 978, 2197, 1687, 1569, 4019, 3517, 2251, 2532, 2833, 2427, 1121, 3195, 2308, 2509
-            ],
-            [
-                0, 0, 0, 0, 0, 1683, 1100, 4319, 4320, 2339, 2699, 0, 0, 0, 0, 0, 0, 0, 1100, 0, 280, 3889, 2096, 0, 0, 0, 0, 0, 2641, 0
+                3699, 0, 4390, 5168, 2793, 3878, 4373, 4404, 2691, 0, 0, 4815, 6441, 4110, 4867, 6168, 3908, 4444
             ]
         ];
         $bioSolar = [
             [
-                1446, 4516, 4725, 0, 4251, 3406, 3149, 4994, 3959, 3519, 4187, 0, 0, 0, 0, 3953, 0, 11, 0, 2280, 2497, 2463, 2097, 1477, 2052, 5136, 4311, 4004, 3778, 5576, 4139
+                5593, 6319, 5080, 4329, 4365, 4368, 2852, 3448, 2406, 2396, 4276, 2383, 3188, 2440, 3917, 4106, 4438, 5244
             ],
             [
-                2052, 3881, 473, 0, 2183, 1478, 0, 3170, 3833, 3859, 0, 0, 0, 0, 0, 46, 0, 0, 0, 0, 0, 0, 0, 29, 0, 3956, 1207, 2804, 4743, 4876, 2187
-            ],
-            [
-                0, 2910, 0, 0, 0, 0, 22, 1376, 3238, 0, 3406, 0, 1740, 12936, 0, 16001, 7496, 1605, 10074, 2363, 7916, 2127, 10921, 990, 0, 0, 0, 0, 0, 22, 10204
+                2440, 4814, 3712, 3674, 1640, 2332, 2683, 2237, 1270, 0, 0, 1539, 2996, 2538, 2270, 2187, 4700, 4157
             ]
         ];
         $pertamax = [
             [
-                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+                264.89, 252.08, 623.87, 1374.52, 595.22, 612.46, 860.77, 1546.01, 1367.49, 1550.38, 3559.59, 1514.32, 2200.45, 1761.69, 1366.51, 1580.55, 602.98, 429.90,
             ],
             [
-                0, 0, 63, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
-            ],
-            [
-                0, 0, 0, 3.312, 0, 0, 0, 0, 0, 0, 0, 0, 2.751, 1.641, 0, 5.130, 3.165, 1.020, 1.530, 3.369, 2.881, 4.806, 0, 0, 0, 0, 0, 0, 0, 0, 0
+                78.88, 779.81, 183.32, 276.56, 583.67, 695.99, 286.84, 1096.90, 756.28, 0, 0, 1234.66, 916.81, 1904.87, 551.49, 478.31, 633.46, 184.78
             ]
         ];
         $pertadex = [
             [
-                0, 0, 0, 0, 0, 0, 0, 0, 39, 0, 23, 0, 61, 0, 7, 0, 6, 0, 12, 0, 44, 0, 0, 23, 0, 0, 13, 0, 0, 0, 19
+                19, 10, 10, 93, 13, 103, 49, 0, 0, 20, 153, 42, 58, 0, 45, 10, 0, 18
             ],
             [
-                0, 0, 0, 0, 0, 0, 0, 52, 24, 0, 0, 0, 0, 13, 0, 0, 26, 53, 0, 0, 3, 0, 0, 27, 0, 0, 8, 26, 0, 0, 0
-            ],
-            [
-                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+                0, 19, 0, 31, 38, 37, 0, 109, 0, 0, 0, 6, 98, 7, 78, 72, 9, 0
             ]
         ];
 
@@ -341,7 +401,7 @@ class DumpController extends Controller
         // $dombakBs2 = Dombak::where('nama_dombak', 'DM5-BS')->first();
 
         // Nozzle
-        $nozzleN1 = Nozzle::where('nama_nozzle', 'N-3A BS')->first();
+        $nozzleBs1 = Nozzle::where('nama_nozzle', 'N-3A BS')->first();
 
         // Jadwal Kerja
         $jadwalKerja = [
@@ -352,13 +412,13 @@ class DumpController extends Controller
 
         $tgl = 1;
         $bioSolarFlip = $this->flip_row_col_array($bioSolar);
-        $standMeterLast = 13748394;
+        $standMeterLast = 14474241.00;
         for ($i = 0; $i < count($bioSolarFlip); $i++) {
             for ($j = 0; $j < count($bioSolarFlip[$i]); $j++) {
-                $nozzleN1->stand_meter()->create([
+                $nozzleBs1->stand_meter()->create([
                     'dombak_id' => $dombakBs1->dombak_id,
                     'jam_kerja_id' => $jadwalKerja[$j],
-                    'tanggal' => '2024-01-' . ($tgl + $i),
+                    'tanggal' => '2024-04-' . ($tgl + $i),
                     'stand_meter_awal' => $standMeterLast,
                     'stand_meter_akhir' => $standMeterLast + $bioSolarFlip[$i][$j],
                     'is_confirmation' => false
@@ -367,7 +427,6 @@ class DumpController extends Controller
                 $standMeterLast += $bioSolarFlip[$i][$j];
             }
         }
-
 
         // Pertalite
         $dombakPl = Dombak::where('nama_dombak', 'DM2-PL')->first();
@@ -380,19 +439,19 @@ class DumpController extends Controller
         $jadwalKerja = [
             'd61ddc4b-f97c-4361-935a-26718af856d7',
             '2d377da7-19fd-4459-8a1b-fd5bf5b390a3',
-            'ddcfd64a-dae4-4044-a58f-ae7035108a92',
+            // 'ddcfd64a-dae4-4044-a58f-ae7035108a92',
         ];
 
-        $tgl = 2;
+        $tgl = 1;
         $pertaliteN1Flip = $this->flip_row_col_array($pertaliteN1);
-        $standMeterLast = 7701156.00;
+        $standMeterLast = 8086824.00;
         for ($i = 0; $i < count($pertaliteN1Flip); $i++) {
             for ($j = 0; $j < count($pertaliteN1Flip[$i]); $j++) {
 
                 $nozzleN1->stand_meter()->create([
                     'dombak_id' => $dombakPl->dombak_id,
                     'jam_kerja_id' => $jadwalKerja[$j],
-                    'tanggal' => '2024-01-' . ($tgl + $i),
+                    'tanggal' => '2024-04-' . ($tgl + $i),
                     'stand_meter_awal' => $standMeterLast,
                     'stand_meter_akhir' => $standMeterLast + $pertaliteN1Flip[$i][$j],
                     'is_confirmation' => false
@@ -402,16 +461,16 @@ class DumpController extends Controller
             }
         }
 
-        $tgl = 2;
+        $tgl = 1;
         $pertaliteN2Flip = $this->flip_row_col_array($pertaliteN2);
-        $standMeterLast = 8351384.00;
+        $standMeterLast = 9012554.00;
         for ($i = 0; $i < count($pertaliteN2Flip); $i++) {
             for ($j = 0; $j < count($pertaliteN2Flip[$i]); $j++) {
 
                 $nozzleN2->stand_meter()->create([
                     'dombak_id' => $dombakPl->dombak_id,
                     'jam_kerja_id' => $jadwalKerja[$j],
-                    'tanggal' => '2024-01-' . ($tgl + $i),
+                    'tanggal' => '2024-04-' . ($tgl + $i),
                     'stand_meter_awal' => $standMeterLast,
                     'stand_meter_akhir' => $standMeterLast + $pertaliteN2Flip[$i][$j],
                     'is_confirmation' => false
@@ -422,7 +481,6 @@ class DumpController extends Controller
         }
 
         // Pertamax
-
         $dombakPl = Dombak::where('nama_dombak', 'DM1-PX')->first();
 
         // Nozzle
@@ -437,14 +495,14 @@ class DumpController extends Controller
 
         $tgl = 1;
         $pertamaxN1 = $this->flip_row_col_array($pertamax);
-        $standMeterLast = 3.00;
+        $standMeterLast = 24813.73;
         for ($i = 0; $i < count($pertamaxN1); $i++) {
             for ($j = 0; $j < count($pertamaxN1[$i]); $j++) {
 
                 $nozzleN1->stand_meter()->create([
                     'dombak_id' => $dombakPl->dombak_id,
                     'jam_kerja_id' => $jadwalKerja[$j],
-                    'tanggal' => '2024-01-' . ($tgl + $i),
+                    'tanggal' => '2024-04-' . ($tgl + $i),
                     'stand_meter_awal' => $standMeterLast,
                     'stand_meter_akhir' => $standMeterLast + $pertamaxN1[$i][$j],
                     'is_confirmation' => false
@@ -470,14 +528,14 @@ class DumpController extends Controller
 
         $tgl = 1;
         $pertaminaDex = $this->flip_row_col_array($pertadex);
-        $standMeterLast = 134082;
+        $standMeterLast = 136143.00;
         for ($i = 0; $i < count($pertaminaDex); $i++) {
             for ($j = 0; $j < count($pertaminaDex[$i]); $j++) {
 
                 $nozzleN1->stand_meter()->create([
                     'dombak_id' => $dombakPl->dombak_id,
                     'jam_kerja_id' => $jadwalKerja[$j],
-                    'tanggal' => '2024-01-' . ($tgl + $i),
+                    'tanggal' => '2024-04-' . ($tgl + $i),
                     'stand_meter_awal' => $standMeterLast,
                     'stand_meter_akhir' => $standMeterLast + $pertaminaDex[$i][$j],
                     'is_confirmation' => false

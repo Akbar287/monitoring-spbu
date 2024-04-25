@@ -51,7 +51,10 @@ class FileAsetController extends Controller
             $request->file('gambar')->storeAs('public/aset', $foto);
         }
 
-        $fileAset = $aset->file_aset()->create($this->fileAsetData($foto, $filenameWithExt));
+        $fileAset = $aset->file_aset()->where('nama_file', $foto != null ? $foto : request('nama_file'))->where('nama_dokumen', $filenameWithExt != null ? $filenameWithExt : request('nama_dokumen'))->where('tanggal_upload', request('tanggal_upload'))->first();
+        if (is_null($fileAset)) {
+            $fileAset = $aset->file_aset()->create($this->fileAsetData($foto, $filenameWithExt));
+        }
 
         return redirect('/master/aset/' . $aset->aset_id . '/file/' . $fileAset->file_aset_id)->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> File Aset sudah ditambahkan.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
     }

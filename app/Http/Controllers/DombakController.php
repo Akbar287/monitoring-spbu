@@ -48,7 +48,11 @@ class DombakController extends Controller
     public function store(DombakRequest $dombakRequest)
     {
         $spbu = Spbu::find($dombakRequest->spbu_id);
-        $dombak = $spbu->dombak()->create($this->dombakData());
+
+        $dombak = $spbu->dombak()->where('nama_dombak', request('nama_dombak'))->where('keterangan', request('keterangan'))->where('is_aktif', request('is_aktif'))->first();
+        if (is_null($dombak)) {
+            $dombak = $spbu->dombak()->create($this->dombakData());
+        }
 
         return redirect('/master/dombak/' . $dombak->dombak_id)->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> Data Dombak sudah ditambah.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
     }

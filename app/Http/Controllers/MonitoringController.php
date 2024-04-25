@@ -80,14 +80,19 @@ class MonitoringController extends Controller
             }
         }
 
-        $stok = $produk->stok_inventory()->create($this->stokInventoryData($totalStok));
+        $stok = $produk->stok_inventory()->where('stok', $totalStok)->first();
+        if (is_null($stok)) {
+            $stok = $produk->stok_inventory()->create($this->stokInventoryData($totalStok));
+        }
 
         for ($i = 0; $i < count($request->stok); $i++) {
             if ($request->stok[$i] > 0) {
-                $stok->stok_inventory_dombak()->create([
-                    "dombak_id" => $request->dombak_id[$i],
-                    "stok" => $request->stok[$i],
-                ]);
+                if (is_null($stok->stok_inventory_dombak()->where("dombak_id", $request->dombak_id[$i])->where("stok", $request->stok[$i])->first())) {
+                    $stok->stok_inventory_dombak()->create([
+                        "dombak_id" => $request->dombak_id[$i],
+                        "stok" => $request->stok[$i],
+                    ]);
+                }
             }
         }
 
@@ -147,17 +152,22 @@ class MonitoringController extends Controller
                 if ($stok->stok_inventory_dombak()->where('dombak_id', $request->dombak_id[$i])->count() > 0) {
                     $stok->stok_inventory_dombak()->where('dombak_id', $request->dombak_id[$i])->update(['stok' => $request->stok[$i]]);
                 } else {
-                    $stok->stok_inventory_dombak()->create([
-                        'dombak_id' => $request->dombak_id[$i],
-                        'stok' => $request->stok[$i]
-                    ]);
+                    if (is_null($stok->stok_inventory_dombak()->where('dombak_id', $request->dombak_id[$i])->where('stok', $request->stok[$i])->first())) {
+                        $stok->stok_inventory_dombak()->create([
+                            'dombak_id' => $request->dombak_id[$i],
+                            'stok' => $request->stok[$i]
+                        ]);
+                    }
                 }
+
+                $tgl = date('Y-m-d H:i:s');
+                if (is_null($stok->dokumen_stok()->where('member_id', Auth::user()->member_id)->where('jam_kerja_id', $jamKerja->jam_kerja_id)->where('type_dokumen_stok_id', $type->type_dokumen_stok_id)->where('dombak_id', $request->dombak_id[$i])->where('tanggal', $tgl)->where('stok_awal', $awal)->where('stok_akhir', $request->stok[$i])->where('is_confirmation', true)->first()));
                 $stok->dokumen_stok()->create([
                     'member_id' => Auth::user()->member_id,
                     'jam_kerja_id' => $jamKerja->jam_kerja_id,
                     'type_dokumen_stok_id' => $type->type_dokumen_stok_id,
                     'dombak_id' => $request->dombak_id[$i],
-                    'tanggal' => date('Y-m-d H:i:s'),
+                    'tanggal' => $tgl,
                     'stok_awal' => $awal,
                     'stok_akhir' => $request->stok[$i],
                     'is_confirmation' => true

@@ -116,15 +116,27 @@
                                     <a type="button" href="{{ route('pembayaran.edit', [$rencana->rencana_pembelian_id, $pembayaran->pembayaran_id]) }}" class="btn mx-2 btn-success"><i class="fas fa-pen"></i> Ubah</a>
                                     @endif
                                     @if(Auth::user()->member()->first()->jabatan()->first()->level()->first()->divisi()->first()->nama_divisi == 'Top Manajemen')
-                                    <form action="{{ route('pembayaran.update.confirmation', [$rencana->rencana_pembelian_id, $pembayaran->pembayaran_id]) }}" method="POST">@csrf @method('put')
-                                        <button type="submit" onclick="return confirm('Konfirmasi Pembayaran ini!\n Lanjutkan?')" title="Konfirmasi Data" class="btn {{ $pembayaran->is_confirmation_top ? 'btn-danger' : 'btn-info'}} mr-2"><i class="fas fa-check"></i> {{ $pembayaran->is_confirmation_top ? 'Batalkan Konfirmasi' : 'Konfirmasi Top Manajemen'}}</button>
+                                    @if($pembayaran->is_confirmation_top)
+                                    <form action="{{ route('pembayaran.update.confirmation_top_no', [$rencana->rencana_pembelian_id, $pembayaran->pembayaran_id]) }}" method="POST">@csrf @method('put')
+                                        <button type="submit" onclick="return confirm('Tolak Konfirmasi Pembayaran ini!\n Lanjutkan?')" title="Konfirmasi Data" class="btn btn-danger mr-2"><i class="fas fa-times"></i> Batalkan Konfirmasi</button>
                                     </form>
+                                    @else
+                                    <form action="{{ route('pembayaran.update.confirmation_top_ok', [$rencana->rencana_pembelian_id, $pembayaran->pembayaran_id]) }}" method="POST">@csrf @method('put')
+                                        <button type="submit" onclick="return confirm('Konfirmasi Pembayaran ini!\n Lanjutkan?')" title="Konfirmasi Data" class="btn btn-info mr-2"><i class="fas fa-check"></i> Konfirmasi Top Manajemen</button>
+                                    </form>
+                                    @endif
                                     @endif
 
                                     @if(Auth::user()->member()->first()->jabatan()->first()->level()->first()->nama_level == 'Penanggung Jawab')
-                                    <form action="{{ route('pembayaran.update.confirmation', [$rencana->rencana_pembelian_id, $pembayaran->pembayaran_id]) }}" method="POST">@csrf @method('put')
-                                        <button type="submit" onclick="return confirm('Konfirmasi Pembayaran ini!\n Lanjutkan?')" title="Konfirmasi Data" class="btn {{$pembayaran->is_confirmation_admin ? 'btn-danger' : 'btn-info'}} mr-2"><i class="fas fa-check"></i> {{ $pembayaran->is_confirmation_admin ? 'Batalkan Konfirmasi' : 'Konfirmasi Admin'}}</button>
+                                    @if($pembayaran->is_confirmation_admin)
+                                    <form action="{{ route('pembayaran.update.confirmation_admin_no', [$rencana->rencana_pembelian_id, $pembayaran->pembayaran_id]) }}" method="POST">@csrf @method('put')
+                                        <button type="submit" onclick="return confirm('Tolak Konfirmasi Pembayaran ini!\n Lanjutkan?')" title="Konfirmasi Data" class="btn btn-danger mr-2"><i class="fas fa-times"></i>Batalkan Konfirmasi</button>
                                     </form>
+                                    @else
+                                    <form action="{{ route('pembayaran.update.confirmation_admin_ok', [$rencana->rencana_pembelian_id, $pembayaran->pembayaran_id]) }}" method="POST">@csrf @method('put')
+                                        <button type="submit" onclick="return confirm('Konfirmasi Pembayaran ini!\n Lanjutkan?')" title="Konfirmasi Data" class="btn btn-info mr-2"><i class="fas fa-check"></i> Konfirmasi Admin</button>
+                                    </form>
+                                    @endif
                                     @endif
 
                                     @if(Auth::user()->member()->first()->jabatan()->first()->level()->first()->nama_level == 'Penanggung Jawab')

@@ -57,7 +57,11 @@ class KonversiController extends Controller
      */
     public function store(KonversiRequest $konversiRequest, Dombak $dombak)
     {
-        $konversi = $dombak->konversi()->create($this->konversiData($konversiRequest->satuan_ukur_tinggi_id, $konversiRequest->satuan_ukur_volume_id));
+
+        $konversi = $dombak->konversi()->where('satuan_ukur_tinggi_id', $konversiRequest->satuan_ukur_tinggi_id != null ? $konversiRequest->satuan_ukur_tinggi_id : request('satuan_ukur_tinggi_id'))->where('satuan_ukur_volume_id', $konversiRequest->satuan_ukur_volume_id != null ? $konversiRequest->satuan_ukur_volume_id : request('satuan_ukur_volume_id'))->where('tinggi', str_replace(',', '', request('tinggi')))->where('volume', str_replace(',', '', request('volume')))->first();
+        if (is_null($konversi)) {
+            $konversi = $dombak->konversi()->create($this->konversiData($konversiRequest->satuan_ukur_tinggi_id, $konversiRequest->satuan_ukur_volume_id));
+        }
 
         return redirect('/master/dombak/' . $dombak->dombak_id . '/konversi/' . $konversi->konversi_id)->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> Data Konversi sudah ditambah.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
     }

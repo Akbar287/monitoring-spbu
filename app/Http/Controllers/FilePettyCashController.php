@@ -56,7 +56,10 @@ class FilePettyCashController extends Controller
             $request->file('gambar')->storeAs('public/file_petty_cash', $foto);
         }
 
-        $file = $pettyCash->file_petty_cash()->create($this->filePettyCashData($foto, $filenameWithExt));
+        $file = $pettyCash->file_petty_cash()->where('nama_file', $foto)->where('nama_dokumen', $filenameWithExt)->where('tanggal_upload', date('Y-m-d'))->first();
+        if (is_null($file)) {
+            $file = $pettyCash->file_petty_cash()->create($this->filePettyCashData($foto, $filenameWithExt));
+        }
 
         return redirect('/financial/petty-cash/' . $pettyCash->petty_cash_id . '/file/' . $file->file_petty_cash_id)->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> File Petty Cash sudah ditambah.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
     }

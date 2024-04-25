@@ -101,6 +101,12 @@ class StandMeterController extends Controller
                 ->addColumn('jam_kerja', function ($row) {
                     return $row->jam_kerja()->first()->nama_jam_kerja;
                 })
+                ->addColumn('stand_meter_awal', function ($row) {
+                    return number_format($row->stand_meter_awal, 2, ".", ",");
+                })
+                ->addColumn('stand_meter_akhir', function ($row) {
+                    return number_format($row->stand_meter_akhir, 2, ".", ",");
+                })
                 ->addColumn('selisih', function ($row) {
                     return number_format($row->stand_meter_akhir - $row->stand_meter_awal, 2, ".", ",");
                 })

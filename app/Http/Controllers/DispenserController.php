@@ -48,7 +48,10 @@ class DispenserController extends Controller
     public function store(DispenserRequest $dispenserRequest)
     {
         $payung = Payung::find($dispenserRequest->payung_id);
-        $dispenser = $payung->dispenser()->create($this->dispenserData());
+        $dispenser = $payung->dispenser()->where('nama_dispenser', request('nama_dispenser'))->where('keterangan', request('keterangan'))->where('is_aktif', request('is_aktif'))->first();
+        if (is_null($dispenser)) {
+            $dispenser = $payung->dispenser()->create($this->dispenserData());
+        }
 
         return redirect('/master/dispenser/' . $dispenser->dispenser_id)->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> Data Dispenser sudah ditambah.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
     }

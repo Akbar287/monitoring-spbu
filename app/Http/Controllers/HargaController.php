@@ -103,7 +103,12 @@ class HargaController extends Controller
                 'is_default' => false
             ]);
         }
-        $harga = $produk->harga()->create($this->hargaData());
+
+
+        $harga = $produk->harga()->where('jam_kerja_id', request('jam_kerja_id'))->where('tanggal', request('tanggal'))->where('harga_jual', str_replace(',', '', request('harga_jual')))->where('harga_beli', str_replace(',', '', request('harga_beli')))->where('is_default', true)->first();
+        if (is_null($harga)) {
+            $harga = $produk->harga()->create($this->hargaData());
+        }
 
         return redirect('/master/harga/' . $harga->harga_id)->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> Data Harga sudah ditambah.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
     }

@@ -53,7 +53,10 @@ class FileDokumenStokController extends Controller
             $request->file('gambar')->storeAs('public/file_dokumen_stok', $foto);
         }
 
-        $file = $stok->file_dokumen_stok()->create($this->fileDokumenStokData($filenameWithExt, $foto));
+        $file = $stok->file_dokumen_stok()->where('tanggal_upload', date('Y-m-d'))->where('nama_dokumen', $filenameWithExt)->where('nama_file', $foto)->first();
+        if (is_null($file)) {
+            $file = $stok->file_dokumen_stok()->create($this->fileDokumenStokData($filenameWithExt, $foto));
+        }
         return redirect('/stok/stok-taking/' . $stok->dokumen_stok_id . '/file/' . $file->file_stok_taking_id)->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> File Fasilitas sudah ditambahkan.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
     }
 

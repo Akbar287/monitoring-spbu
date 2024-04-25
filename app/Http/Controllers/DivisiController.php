@@ -49,7 +49,11 @@ class DivisiController extends Controller
     public function store(DivisiRequest $divisiRequest)
     {
         $spbu = Spbu::find($divisiRequest->spbu_id);
-        $divisi = $spbu->divisi()->create($this->divisiData());
+
+        $divisi = $spbu->divisi()->where('nama_divisi', request('nama_divisi'))->where('keterangan', request('keterangan'))->where('is_aktif', request('is_aktif') == 'true' ? true : false)->first();
+        if (is_null($divisi)) {
+            $divisi = $spbu->divisi()->create($this->divisiData());
+        }
 
         return redirect('/konfigurasi/divisi/' . $divisi->divisi_id)->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> Data Divisi sudah ditambah.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
     }

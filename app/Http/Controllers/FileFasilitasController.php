@@ -53,7 +53,10 @@ class FileFasilitasController extends Controller
             $request->file('gambar')->storeAs('public/fasilitas', $foto);
         }
 
-        $fileFasilitas = $fasilitas->file_fasilitas()->create($this->fileFasilitasData($foto, $filenameWithExt));
+        $fileFasilitas = $fasilitas->file_fasilitas()->where('nama_file', $foto != null ? $foto : request('nama_file'))->where('nama_dokumen', $filenameWithExt != null ? $filenameWithExt : request('nama_dokumen'))->where('tanggal_upload', request('tanggal_upload'))->first();
+        if (is_null($fileFasilitas)) {
+            $fileFasilitas = $fasilitas->file_fasilitas()->create($this->fileFasilitasData($foto, $filenameWithExt));
+        }
 
         return redirect('/master/fasilitas/' . $fasilitas->fasilitas_id . '/file/' . $fileFasilitas->file_fasilitas_id)->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> File Fasilitas sudah ditambahkan.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
     }

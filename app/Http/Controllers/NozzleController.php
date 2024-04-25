@@ -58,7 +58,11 @@ class NozzleController extends Controller
     public function store(NozzleRequest $nozzleRequest)
     {
         $dispenser = Dispenser::find($nozzleRequest->dispenser_id);
-        $nozzle = $dispenser->nozzle()->create($this->nozzleData());
+
+        $nozzle = $dispenser->nozzle()->where('produk_id', request('produk_id'))->where('nama_nozzle', request('nama_nozzle'))->where('keterangan', request('keterangan'))->where('is_aktif', request('is_aktif'))->first();
+        if (is_null($nozzle)) {
+            $nozzle = $dispenser->nozzle()->create($this->nozzleData());
+        }
 
         return redirect('/master/nozzle/' . $nozzle->nozzle_id)->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> Data Nozzle sudah ditambah.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
     }

@@ -48,8 +48,15 @@ class ProdukController extends Controller
     public function store(ProdukRequest $produkRequest)
     {
         $spbu = Spbu::find($produkRequest->spbu_id);
-        $produk = $spbu->produk()->create($this->produkData());
-        $detail = $produk->detail_produk()->create($this->detailProdukData());
+        $produk = $spbu->produk()->where('nama_produk', request('nama_produk'))->where('is_aktif', request('is_aktif'))->first();
+        if (is_null($produk)) {
+            $produk = $spbu->produk()->create($this->produkData());
+        }
+
+        $detail = $produk->detail_produk()->where('nama_jenis', request('nama_jenis'))->where('oktan', request('oktan'))->first();
+        if (is_null($detail)) {
+            $detail = $produk->detail_produk()->create($this->detailProdukData());
+        }
 
         return redirect('/master/produk/' . $produk->produk_id)->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> Data Produk sudah ditambah.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
     }

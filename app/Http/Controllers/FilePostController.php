@@ -54,7 +54,10 @@ class FilePostController extends Controller
             $request->file('file')->storeAs('public/post', $foto);
         }
 
-        $filePost = $post->file_post()->create($this->filePostData($foto, $filenameWithExt));
+        $filePost = $post->file_post()->where('nama_file', $foto)->where('nama_dokumen', $filenameWithExt)->first();
+        if (is_null($filePost)) {
+            $filePost = $post->file_post()->create($this->filePostData($foto, $filenameWithExt));
+        }
 
         return redirect('/artikel/post/' . $post->post_id . '/file/' . $filePost->file_post_id)->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> File Post sudah ditambahkan.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
     }

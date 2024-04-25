@@ -44,7 +44,11 @@ class JamKerjaController extends Controller
     public function store(JamKerjaRequest $jamKerjaRequest)
     {
         $spbu = Spbu::find($jamKerjaRequest->spbu_id);
-        $jamKerja = $spbu->jam_kerja()->create($this->jamKerjaData());
+
+        $jamKerja = $spbu->jam_kerja()->where("spbu_id", request('spbu_id'))->where("nama_jam_kerja", request('nama_jam_kerja'))->where("batas_awal_in", request('batas_awal_in'))->where("batas_akhir_in", request('batas_akhir_in'))->where("jam_datang_in", request('jam_datang_in'))->where("jam_pulang_out", request('jam_pulang_out'))->where("akhir_out", request('akhir_out'))->where("jam_istirahat", request('jam_istirahat'))->where("masuk_istirahat", request('masuk_istirahat'))->where("batas_telat", request('batas_telat'))->where("urutan", request('urutan'))->first();
+        if (is_null($jamKerja)) {
+            $jamKerja = $spbu->jam_kerja()->create($this->jamKerjaData());
+        }
 
         return redirect('/konfigurasi/jam_kerja/' . $jamKerja->jam_kerja_id)->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> Data Jam Kerja sudah ditambah.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
     }

@@ -134,39 +134,55 @@ class StokTakingController extends Controller
             $awal = Dombak::where('dombak_id', $request->dombak_id)->first()->stok_inventory_dombak()->first()->stok;
             $akhir = $tinggiDombak->volume;
 
-            $dokumenStok = $type_dokumen_stock->dokumen_stok()->create([
-                'stok_inventory_id' => $stok_inventory->stok_inventory_id,
-                'jam_kerja_id' => $request->jam_kerja_id,
-                'member_id' => Auth::user()->member_id,
-                'dombak_id' => $request->dombak_id,
-                'tanggal' => $request->tanggal,
-                'stok_awal' => $awal,
-                'stok_akhir' => $akhir,
-                'is_confirmation' => false
-            ]);
+            $dokumenStok = $type_dokumen_stock->dokumen_stok()->where('stok_inventory_id', $stok_inventory->stok_inventory_id)->where('jam_kerja_id', $request->jam_kerja_id)->where('member_id', Auth::user()->member_id)->where('dombak_id', $request->dombak_id)->where('tanggal', $request->tanggal)->where('stok_awal', $awal)->where('stok_akhir', $akhir)->where('is_confirmation', false)->first();
+            if (is_null($dokumenStok)) {
+                $dokumenStok = $type_dokumen_stock->dokumen_stok()->create([
+                    'stok_inventory_id' => $stok_inventory->stok_inventory_id,
+                    'jam_kerja_id' => $request->jam_kerja_id,
+                    'member_id' => Auth::user()->member_id,
+                    'dombak_id' => $request->dombak_id,
+                    'tanggal' => $request->tanggal,
+                    'stok_awal' => $awal,
+                    'stok_akhir' => $akhir,
+                    'is_confirmation' => false
+                ]);
+            }
 
-            DB::table('konversi_dokumen_stok')->insert([
-                'konversi_id' => $tinggiDombak->konversi_id,
-                'dokumen_stok_id' => $dokumenStok->dokumen_stok_id
-            ]);
+            if (is_null(DB::table('konversi_dokumen_stok')->where(
+                'konversi_id',
+                $tinggiDombak->konversi_id
+            )->where('dokumen_stok_id', $dokumenStok->dokumen_stok_id)->first())) {
+                DB::table('konversi_dokumen_stok')->insert([
+                    'konversi_id' => $tinggiDombak->konversi_id,
+                    'dokumen_stok_id' => $dokumenStok->dokumen_stok_id
+                ]);
+            }
 
             $type_losses = JenisLosses::where('jenis_loss', 'Stok Taking')->first();
             if ($akhir - $awal < 0) {
                 // Loss
-                $dokumenStok->losses()->create([
-                    'jenis_losses_id' => $type_losses->jenis_losses_id,
-                    'tanggal' => $request->tanggal,
-                    'simbol' => 'kurang',
-                    'jumlah' => ($akhir - $awal) * -1
-                ]);
+                if (is_null(
+                    $dokumenStok->losses()->where('jenis_losses_id', $type_losses->jenis_losses_id)->where('tanggal', $request->tanggal)->where('simbol', 'kurang')->where('jumlah', ($akhir - $awal) * -1)->first()
+                )) {
+                    $dokumenStok->losses()->create([
+                        'jenis_losses_id' => $type_losses->jenis_losses_id,
+                        'tanggal' => $request->tanggal,
+                        'simbol' => 'kurang',
+                        'jumlah' => ($akhir - $awal) * -1
+                    ]);
+                }
             } else {
                 // Profit
-                $dokumenStok->losses()->create([
-                    'jenis_losses_id' => $type_losses->jenis_losses_id,
-                    'tanggal' => $request->tanggal,
-                    'simbol' => 'lebih',
-                    'jumlah' => $akhir - $awal
-                ]);
+                if (is_null(
+                    $dokumenStok->losses()->where('jenis_losses_id', $type_losses->jenis_losses_id)->where('tanggal', $request->tanggal)->where('simbol', 'lebih')->where('jumlah', $akhir - $awal)->first()
+                )) {
+                    $dokumenStok->losses()->create([
+                        'jenis_losses_id' => $type_losses->jenis_losses_id,
+                        'tanggal' => $request->tanggal,
+                        'simbol' => 'lebih',
+                        'jumlah' => $akhir - $awal
+                    ]);
+                }
             }
         }
 

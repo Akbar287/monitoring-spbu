@@ -57,7 +57,10 @@ class FilePenerimaanController extends Controller
             $request->file('gambar')->storeAs('public/file_penerimaan', $foto);
         }
 
-        $file = $penerimaan->file_penerimaan()->create($this->filePenerimaanData($foto, $filenameWithExt));
+        $file = $penerimaan->file_penerimaan()->where('nama_file', $foto)->where('nama_dokumen', $filenameWithExt)->where('tanggal_upload', date('Y-m-d'))->first();
+        if (is_null($file)) {
+            $file = $penerimaan->file_penerimaan()->create($this->filePenerimaanData($foto, $filenameWithExt));
+        }
 
         return redirect('/stok/penerimaan/verifikasi/' . $penerimaan->penerimaan_id . '/file/' . $file->file_penerimaan_id)->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> File Penerimaan sudah ditambah.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
     }

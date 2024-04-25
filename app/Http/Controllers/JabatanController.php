@@ -48,7 +48,11 @@ class JabatanController extends Controller
     public function store(JabatanRequest $jabatanRequest)
     {
         $level = Level::find($jabatanRequest->level_id);
-        $jabatan = $level->jabatan()->create($this->jabatanData());
+
+        $jabatan = $level->jabatan()->where('nama_jabatan', request('nama_jabatan'))->where('keterangan', request('keterangan'))->where('is_aktif', request('is_aktif') == 'true' ? true : false)->first();
+        if (is_null($jabatan)) {
+            $jabatan = $level->jabatan()->create($this->jabatanData());
+        }
 
         return redirect('/konfigurasi/jabatan/' . $jabatan->jabatan_id)->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> Data Jabatan sudah ditambah.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
     }

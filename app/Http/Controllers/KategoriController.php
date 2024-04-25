@@ -41,7 +41,10 @@ class KategoriController extends Controller
      */
     public function store(KategoriRequest $kategoriRequest)
     {
-        $kategori = Kategori::create($this->kategoriData());
+        $kategori = Kategori::where('nama_kategori', request('nama_kategori'))->where('detail', request('detail'))->first();
+        if (is_null($kategori)) {
+            $kategori = Kategori::create($this->kategoriData());
+        }
 
         return redirect('/artikel/kategori/' . $kategori->kategori_id)->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> Data Kategori sudah ditambah.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
     }
