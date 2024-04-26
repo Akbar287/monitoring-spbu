@@ -21,19 +21,23 @@ class KonversiController extends Controller
     public function index(Request $request, Dombak $dombak)
     {
         if ($request->ajax()) {
-            $data = $dombak->konversi()->get();
+            $data = $dombak->konversi()->select('konversi.konversi_id', 'dombak.dombak_id', 'satuan_ukur_tinggi.nama_satuan as nama_satuan_tinggi', 'satuan_ukur_volume.nama_satuan as nama_satuan_volume', 'konversi.tinggi', 'konversi.volume')
+                ->join('dombak', 'dombak.dombak_id', 'konversi.dombak_id')
+                ->join('satuan_ukur_tinggi', 'satuan_ukur_tinggi.satuan_ukur_tinggi_id', 'konversi.satuan_ukur_tinggi_id')
+                ->join('satuan_ukur_volume', 'satuan_ukur_volume.satuan_ukur_volume_id', 'konversi.satuan_ukur_volume_id')
+                ->get();
             return DataTables::of($data)
                 ->addIndexColumn()
                 ->addColumn('tinggi', function ($row) {
-                    $actionBtn = $row->tinggi . ' (' . $row->satuan_ukur_tinggi()->first()->nama_satuan . ')';
+                    $actionBtn = $row->tinggi . ' (' . $row->nama_satuan_tinggi . ')';
                     return $actionBtn;
                 })
                 ->addColumn('volume', function ($row) {
-                    $actionBtn = $row->volume . ' (' . $row->satuan_ukur_volume()->first()->nama_satuan . ')';
+                    $actionBtn = $row->volume . ' (' . $row->nama_satuan_volume . ')';
                     return $actionBtn;
                 })
                 ->addColumn('action', function ($row) {
-                    $actionBtn = '<a href="' . route('konversi.show', [$row->dombak()->first()->dombak_id, $row->konversi_id]) . '" class="edit btn btn-success btn-sm">Detail</a>';
+                    $actionBtn = '<a href="' . route('konversi.show', [$row->dombak_id, $row->konversi_id]) . '" class="edit btn btn-success btn-sm">Detail</a>';
                     return $actionBtn;
                 })
                 ->rawColumns(['action'])

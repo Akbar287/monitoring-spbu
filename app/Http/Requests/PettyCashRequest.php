@@ -23,7 +23,7 @@ class PettyCashRequest extends FormRequest
     {
         return [
             'spbu_id' => ['required'],
-            'no_kode' => ['string', 'required'],
+            'no_kode' => ['string', 'required', 'size:4'],
             'no_bukti' => ['string', 'required'],
             'keterangan' => ['string', 'required'],
             'jumlah' => ['required'],
