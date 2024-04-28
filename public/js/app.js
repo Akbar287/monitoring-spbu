@@ -683,6 +683,9 @@ $(function () {
         data: 'stok_akhir',
         name: 'stok_akhir'
       }, {
+        data: 'total_loss',
+        name: 'total_loss'
+      }, {
         data: 'action',
         name: 'action',
         orderable: false,

@@ -377,6 +377,7 @@ $(function () {
                 {data: 'nama_dombak', name: 'nama_dombak'},
                 {data: 'stok_awal', name: 'stok_awal'},
                 {data: 'stok_akhir', name: 'stok_akhir'},
+                {data: 'total_loss', name: 'total_loss'},
                 {data: 'action', name: 'action', orderable: false, searchable: false},
             ]
         });

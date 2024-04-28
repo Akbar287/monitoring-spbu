@@ -32,6 +32,7 @@
                                     <th>Dombak</th>
                                     <th>Stok Awal</th>
                                     <th>Stok Akhir</th>
+                                    <th>Total Loss</th>
                                     <th>Aksi</th>
                                 </tr>
                             </thead>

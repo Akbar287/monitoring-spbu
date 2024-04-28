@@ -277,10 +277,14 @@ class MonitoringController extends Controller
                 ->addSelect('dokumen_stok.stok_akhir')
                 ->addSelect('type_dokumen_stok.type_movement')
                 ->addSelect('dombak.nama_dombak')
+                ->addSelect('losses.simbol')
+                ->addSelect('losses.jumlah')
+                ->addSelect('jam_kerja.nama_jam_kerja')
                 ->join('stok_inventory', 'stok_inventory.stok_inventory_id', 'dokumen_stok.stok_inventory_id')
                 ->join('type_dokumen_stok', 'type_dokumen_stok.type_dokumen_stok_id', 'dokumen_stok.type_dokumen_stok_id')
                 ->join('dombak', 'dombak.dombak_id', 'dokumen_stok.dombak_id')
                 ->join('jam_kerja', 'jam_kerja.jam_kerja_id', 'dokumen_stok.jam_kerja_id')
+                ->join('losses', 'losses.dokumen_stok_id', 'dokumen_stok.dokumen_stok_id')
                 ->where('dokumen_stok.is_confirmation', true)
                 ->orderBy('tanggal', 'desc')
                 ->orderBy('jam_datang_in', 'desc')
@@ -289,13 +293,16 @@ class MonitoringController extends Controller
                 ->addIndexColumn()
                 ->addColumn('tanggal', function ($row) {
                     $actionBtn = Carbon::createFromFormat('Y-m-d', $row->tanggal)->format('d F Y');
-                    return $actionBtn;
+                    return $actionBtn . ' ' . $row->nama_jam_kerja;
                 })
                 ->addColumn('stok_awal', function ($row) {
                     return number_format($row->stok_awal, 2, ".", ",");
                 })
                 ->addColumn('stok_akhir', function ($row) {
                     return number_format($row->stok_akhir, 2, ".", ',');
+                })
+                ->addColumn('total_loss', function ($row) {
+                    return ($row->simbol == 'lebih' ? '+' : '-') . number_format($row->jumlah > 0 ? $row->jumlah : $row->jumlah * -1, 2, ".", ',');
                 })
                 ->addColumn('action', function ($row) {
                     $actionBtn = '<a href="' . route('monitoring.show_detail_riwayat', [$row->stok_inventory_id, $row->dokumen_stok_id]) . '" class="edit btn btn-success btn-sm">Detail</a>';

@@ -75,6 +75,8 @@ class StandMeterController extends Controller
 
     public function riwayat(Request $request)
     {
+        $produk = Produk::select()->orderBy('nama_produk', 'asc')->get();
+        $produkSelected = $request->produk_id ??  'all';
         $waktuMulai = $request->has('waktu_mulai') ? Carbon::createFromFormat('Y-m-d', $request->waktu_mulai) : Carbon::now()->firstOfMonth();
         $waktuSelesai = $request->has('waktu_selesai') ? Carbon::createFromFormat('Y-m-d', $request->waktu_selesai) : Carbon::now()->endOfMonth();
         if ($waktuMulai->gt($waktuSelesai)) {
@@ -86,7 +88,7 @@ class StandMeterController extends Controller
         $waktuSelesai = $waktuSelesai->format('Y-m-d');
 
         if ($request->ajax()) {
-            $data = StandMeter::where('stand_meter_akhir', '!=', null)->where('is_confirmation', true)->whereBetween('tanggal', [$waktuMulai, $waktuSelesai])->orderBy('tanggal', 'desc')->get();
+            $data = $produkSelected === 'all' ? StandMeter::where('stand_meter_akhir', '!=', null)->where('is_confirmation', true)->whereBetween('tanggal', [$waktuMulai, $waktuSelesai])->orderBy('tanggal', 'desc')->get() : StandMeter::where('stand_meter_akhir', '!=', null)->where('is_confirmation', true)->where('nozzle.produk_id', $produkSelected)->join('nozzle', 'nozzle.nozzle_id', 'stand_meter.nozzle_id')->whereBetween('tanggal', [$waktuMulai, $waktuSelesai])->orderBy('tanggal', 'desc')->get();
             return DataTables::of($data)
                 ->addIndexColumn()
                 ->addColumn('nozzle', function ($row) {
@@ -120,7 +122,7 @@ class StandMeterController extends Controller
                 ->rawColumns(['action', 'status'])
                 ->make(true);
         }
-        return view('stok/totalisator/riwayat', compact('waktuMulai', 'waktuSelesai'));
+        return view('stok/totalisator/riwayat', compact('waktuMulai', 'waktuSelesai', 'produk', 'produkSelected'));
     }
 
     public function riwayat_show(StandMeter $standMeter)
