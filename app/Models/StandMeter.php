@@ -28,6 +28,7 @@ class StandMeter extends Model
         'tanggal',
         'stand_meter_awal',
         'stand_meter_akhir',
+        'urutan',
         'is_confirmation'
     ];
 

@@ -23,11 +23,13 @@
             <div class="card">
                 <div class="card-header">
                     <h4>{{ __('List File Penarikan') }}</h4>
+                    @if(Auth::user()->member()->first()->jabatan()->first()->level()->first()->nama_level == 'Penanggung Jawab')
                     <div class="card-header-action">
                         <a href="{{ route('setoran.setoran_bank.file.create', [$penjualan->penjualan_id, $penitipan->penarikan_id]) }}" class="btn btn-primary">
                             Tambah
                         </a>
                     </div>
+                    @endif
                 </div>
                 <div class="card-body">
                     @if(session('msg')){!! session('msg') !!} @endif

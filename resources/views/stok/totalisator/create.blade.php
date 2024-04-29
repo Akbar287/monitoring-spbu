@@ -5,7 +5,6 @@
     <h1>Tambah Totalisator</h1>
     <div class="section-header-breadcrumb">
         <div class="breadcrumb-item"><a href="{{ route('home') }}">Dashboard</a></div>
-        <div class="breadcrumb-item"><a href="{{ route('menu.stok') }}">Stok</a></div>
         <div class="breadcrumb-item"><a href="{{ route('totalisator.index') }}">Totalisator</a></div>
         <div class="breadcrumb-item">Tambah</div>
     </div>
@@ -25,6 +24,8 @@
                     @if(session('msg')){!! session('msg') !!} @endif
                     <form action="{{ route('totalisator.store') }}" method="post">@csrf
                         <div class="row">
+                            <div class="col-md-12 information">
+                            </div>
                             <div class="col-md-12">
                                 <div class="row mb-3 justify-content-center">
                                     <label for="dombak_id" class="col-md-4 col-form-label text-md-end">{{ __('Dombak')
@@ -77,7 +78,7 @@
                                     <label for="jam_kerja_id" class="col-md-4 col-form-label text-md-end">{{ __('Jam Kerja')
                                         }}</label>
 
-                                    <div class="col-md-6">
+                                    <div class="col-md-6 jam_kerja_dynamic">
                                         <input id="jam_kerja_id" type="text" class="form-control @error('jam_kerja_id') is-invalid @enderror" name="jam_kerja_id" readonly value="" />
                                     </div>
                                 </div>

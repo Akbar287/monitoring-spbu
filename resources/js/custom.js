@@ -1125,6 +1125,8 @@ $(function () {
                 beforeSend: function() {
                     $('select#nozzle_id').children().remove();
                     $('select#nozzle_id').attr('disabled', '');
+                    $('input#jam_kerja_id').attr('readonly', '');
+                    $('input#tanggal').attr('readonly', '');
                 },
                 success: function(data) {
                     if(data.status == 'success'){
@@ -1168,6 +1170,22 @@ $(function () {
                             $('button[type=submit]').removeAttr('disabled');
                             $('input#tanggal').attr('type', 'date');
                             $('input#tanggal').val(data.data.tanggal);
+                            if(data.data.receive) {
+                                $('input#tanggal').removeAttr('readonly');
+                                $('.information').children().remove();
+                                $('.information').append('<div class="alert alert-info">Sistem mendeteksi ada Penerimaan BBM. Silakan isi tanggal dan jam kerja sesuai dengan keadaan.</div>');
+                                $('.jam_kerja_dynamic').children().remove();
+                                let loop = '';
+                                data.data.jam_kerja_id.forEach(x => {
+                                    loop += '<option value="'+ x.jam_kerja_id +'" >'+ x.nama_jam_kerja +'</option>'
+                                })
+                                $('.jam_kerja_dynamic').append('<select class="custom-select" name="jam_kerja_id" id="jam_kerja_id">'+ loop +'</select>');
+                            } else {
+                                $('.information').children().remove();
+                                $('.jam_kerja_dynamic').children().remove();
+                                $('.jam_kerja_dynamic').append('<input id="jam_kerja_id" type="text" class="form-control" name="jam_kerja_id" readonly value="'+ data.data.jam_kerja +'" />');
+                                $('input#tanggal').attr('readonly', '');
+                            }
                             $('input#jam_kerja_id').val('Shift ' + (data.data.jam_kerja ?? 1));
                             if(data.data.stand_meter_akhir == 0) {
                                 $('input#stand_meter_awal').removeAttr('readonly');

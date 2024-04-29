@@ -210,13 +210,19 @@ class PenerimaanController extends Controller
             ]);
         }
 
-        DB::table('konversi_dokumen_stok')->insert([[
-            'konversi_id' =>  $dombak->konversi()->where('tinggi', $request->tinggi_dombak_sebelumnya)->first()->konversi_id,
-            'dokumen_stok_id' => $dokumenStokForStokTaking->dokumen_stok_id
-        ], [
-            'konversi_id' =>  $dombak->konversi()->where('tinggi', $request->tinggi_dombak_setelahnya)->first()->konversi_id,
-            'dokumen_stok_id' => $dokumenStokForGRP->dokumen_stok_id
-        ]]);
+        if (is_null(DB::table('konversi_dokumen_stok')->where('konversi_id',  $dombak->konversi()->where('tinggi', $request->tinggi_dombak_sebelumnya)->first()->konversi_id)->where('dokumen_stok_id', $dokumenStokForStokTaking->dokumen_stok_id)->first())) {
+            DB::table('konversi_dokumen_stok')->insert([
+                'konversi_id' =>  $dombak->konversi()->where('tinggi', $request->tinggi_dombak_sebelumnya)->first()->konversi_id,
+                'dokumen_stok_id' => $dokumenStokForStokTaking->dokumen_stok_id
+            ]);
+        }
+
+        if (is_null(DB::table('konversi_dokumen_stok')->where('konversi_id',  $dombak->konversi()->where('tinggi', $request->tinggi_dombak_setelahnya)->first()->konversi_id)->where('dokumen_stok_id', $dokumenStokForGRP->dokumen_stok_id)->first())) {
+            DB::table('konversi_dokumen_stok')->insert([
+                'konversi_id' => $dombak->konversi()->where('tinggi', $request->tinggi_dombak_setelahnya)->first()->konversi_id,
+                'dokumen_stok_id' => $dokumenStokForGRP->dokumen_stok_id
+            ]);
+        }
 
         $penerimaan = $fileLo->penerimaan()->where('dokumen_stok_id', $dokumenStokForGRP->dokumen_stok_id)->where('tanggal', $request->tanggal)->first();
         if (is_null($penerimaan)) {

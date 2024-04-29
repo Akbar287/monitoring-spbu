@@ -10,7 +10,6 @@ use App\Models\Nozzle;
 use App\Models\Pengiriman;
 use App\Models\Produk;
 use App\Models\StatusPurchase;
-use App\Models\TypeDokumenStok;
 use App\Models\UserLogin;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -113,6 +112,40 @@ class HomeController extends Controller
                     "color" => "info"
                 ],
                 [
+                    "nama" => "Totalisator",
+                    "icon" => "tint",
+                    "url" => route('totalisator.index'),
+                    "color" => "success"
+                ],
+                [
+                    "nama" => "Setoran",
+                    "icon" => "percent",
+                    "url" => route('menu.setoran'),
+                    "color" => "danger"
+                ],
+                [
+                    "nama" => "Kehadiran",
+                    "icon" => "calendar",
+                    "url" => route('menu.kehadiran'),
+                    "color" => "warning"
+                ]
+            ];
+        }
+        if (Auth::user()->member()->first()->jabatan()->first()->level()->first()->nama_level == 'Keamanan') {
+            $allMenu = [
+                [
+                    "nama" => "Procurement",
+                    "icon" => "filter",
+                    "url" => route('menu.procurement'),
+                    "color" => "primary"
+                ],
+                [
+                    "nama" => "Manajemen Persediaan",
+                    "icon" => "flask",
+                    "url" => route('menu.stok'),
+                    "color" => "info"
+                ],
+                [
                     "nama" => "Stand Meter",
                     "icon" => "tint",
                     "url" => route('menu.stand-meter'),
@@ -167,7 +200,6 @@ class HomeController extends Controller
                 ]
             ];
         }
-
 
         $pembayaran = StatusPurchase::where('nama_status', 'Pembayaran')->first()->rencana_pembelian()->get();
         $delivery = Pengiriman::where('is_confirmation_admin', true)->where('is_done', false)->get();

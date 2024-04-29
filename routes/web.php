@@ -11,7 +11,7 @@ Auth::routes([
 
 // Route::get('/hash', function () {return hash('sha512', 'BARBIE_SPBU2434520_20240406_38271517-f3e7-4d21-92cc-a114e3f37eaa_f2837222-44c8-4deb-8d6b-c9458b0514ce');})->name('uploadTest');
 // Route::get('/upload', [App\Http\Controllers\WelcomeController::class, 'uploadTest'])->name('uploadTest');
-Route::get('/upload', [App\Http\Controllers\DumpController::class, 'uploadDataStokTaking'])->name('uploadDataStokTaking');
+// Route::get('/upload', [App\Http\Controllers\DumpController::class, 'uploadDataStokTaking'])->name('uploadDataStokTaking');
 // Route::get('/upload', [App\Http\Controllers\DumpController::class, 'uploadDataStokTaking'])->name('uploadDataStokTaking');
 
 Route::middleware(['auth', 'cache.header'])->group(function ($route) {

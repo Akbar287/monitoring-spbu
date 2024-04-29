@@ -167,11 +167,13 @@
                         </div>
                         <div class="col-md-8 offset-md-2 d-flex align-items-end">
                             <a type="button" href="{{ route('setoran.open') }}" class="btn btn-primary mr-2"><i class="fas fa-arrow-left"></i> Kembali</a>
+                            @if(Auth::user()->member()->first()->jabatan()->first()->level()->first()->nama_level == 'Penanggung Jawab')
                             <a href="{{ route('setoran.open.pj', $penjualan->penjualan_id) }}" class="btn mr-2 btn-info"><i class="fas fa-users"></i> PJ Operasional</a>
                             <a href="{{ route('setoran.open.detail', $penjualan->penjualan_id) }}" class="btn mr-2 btn-warning"><i class="fas fa-thermometer-full"></i> Stand Meter</a>
                             <form action="{{ route('setoran.open.update.status_to', $penjualan->penjualan_id) }}" method="POST">@csrf @method('put')
                                 <button type="submit" class="btn mr-2 btn-success"><i class="fas fa-arrow-right"></i> Konfirmasi</button>
                             </form>
+                            @endif
                             <form action="{{ route('setoran.open.delete', $penjualan->penjualan_id) }}" method="POST">@csrf @method('delete')
                                 <button type="submit" onclick="return confirm('Open Penjualan akan dihapus!\n Lanjutkan?')" title="Hapus Data" class="btn btn-danger"><i class="fas fa-trash"></i> Hapus</button>
                             </form>

@@ -25,9 +25,11 @@
                         <div class="badge badge-success">
                             {{ 'Rp. ' . number_format($penjualan->total_penjualan + $penjualan->total_uang_kotak, 0, ".", ",") }}
                         </div>
+                        @if(Auth::user()->member()->first()->jabatan()->first()->level()->first()->nama_level == 'Penanggung Jawab')
                         <a href="{{ route('setoran.setoran_bank.bank.create', $penjualan->penjualan_id) }}" class="btn btn-primary">
                             Tambah
                         </a>
+                        @endif
                     </div>
                 </div>
                 <div class="card-body">

@@ -21,11 +21,6 @@
             <div class="card">
                 <div class="card-header">
                     <h4>{{ __('Detail Penitipan Setoran') }}</h4>
-                    <div class="card-header-action">
-                        {{-- <a href="{{ route('setoran.penitipan.index_penitipan', $penjualan->penjualan_id) }}" class="btn btn-primary">
-                            Bank
-                        </a> --}}
-                    </div>
                 </div>
                 <div class="card-body">
                     <div class="row">
@@ -249,12 +244,14 @@
                             <div class="row mb-0">
                                 <div class="col-md-8 offset-md-4 d-flex align-items-end">
                                     <a type="button" href="{{ route('setoran.penitipan') }}" class="btn btn-primary mr-2"><i class="fas fa-arrow-left"></i> Kembali</a>
+                                    @if(Auth::user()->member()->first()->jabatan()->first()->level()->first()->nama_level == 'Penanggung Jawab')
                                     <form action="{{ route('setoran.open.update.status_from', $penjualan->penjualan_id) }}" method="POST">@csrf @method('put')
                                         <button type="submit" onclick="return confirm('Penitipan Setoran akan di kembalikan ke Opening Setoran!\n Lanjutkan?')" title="Lanjutkan Data" class="btn btn-info mr-2"><i class="fas fa-arrow-left"></i> Kembali ke Opening</button>
                                     </form>
                                     <form action="{{ route('setoran.penitipan.update_closing_to', $penjualan->penjualan_id) }}" method="POST">@csrf @method('put')
                                         <button type="submit" onclick="return confirm('Penitipan Setoran akan di lanjutkan ke Closing!\n Lanjutkan?')" title="Lanjutkan Data" class="btn btn-success mr-2"><i class="fas fa-arrow-right"></i> Lanjut Ke Closing</button>
                                     </form>
+                                    @endif
                                 </div>
                             </div>
                         </div>

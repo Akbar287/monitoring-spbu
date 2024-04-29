@@ -33,6 +33,7 @@ class DetailRencanaPembelian extends Model
         'is_confirmation',
         'ms2',
         'delivery',
+        'kode_detail'
     ];
 
     public function rencana_pembelian()

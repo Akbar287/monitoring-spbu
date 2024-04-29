@@ -5,7 +5,6 @@
     <h1>Totalisator</h1>
     <div class="section-header-breadcrumb">
         <div class="breadcrumb-item"><a href="{{ route('home') }}">Dashboard</a></div>
-        <div class="breadcrumb-item"><a href="{{ route('menu.stok') }}">Stok</a></div>
         <div class="breadcrumb-item"><a href="{{ route('totalisator.index') }}">Totalisator</a></div>
         <div class="breadcrumb-item">Riwayat</div>
     </div>

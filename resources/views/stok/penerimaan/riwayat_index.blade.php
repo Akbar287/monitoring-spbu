@@ -24,9 +24,11 @@
                         <a href="{{ route('penerimaan.index') }}" class="btn btn-info mr-2">
                             Penerimaan
                         </a>
+                        @if(Auth::user()->member()->first()->jabatan()->first()->level()->first()->nama_level != 'Operator')
                         <a href="{{ route('penerimaan.verifikasi') }}" class="btn btn-success">
                             Verifikasi
                         </a>
+                        @endif
                     </div>
                 </div>
                 <div class="card-body">

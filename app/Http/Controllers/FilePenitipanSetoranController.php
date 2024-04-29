@@ -7,6 +7,7 @@ use App\Models\Penarikan;
 use App\Models\Penjualan;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Yajra\DataTables\DataTables;
 
@@ -30,7 +31,8 @@ class FilePenitipanSetoranController extends Controller
                     return $actionBtn;
                 })
                 ->addColumn('action', function ($row) {
-                    $actionBtn = '<div class="row"><div class="col-12 d-flex"><a href="' . asset('storage/file_penarikan/' . $row->nama_file) . '" target="_blank" class="btn btn-success btn-sm"><i class="fas fa fa-download"></i> Unduh</a>&nbsp;&nbsp;<form action="' . route('setoran.setoran_bank.file.delete', [$row->penarikan()->first()->penjualan()->first()->penjualan_id, $row->penarikan()->first()->penarikan_id, $row->file_penarikan_id]) . '" method="POST"><input type="hidden" name="_token" value="' . csrf_token() . '"><input type="hidden" name="_method" value="delete" /> <button type="submit" onclick="return confirm(\'Penitipan Setoran akan dihapus!\n Lanjutkan?\')" title="Hapus Data" class="btn btn-danger"><i class="fas fa-trash"></i> Hapus</button></form></div></div>';
+                    $actionBtn = Auth::user()->member()->first()->jabatan()->first()->level()->first()->nama_level == 'Penanggung Jawab' ?
+                        '<div class="row"><div class="col-12 d-flex"><a href="' . asset('storage/file_penarikan/' . $row->nama_file) . '" target="_blank" class="btn btn-success btn-sm"><i class="fas fa fa-download"></i> Unduh</a>&nbsp;&nbsp;<form action="' . route('setoran.setoran_bank.file.delete', [$row->penarikan()->first()->penjualan()->first()->penjualan_id, $row->penarikan()->first()->penarikan_id, $row->file_penarikan_id]) . '" method="POST"><input type="hidden" name="_token" value="' . csrf_token() . '"><input type="hidden" name="_method" value="delete" /> <button type="submit" onclick="return confirm(\'Penitipan Setoran akan dihapus!\n Lanjutkan?\')" title="Hapus Data" class="btn btn-danger"><i class="fas fa-trash"></i> Hapus</button></form></div></div>' : '<div class="row"><div class="col-12 d-flex"><a href="' . asset('storage/file_penarikan/' . $row->nama_file) . '" target="_blank" class="btn btn-success btn-sm"><i class="fas fa fa-download"></i> Unduh</a></div></div>';
                     return $actionBtn;
                 })
                 ->rawColumns(['action', 'gambar'])

@@ -237,6 +237,7 @@
                         </div>
                     </div>
 
+                    @if(Auth::user()->member()->first()->jabatan()->first()->level()->first()->nama_level == 'Penanggung Jawab')
                     <div class="row mb-0">
                         <div class="col-md-8 offset-md-4 d-flex align-items-end">
                             @if($dp->is_confirmed)
@@ -250,6 +251,7 @@
                             @endif
                         </div>
                     </div>
+                    @endif
                 </div>
             </div>
             @endforeach
@@ -266,6 +268,7 @@
                         <div class="col-md-8 offset-md-4 d-flex align-items-end">
                             <a type="button" href="{{ route('setoran.closing') }}" class="btn btn-primary mr-2"><i class="fas fa-arrow-left"></i> Kembali</a>
 
+                            @if(Auth::user()->member()->first()->jabatan()->first()->level()->first()->nama_level == 'Penanggung Jawab')
                             <form action="{{ route('setoran.penitipan.update_closing_from', $penjualan->penjualan_id) }}" method="POST">@csrf @method('put')
                                 <input type="hidden" name="type" value="top">
                                 <button type="submit" onclick="return confirm('Closing dikembalikan ke penitipan?')" title="Konfirmasi Data" class="btn mr-2 btn-danger"><i class="fas fa-arrow-left"></i> Kembali ke Penitipan</button>
@@ -276,6 +279,7 @@
                                 <input type="hidden" name="type" value="top">
                                 <button type="submit" onclick="return confirm('Closing dilanjutkan ke Setoran Bank?')" title="Konfirmasi Data" class="btn mr-2 btn-success"><i class="fas fa-arrow-right"></i> Konfirmasi Ke Setoran Bank</button>
                             </form>
+                            @endif
                             @endif
                         </div>
                     </div>

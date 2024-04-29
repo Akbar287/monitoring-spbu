@@ -25,7 +25,7 @@
                 </div>
                 <div class="card-body">
                     @if(session('msg')){!! session('msg') !!} @endif
-                    <form action="{{ route('perencanaan.detail.store', [$rencana->rencana_pembelian_id]) }}" method="post">@csrf 
+                    <form action="{{ route('perencanaan.detail.store', [$rencana->rencana_pembelian_id]) }}" method="post">@csrf
                         <div class="row">
                             <div class="col-md-12">
                                 <div class="row mb-3 justify-content-center">
@@ -38,6 +38,7 @@
                                             <option {{ old('produk_id') == $s->produk_id ? 'selected' : '' }} value="{{ $s->produk_id }}">{{ $s->nama_produk }}</option>
                                             @endforeach
                                         </select>
+                                        <input type="hidden" name="kode" value="{{ $kode }}">
 
                                         @error('produk_id')
                                         <span class="invalid-feedback" role="alert">
@@ -47,18 +48,18 @@
                                     </div>
                                 </div>
 
-                                
+
                                 <div class="row mb-3 justify-content-center">
                                     <label for="jumlah" class="col-md-4 col-form-label text-md-end">{{ __('Jumlah')
                                         }}</label>
-            
+
                                     <div class="col-md-6">
                                         <input id="jumlah" type="text"
                                             class="form-control thousand-style @error('jumlah') is-invalid @enderror" name="jumlah"
                                             value="{{ old("jumlah") }}" autocomplete="name"
                                             autofocus>
                                         <span class="text-muted">Gunakan titik sebagai 2 angka dibelakang koma (contoh: 8000.00 liter) dan tidak perlu menggunakan koma tapi titik </span>
-            
+
                                         @error('jumlah')
                                         <span class="invalid-feedback" role="alert">
                                             <strong>{{ $message }}</strong>
@@ -70,12 +71,12 @@
                                 <div class="row mb-3 justify-content-center">
                                     <label for="satuan_jumlah" class="col-md-4 col-form-label text-md-end">{{ __('Satuan Jumlah')
                                         }}</label>
-            
+
                                     <div class="col-md-6">
                                         <select class="custom-select @error('satuan_jumlah') is-invalid @enderror" name="satuan_jumlah" id="satuan_jumlah">
                                             <option value="liter">Liter</option>
                                         </select>
-            
+
                                         @error('satuan_jumlah')
                                         <span class="invalid-feedback" role="alert">
                                             <strong>{{ $message }}</strong>

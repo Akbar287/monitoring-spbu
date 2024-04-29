@@ -19,11 +19,6 @@
             <div class="card">
                 <div class="card-header">
                     <h4>{{ __('List Penitipan Setoran') }}</h4>
-                    <div class="card-header-action">
-                        <a href="{{ route('setoran.open.create') }}" class="btn btn-primary">
-                            Tambah
-                        </a>
-                    </div>
                 </div>
                 <div class="card-body">
                     <form action="{{ route('setoran.penitipan') }}" method="get"> @csrf

@@ -20,9 +20,11 @@
                 <div class="card-header">
                     <h4>{{ __('Penerimaan BBM') }}</h4>
                     <div class="card-header-action">
+                        @if(Auth::user()->member()->first()->jabatan()->first()->level()->first()->nama_level != 'Operator')
                         <a href="{{ route('penerimaan.verifikasi') }}" class="btn btn-info mr-2">
                             Verifikasi
                         </a>
+                        @endif
                         <a href="{{ route('penerimaan.riwayat') }}" class="btn btn-success">
                             Riwayat
                         </a>

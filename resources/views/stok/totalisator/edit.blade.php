@@ -5,7 +5,6 @@
     <h1>Ubah Totalisator</h1>
     <div class="section-header-breadcrumb">
         <div class="breadcrumb-item"><a href="{{ route('home') }}">Dashboard</a></div>
-        <div class="breadcrumb-item"><a href="{{ route('menu.stok') }}">Stok</a></div>
         <div class="breadcrumb-item"><a href="{{ route('totalisator.index') }}">Totalisator</a></div>
         <div class="breadcrumb-item"><a href="{{ route('totalisator.show', $standMeter->stand_meter_id) }}">Detail</a></div>
         <div class="breadcrumb-item">Ubah</div>

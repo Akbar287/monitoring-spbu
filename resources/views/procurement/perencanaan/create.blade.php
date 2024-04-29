@@ -23,20 +23,21 @@
                 </div>
                 <div class="card-body">
                     @if(session('msg')){!! session('msg') !!} @endif
-                    <form action="{{ route('perencanaan.store') }}" method="post" enctype="multipart/form-data">@csrf 
+                    <form action="{{ route('perencanaan.store') }}" method="post" enctype="multipart/form-data">@csrf
                         <div class="row">
                             <div class="col-md-12">
                                 <div class="row mb-3 justify-content-center">
                                     <label for="spbu_id" class="col-md-4 col-form-label text-md-end">{{ __('SPBU')
                                         }}</label>
-            
+
                                     <div class="col-md-6">
                                         <select class="custom-select @error('spbu_id') is-invalid @enderror" name="spbu_id" id="spbu_id">
                                             @foreach($spbu as $s)
                                             <option {{ old('spbu_id') == $s->spbu_id ? 'selected' : '' }} value="{{ $s->spbu_id }}">{{ $s->nama_spbu . ' ('.$s->nomor_spbu.')' }}</option>
                                             @endforeach
                                         </select>
-            
+                                        <input type="hidden" name="kode_pembelian" value="{{ $kode }}">
+
                                         @error('spbu_id')
                                         <span class="invalid-feedback" role="alert">
                                             <strong>{{ $message }}</strong>
@@ -45,17 +46,16 @@
                                     </div>
                                 </div>
 
-                                
                                 <div class="row mb-3 justify-content-center">
                                     <label for="keterangan" class="col-md-4 col-form-label text-md-end">{{ __('Keterangan')
                                         }}</label>
-            
+
                                     <div class="col-md-6">
                                         <textarea id="keterangan" type="text" rows="3" cols="3"
                                             class="form-control @error('keterangan') is-invalid @enderror" name="keterangan"
                                             value="" autocomplete="name"
                                             autofocus>{{ old("keterangan") }}</textarea>
-            
+
                                         @error('keterangan')
                                         <span class="invalid-feedback" role="alert">
                                             <strong>{{ $message }}</strong>

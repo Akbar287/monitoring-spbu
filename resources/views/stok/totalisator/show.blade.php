@@ -5,7 +5,6 @@
     <h1>Totalisator</h1>
     <div class="section-header-breadcrumb">
         <div class="breadcrumb-item"><a href="{{ route('home') }}">Dashboard</a></div>
-        <div class="breadcrumb-item"><a href="{{ route('menu.stok') }}">Stok</a></div>
         <div class="breadcrumb-item"><a href="{{ route('totalisator.index') }}">Totalisator</a></div>
         <div class="breadcrumb-item">Detail</div>
     </div>
@@ -122,10 +121,12 @@
                                     @if(is_null($standMeter->stand_meter_akhir))
                                     <a type="button" href="{{ route('totalisator.final', $standMeter->stand_meter_id) }}" class="btn mx-2 btn-info"><i class="fas fa-check"></i> Input Final</a>
                                     @endif
+                                    @if(Auth::user()->member()->first()->jabatan()->first()->level()->first()->nama_level == 'Penanggung Jawab')
                                     @if(!is_null($standMeter->stand_meter_akhir) && !$standMeter->is_confirmation)
                                     <form action="{{ route('totalisator.confirmation', $standMeter->stand_meter_id) }}" method="POST">@csrf @method('put')
                                         <button type="submit" onclick="return confirm('Stand Meter akan dikonfirmasi!\n Lanjutkan?')" title="Konfirmasi Data" class="btn btn-success mr-2"><i class="fas fa-check"></i> Konfirmasi</button>
                                     </form>
+                                    @endif
                                     @endif
                                     <form action="{{ route('totalisator.delete', $standMeter->stand_meter_id) }}" method="POST">@csrf @method('delete')
                                         <button type="submit" onclick="return confirm('Stand Meter akan dihapus!\n Lanjutkan?')" title="Hapus Data" class="btn btn-danger"><i class="fas fa-trash"></i> Hapus</button>

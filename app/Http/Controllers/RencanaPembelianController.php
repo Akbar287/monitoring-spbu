@@ -112,8 +112,9 @@ class RencanaPembelianController extends Controller
     public function create()
     {
         $spbu = Spbu::all();
+        $kode = $this->generateKodePembelian();
         $produk = Produk::all();
-        return view('procurement/perencanaan/create', compact('spbu', 'produk'));
+        return view('procurement/perencanaan/create', compact('spbu', 'produk', 'kode'));
     }
 
     /**
@@ -122,30 +123,34 @@ class RencanaPembelianController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            "spbu_id" => ["required"]
+            "spbu_id" => ["required"],
+            "kode_pembelian" => ["required"]
         ]);
 
         $spbu = Spbu::find($request->spbu_id);
         $statusPurchase = StatusPurchase::where("nama_status", "Rencana")->first();
+        $cek = true;
+        do {
+            $rencana = RencanaPembelian::where("status_purchase_id", $statusPurchase->status_purchase_id)->where("spbu_id", $spbu->spbu_id)->where("grand_total", 0)->where('kode_pembelian', $request->kode_pembelian)->where("pembelian_id", null)->where("tanggal_pembelian", null)->where("keterangan", request('keterangan'))->where("keterangan_denied", null)->where("is_confirmation", false)->where("is_denied", false)->first();
 
-        $kode = $this->generateKodePembelian();
-        $rencana = Auth::user()->member()->first()->rencana_pembelian()->where("status_purchase_id", $statusPurchase->status_purchase_id)->where("spbu_id", $spbu->spbu_id)->where("grand_total", 0)->where('kode_pembelian', $kode)->where("pembelian_id", null)->where("tanggal_pembelian", null)->where("keterangan", request('keterangan'))->where("keterangan_denied", null)->where("is_confirmation", false)->where("is_denied", false)->first();
-
-        if (is_null($rencana)) {
-            $rencana = RencanaPembelian::firstOrCreate([
-                "status_purchase_id" => $statusPurchase->status_purchase_id,
-                "spbu_id" => $spbu->spbu_id,
-                'member_id' => Auth::user()->member_id,
-                "grand_total" => 0,
-                'kode_pembelian' => $kode,
-                "pembelian_id" => null,
-                "tanggal_pembelian" => null,
-                "keterangan" => request('keterangan'),
-                "keterangan_denied" => null,
-                "is_confirmation" => false,
-                "is_denied" => false,
-            ]);
-        }
+            if (is_null($rencana)) {
+                $rencana = RencanaPembelian::firstOrCreate([
+                    "status_purchase_id" => $statusPurchase->status_purchase_id,
+                    "spbu_id" => $spbu->spbu_id,
+                    'member_id' => Auth::user()->member_id,
+                    "grand_total" => 0,
+                    'kode_pembelian' => $request->kode_pembelian,
+                    "pembelian_id" => null,
+                    "tanggal_pembelian" => null,
+                    "keterangan" => request('keterangan'),
+                    "keterangan_denied" => null,
+                    "is_confirmation" => false,
+                    "is_denied" => false,
+                ]);
+            } else {
+                $cek = false;
+            }
+        } while ($cek);
 
         return redirect()->route('perencanaan.show', $rencana->rencana_pembelian_id)->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> Data Rencana Pembelian sudah ditambah.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
     }

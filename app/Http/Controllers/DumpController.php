@@ -58,15 +58,91 @@ class DumpController extends Controller
                 14033.8, 8966.7, 4188.7, 13957.0, 8565.0, 1703.0, 8946.1, 2013.7, 562.0, 15177.8, 8153.0, 1710.6, 14620.5, 7102.3, 1945.1, 15136.6, 8925.5, 11521.2, 11559.1, 3644.5, 8225.1, 6927.2, 7323.3, 9553.8, 14276.0, 8338.4, 1277.0, 14601.4, 8266.3, 4626.3, 10401.0, 3068.1, 562.0, 8771.0, 562.0, 601.7, 9615.6, 1556.0, 562.0, 14168.1, 8915.2, 5829.8, 14187.3, 7408.0, 5290.9, 7344.6, 1012.0, 567.7, 13184.9, 5172.0, 3734.5, 3882.2, 579.0, 573.3, 5599.9, 579.0, 573.3, 573.3, 4402.1, 6577.0, 14614.1, 6762.4, 2029.0, 10313.7, 2180.3, 5779.9, 5809.9, 8492.9, 1548.6, 9801.0, 579.0, 1358.6, 1392.6, 8822.5, 1801.7, 10075.8, 567.7, 573.3, 8884.3, 6062.0, 573.3, 8750.4, 584.7, 5430.8, 5430.8, 532.2, 3947.4
             ],
             [
-                0,
-                0,
+                null,
+                null,
                 [[4188.7, 8000.0,  12450.8], [5221.8, 8000.0,  13234.0]],
-                0,
-                0,
-                [764.3, 8000.0, 8956.4],
-                0,
-                0,
-                [[562, 8000.0, 8771.00], [7122.9, 8000.0, 151730]], 0, 0, [[1703.0, 8000.0,  9955.4], [6535.8, 8000.0,  14556.5]], 0, 0, [[1870.1, 8000.0,  10145.9], [7112.6, 8000.0,  15136.6]], 0, [5290.9, 8000.0,  13503.5], 0, 0, [562.0, 8000.0,  8771.0], [2196.6, 8000.0,  10459.0], [5101.9, 8000.0,  13316.0], [1923.0, 8000.0,  10195.7], [6185.6, 8000.0,  14282.4], 0, 0, [[1277.0, 8000.0,  9522.9], [6535.8, 8000.0, 14595.0]], 0, 0, [3994.0, 8000.0, 12232.8], 0, 0, [562.0, 8000.0, 8771.0], 0, 0, [[562.0, 8000.0, 8791.6], [7195.0, 8000.0, 15237.7]], 0, 0, [[562.0, 8000.0, 8781.3], [6226.8, 8000.0, 14250.3]], 0, 0, [[573.3, 8000.0, 8791.6], [6041.4, 8000.0, 14168.1]], 0, 0, [1930.0, 8000.0, 10205.0], 0, 0, [[562.0, 8000.0, 8791.6], [6329.8, 8000.0, 14435.9]], 0, 0, [1703.0,  8000.0,  10035.9], 0, 0, [579.0,  8000.0, 8874.0], 0, 0, 0, [590.4, 8000.0, 8781.3], [2433.0, 8000.0, 10762.9], [6556.4, 8000.0, 14913.0], 0, 0, [2029.0, 8000.0, 10304.0], 0, [1179.9, 8000.0, 9450.8], 0, [728.0, 8000.0, 8863.7], 0, [1534.0, 8000.0, 9831.0], 0, [590.4, 8000.0, 8843.1], 0, [584.7, 8000.0, 8822.5], 0, [1816.8, 8000.0, 10065.8], 0, 0, [590.4, 8000.0, 8781.3], [6165.0, 8000.0, 14237.5], 0, [573.3, 8000.0, 8801.9], 0, [590.4, 8000.0, 8801.9], 0, 0, [590.4, 8000.0, 8822.5], [3984.4, 8000.0, 12204.7]
+                null,
+                null,
+                [[764.3, 8000.0, 8956.4]],
+                null,
+                null,
+                [[562, 8000.0, 8771.00], [7122.9, 8000.0, 151730]], null,
+                null,
+                [[1703.0, 8000.0,  9955.4], [6535.8, 8000.0,  14556.5]], null,
+                null,
+                [[1870.1, 8000.0,  10145.9], [7112.6, 8000.0,  15136.6]],
+                null,
+                [[5290.9, 8000.0,  13503.5]],
+                null,
+                null,
+                [[562.0, 8000.0,  8771.0]],
+                [[2196.6, 8000.0,  10459.0]],
+                [[5101.9, 8000.0,  13316.0]],
+                [[1923.0, 8000.0,  10195.7]],
+                [[6185.6, 8000.0,  14282.4]],
+                null,
+                null,
+                [[1277.0, 8000.0,  9522.9], [6535.8, 8000.0, 14595.0]],
+                null,
+                null,
+                [[3994.0, 8000.0, 12232.8]],
+                null,
+                null,
+                [[562.0, 8000.0, 8771.0]],
+                null,
+                null,
+                [[562.0, 8000.0, 8791.6], [7195.0, 8000.0, 15237.7]],
+                null,
+                null,
+                [[562.0, 8000.0, 8781.3], [6226.8, 8000.0, 14250.3]],
+                null,
+                null,
+                [[573.3, 8000.0, 8791.6], [6041.4, 8000.0, 14168.1]],
+                null,
+                null,
+                [[1930.0, 8000.0, 10205.0]],
+                null,
+                null,
+                [[562.0, 8000.0, 8791.6], [6329.8, 8000.0, 14435.9]],
+                null,
+                null,
+                [[1703.0,  8000.0,  10035.9]],
+                null,
+                null,
+                [[579.0,  8000.0, 8874.0]],
+                null,
+                null,
+                null,
+                [[590.4, 8000.0, 8781.3]],
+                [[2433.0, 8000.0, 10762.9]],
+                [[6556.4, 8000.0, 14913.0]],
+                null,
+                null,
+                [[2029.0, 8000.0, 10304.0]],
+                null,
+                [[1179.9, 8000.0, 9450.8]],
+                null,
+                [[728.0, 8000.0, 8863.7]],
+                null,
+                [[1534.0, 8000.0, 9831.0]],
+                null,
+                [[590.4, 8000.0, 8843.1]],
+                null,
+                [[584.7, 8000.0, 8822.5]],
+                null,
+                [[1816.8, 8000.0, 10065.8]],
+                null,
+                null,
+                [[590.4, 8000.0, 8781.3]],
+                [[6165.0, 8000.0, 14237.5]],
+                null,
+                [[573.3, 8000.0, 8801.9]],
+                null,
+                [[590.4, 8000.0, 8801.9]],
+                null,
+                null,
+                [[590.4, 8000.0, 8822.5]],
+                [[3984.4, 8000.0, 12204.7]]
             ],
             [
                 [1803, 3308], [1881, 2611], [2919, 3503], [1701, 3702], [2169, 4415], [264, 714], [2005, 4729], [504, 945], [375, 1160], [2144, 4893], [2148, 4082], [1340, 1930], [2440, 4978], [1575, 3518], [680, 2221], [2144, 4108], [1732, 3666], [0, 0], [2480, 5169], [1150, 2409], [3932, 5277], [2690, 4898], [1892, 3949], [1406, 1815], [1714, 4248], [2169, 4658], [1456, 1359], [1949, 4407], [1177, 2306], [818, 1598], [2189, 4903], [721, 1766], [0, 0], [2516, 5461], [0, 0], [3260, 3882], [2488, 5310], [362, 645], [1413, 1140], [1801, 3460], [1281, 1716], [3223, 4518], [1999, 4715], [780, 1272], [2802, 3206], [1758, 4400], [142, 303], [1428, 2229], [2289, 5517], [442, 928], [4092, 3748], [1108, 2161], [0, 0], [1479, 1578], [1630, 3296], [0, 0], [0, 0], [1399, 2808], [1953, 3948], [0, 0], [2708, 5099], [1415, 3157], [0, 0], [2486, 5283], [1658, 2877], [0, 0], [1770, 3675], [2131, 4586], [0, 0], [3210, 5732], [2976, 4233], [0, 0], [248, 545], [2305, 4457], [0, 0], [2951, 6263], [0, 0], [0, 0], [3640, 6935], [1987, 3375], [0, 0], [2380, 5591], [1142, 2079], [0, 0], [1849, 2905], [1954, 2681], [0, 0]
@@ -85,10 +161,182 @@ class DumpController extends Controller
                 10449.2, 3962.0, 839.6, 9229.3, 6316.1, 6436.7, 13734.7, 10953.2, 10892.3, 903.4, 854.4, 864.0, 7909.4, 5894.8, 5904.6, 3232.0, 959.1, 854.0, 7050.6, 3487.4, 888.7, 839.6, 893.6, 868.7, 8213.9, 6316.2, 6350.5, 13747.2, 11933.3, 11881.2, 1488.2, 864.2, 820.0, 9160.7, 7402.3, 7178.0, 12707.3, 9772.1, 9830.3, 7969.9, 6526.9, 6458.7, 6132.1, 4303.4, 3426.7, 2488.7, 654.9, 625.5, 8938.8, 7046.0, 7017.0, 4745.0, 2740.9, 2750.4, 10937.6, 5776.7, 1189.0, 1199.9, 6740.4, 11703.1, 19431.8, 15189.0, 10132.5, 10219.1, 5235.3, 9896.9, 9866.4, 12514.4, 8171.3, 8179.0, 2715.0, 6690.0, 6700.1, 9418.2, 5357.0, 5396.7, 1085.8, 1080.9, 9410.0, 1071.9, 11068.5, 11031.2, 5704.0, 6467.1, 6506.4, 878.6, 3566.3
             ],
             [
-                0, 0, [384.3, 8000.0, 8715.2], 0, 0, [5410.0, 8000.0, 13267.2], 0, 0, 0, 0, 0, [389.2, 8000.0, 8725.0], 0, 0, [5429.6, 8000.0, 13244.6], 0, 0, [[379.4, 80000, 8685.8], [7364.6, 8000.0, 14879.7]], 0, 0, 0, 0, 0, [399.0, 8000.0, 8725.0], 0, 0, [5842.3, 8000.0, 13627.0], 0, 0, 0, 0, 0, [389.2, 8000.0, 8695.6], 0, 0, [[840.0, 8000.0, 9077.8], [435.7, 8000.0, 8312.7]], 0, 0, [389.2, 8000.0, 8774.0], 0, 0, 0, 0, 0, [3197.1, 8000.0, 11256.9], 0, 0, [389.2, 8000.0, 8725.0], 0, 0, 0, 0, 0, [2546.4, 8000.0, 10669.6], 0, 0, 0, [951.0, 8000.0, 9224.8], [5194.4, 8000.0, 13162.1], [215.8, 8000.0, 7972.5], 0, 0, 0, 0, [3006.0, 8000.0, 11061.2], 0, [3861.1, 8000.0, 12120.5], 0, 0, 0, [1703.5, 8000.0, 9938.0], 0, [423.5, 8000.0, 8764.2], 0, 0, 0, 0, [399.0, 8000.0, 8764.2], 0, [[408.8, 8000.0, 12981.3], [654.0, 8000.0, 4256.3]], 0, 0, [641.6, 8000.0, 8911.2], 0, 0, [428.4, 8000.0, 8793.6], 0
+                null,
+                null,
+                [[384.3, 8000.0, 8715.2]],
+                null,
+                null,
+                [[5410.0, 8000.0, 13267.2]],
+                null,
+                null,
+                null,
+                null,
+                null,
+                [[389.2, 8000.0, 8725.0]],
+                null,
+                null,
+                [[5429.6, 8000.0, 13244.6]],
+                null,
+                null,
+                [[379.4, 80000, 8685.8], [7364.6, 8000.0, 14879.7]],
+                null,
+                null,
+                null,
+                null,
+                null,
+                [[399.0, 8000.0, 8725.0]],
+                null,
+                null,
+                [[5842.3, 8000.0, 13627.0]],
+                null,
+                null,
+                null,
+                null,
+                null,
+                [[389.2, 8000.0, 8695.6]],
+                null,
+                null,
+                [[840.0, 8000.0, 9077.8], [435.7, 8000.0, 8312.7]],
+                null,
+                null,
+                [[389.2, 8000.0, 8774.0]],
+                null,
+                null,
+                null,
+                null,
+                null,
+                [[3197.1, 8000.0, 11256.9]],
+                null,
+                null,
+                [[389.2, 8000.0, 8725.0]],
+                null,
+                null,
+                null,
+                null,
+                null,
+                [[2546.4, 8000.0, 10669.6]],
+                null,
+                null,
+                null,
+                [[951.0, 8000.0, 9224.8]],
+                [[5194.4, 8000.0, 13162.1]],
+                [[215.8, 8000.0, 7972.5]],
+                null,
+                null,
+                null,
+                null,
+                [[3006.0, 8000.0, 11061.2]],
+                null,
+                [[3861.1, 8000.0, 12120.5]],
+                null,
+                null,
+                null,
+                [[1703.5, 8000.0, 9938.0]],
+                null,
+                [[423.5, 8000.0, 8764.2]],
+                null,
+                null,
+                null,
+                null,
+                [[399.0, 8000.0, 8764.2]],
+                null,
+                [[408.8, 8000.0, 12981.3], [654.0, 8000.0, 4256.3]],
+                null,
+                null,
+                [[641.6, 8000.0, 8911.2]],
+                null,
+                null,
+                [[428.4, 8000.0, 8793.6]],
+                0
             ],
             [
-                6330.0, 3031.0, 0, 2775.0, 0, 495.0, 2928.0, 37.0, 9829.0, 0, 0, 1263.0, 2027.0, 0, 10521.0, 2194.0, 59.0, 10198.0, 3393.0, 2481.0, 0, 0, 0, 1018.0, 1856.0, 0, 358.0, 2004.0, 0, 10330.0, 513.0, 0, 0, 2035.0, 0, 10345.0, 3020.0, 3.0, 10002.0, 1395.0, 51.0, 192.0, 831.0, 1827.0, 9000.0, 1741.0, 0, 0, 2044.0, 0, 2137.0, 1847.0, 1.0, 0, 5205.0, 4336.0, 0, 2688.0, 3028.0, 0, 4556.0, 4880.0, 0, 5023.0, 3497.0, 0, 5285.0, 4517.0, 0, 5212.0, 4255.0, 0, 5328.0, 4015.0, 0, 4053.0, 0, 0, 8053.0, 6359.0, 0, 5558.0, 7191.0, 0, 5274.0, 5504.0, 0
+                [6330.0],
+                [3031.0],
+                [0],
+                [2775.0],
+                [0],
+                [495.0],
+                [2928.0],
+                [37.0],
+                [9829.0],
+                [0],
+                [0],
+                [1263.0],
+                [2027.0],
+                [0],
+                [10521.0],
+                [2194.0],
+                [59.0],
+                [10198.0],
+                [3393.0],
+                [2481.0],
+                [0],
+                [0],
+                [0],
+                [1018.0],
+                [1856.0],
+                [0],
+                [358.0],
+                [2004.0],
+                [0],
+                [10330.0],
+                [513.0],
+                [0],
+                [0],
+                [2035.0],
+                [0],
+                [10345.0],
+                [3020.0],
+                [3.0],
+                [10002.0],
+                [1395.0],
+                [51.0],
+                [192.0],
+                [831.0],
+                [1827.0],
+                [9000.0],
+                [1741.0],
+                [0],
+                [0],
+                [2044.0],
+                [0],
+                [2137.0],
+                [1847.0],
+                [1.0],
+                [0],
+                [5205.0],
+                [4336.0],
+                [0],
+                [2688.0],
+                [3028.0],
+                [0],
+                [4556.0],
+                [4880.0],
+                [0],
+                [5023.0],
+                [3497.0],
+                [0],
+                [5285.0],
+                [4517.0],
+                [0],
+                [5212.0],
+                [4255.0],
+                [0],
+                [5328.0],
+                [4015.0],
+                [0],
+                [4053.0],
+                [0],
+                [0],
+                [8053.0],
+                [6359.0],
+                [0],
+                [5558.0],
+                [7191.0],
+                [0],
+                [5274.0],
+                [5504.0],
+                [0]
             ],
             [
                 4119.2, 931.0, 8839.6, 6454.3, 6316.1, 13941.7, 10806.7, 10916.2, 1063.3, 903.4, 854.4, 7601.0, 5882.4, 5894.8, 3383.6, 1038.0, 900.1, 6656.0, 3657.6, 1006.4, 888.7, 839.6, 893.6, 7850.7, 6357.9, 6316.2, 13992.5, 11743.2, 11933.3, 1551.2, 975.2, 864.2, 8820.0, 7125.7, 7402.3, 12833.0, 9687.3, 9769.1, 7828.3, 6574.9, 6475.9, 6266.7, 5301.1, 2476.4, 2426.7, 747.7, 654.9, 8625.5, 6894.8, 7046.0, 4880.0, 2898.0, 2739.9, 10750.4, 5732.6, 1440.7, 1189.0, 6511.9, 11712.4, 19703.1, 14875.8, 10309.0, 10132.5, 5196.1, 9738.3, 9896.9, 12581.4, 7997.4, 8171.3, 2967.0, 6460.0, 6690.0, 9372.1, 5403.2, 5357.0, 1343.7, 1085.8, 9080.9, 1357.0, 10712.9, 11068.5, 5473.2, 6513.0, 6467.1, 1232.4, 3374.6, 3566.3
@@ -120,32 +368,30 @@ class DumpController extends Controller
         // Inisiasi Standar
 
         // Dinamis
-        $dombak = Dombak::select('nama_dombak', 'dombak_id')->where('nama_dombak', 'DM2-PL')->first();
-        $standMeterLast1 = 7804670;
-        $standMeterLast2 = 8530513;
+        $dombak = Dombak::select('nama_dombak', 'dombak_id')->where('nama_dombak', 'DM4-BS')->first();
         $tgl = 1;
         $bln = '02';
-
-        // Nozzle
-        // Pertalite
-        $nozzle1 = Nozzle::where('nama_nozzle', 'N-2A PL')->first();
-        $nozzle2 = Nozzle::where('nama_nozzle', 'N-2B PL')->first();
-
+        $nozzle = [
+            Nozzle::where('nama_nozzle', 'N-3A BS')->first()
+        ];
+        $standMeterLast = [
+            13966444
+        ];
 
         // $nozzle1 = Nozzle::where('nama_nozzle', 'N-1B PX')->first(); // Pertamax
         // $nozzle1 = Nozzle::where('nama_nozzle', 'N-3A BS')->first(); // Bio Solar
         // $nozzle1 = Nozzle::where('nama_nozzle', 'N-3B PDX')->first(); // Nozzle-3B Pertamina Dex
 
         // End Dinamis
-        $dataPertaliteFlip = $this->flip_row_col_array($dataPertalite);
-        unset($dataPertalite);
-        $jadwalKerja = [
+        $dataBioSolarFlip = $this->flip_row_col_array($dataBioSolar);
+        unset($dataBioSolar);
+        $jamKerja = [
             'd61ddc4b-f97c-4361-935a-26718af856d7',
             '2d377da7-19fd-4459-8a1b-fd5bf5b390a3',
             'ddcfd64a-dae4-4044-a58f-ae7035108a92',
         ];
-        $data = array_chunk($dataPertaliteFlip, count($jadwalKerja));
-        unset($dataPertaliteFlip);
+        $data = array_chunk($dataBioSolarFlip, count($jamKerja));
+        unset($dataBioSolarFlip);
 
         $type_dokumen_stock = TypeDokumenStok::select('type_dokumen_stok_id')->where('type_movement', 'Stok Taking')->first();
         $type_dokumen_stock_penerimaan = TypeDokumenStok::select('type_dokumen_stok_id')->where('type_movement', 'Good Receive Penerimaan')->first();
@@ -155,148 +401,42 @@ class DumpController extends Controller
         $jenisLosses = JenisLosses::where('jenis_loss', 'Stok Taking')->first();
         $stokAwal = $stok_inventory->stok;
 
-        // dd($data);
-        // Process
+        dd($data);
+        // loop for tanggal
         for ($i = 0; $i < count($data); $i++) {
-            for ($j = 0; $j < count($jadwalKerja); $j++) {
-                if ($data[$i][$j]['1'] !== 0) {
-                    // Ada Penerimaan
-                    if (is_array($data[$i][$j]['1']['0'])) {
-                        $helper = 0;
-                        foreach ($data[$i][$j]['1'] as $k) {
-                            // Penerimaan lebih dari satu kali di satu shift
-                            // Stok Taking Sebelum Penerimaan
-                            $stokTakingBeforePenerimaan = true;
-                            $stokAwalLoop = $stokAwal;
-                            $stokHelper = 0;
-                            do {
-                                $stokAwal = $stokAwalLoop;
-                                if (is_null($type_dokumen_stock->dokumen_stok()->where('stok_inventory_id', $stok_inventory->stok_inventory_id)->where('jam_kerja_id', $jadwalKerja[$j])->where('member_id', Auth::user()->member_id)->where('dombak_id', $dombak->dombak_id)->where('tanggal', date('2024-' . $bln . '-' . ($tgl + $i)))->where('stok_awal', $helper > 0 ? $stokAwal : $data[$i][$j]['0'])->where('stok_akhir', $k['0'])->where('is_confirmation', true)->first())) {
-                                    $dokumenStok = $type_dokumen_stock->dokumen_stok()->create([
-                                        'stok_inventory_id' => $stok_inventory->stok_inventory_id,
-                                        'jam_kerja_id' => $jadwalKerja[$j],
-                                        'member_id' => Auth::user()->member_id,
-                                        'dombak_id' => $dombak->dombak_id,
-                                        'tanggal' => date('2024-' . $bln . '-' . ($tgl + $i)),
-                                        'stok_awal' => $helper > 0 ? $stokAwal : $data[$i][$j]['0'],
-                                        'stok_akhir' => $k['0'],
-                                        'is_confirmation' => true
-                                    ]);
+            // loop for shift
+            for ($j = 0; $j < count($jamKerja); $j++) {
+                // $data[$i][$j]['0']; // Awal Stok di dombak || integer
+                // $data[$i][$j]['1']; // Penerimaan || integer / array
+                // $data[$i][$j]['2']; // Penjualan || integer / array
+                // $data[$i][$j]['3']; // Stok Akhir Teoritis || integer
+                // $data[$i][$j]['4']; // Stok Akhir Dipping || integer
 
-                                    // Update Stok
-                                    $x = $helper > 0 ? $k['0'] - $stokAwal : $k['0'] - $data[$i][$j]['0'];
-                                    $stok_inventory->update([
-                                        'stok' => $stok_inventory->stok + ($x)
-                                    ]);
-                                    $stok_inventory->stok_inventory_dombak()->where('dombak_id', $dombak->dombak_id)->first()->update([
-                                        'stok' => $stok_inventory->stok_inventory_dombak()->where('dombak_id', $dombak->dombak_id)->first()->stok + ($x)
-                                    ]);
-                                    unset($x);
-
-                                    $stokAwal = $k['0'];
-                                    $stokHelper = $k['0'];
-
-                                    // Buat Relasi Konversi ke Dokumen Stok
-                                    $konversi = $dombak->konversi()->where('volume', $k['0'])->first();
-
-                                    if (!is_null($konversi)) {
-                                        DB::table('konversi_dokumen_stok')->insert([
-                                            'konversi_id' => $konversi->konversi_id,
-                                            'dokumen_stok_id' => $dokumenStok->dokumen_stok_id
-                                        ]);
-                                    }
-                                    // End Stok Taking
-                                } else {
-                                    $stokTakingBeforePenerimaan = false;
-                                    $stokAwal = $stokHelper;
-                                }
-                            } while ($stokTakingBeforePenerimaan);
-
-                            $penerimaanLoop = true;
-                            $stokAwalLoop = $stokAwal;
-                            $stokHelper = 0;
-                            do {
-                                $stokAwal = $stokAwalLoop;
-                                if (is_null($type_dokumen_stock_penerimaan->dokumen_stok()->where('stok_inventory_id', $stok_inventory->stok_inventory_id)->where('jam_kerja_id', $jadwalKerja[$j])->where('member_id', Auth::user()->member_id)->where('dombak_id', $dombak->dombak_id)->where('tanggal', date('2024-' . $bln . '-' . ($tgl + $i)))->where('stok_awal', $stokAwal)->where('stok_akhir', $k['2'])->where('is_confirmation', true)->first())) {
-                                    $dokumenStokPenerimaan = $type_dokumen_stock_penerimaan->dokumen_stok()->create([
-                                        'stok_inventory_id' => $stok_inventory->stok_inventory_id,
-                                        'jam_kerja_id' => $jadwalKerja[$j],
-                                        'member_id' => Auth::user()->member_id,
-                                        'dombak_id' => $dombak->dombak_id,
-                                        'tanggal' => date('2024-' . $bln . '-' . ($tgl + $i)),
-                                        'stok_awal' => $stokAwal,
-                                        'stok_akhir' => $k['2'],
-                                        'is_confirmation' => true
-                                    ]);
-
-                                    if (($k['2'] - $k['0']) < $k['1']) {
-                                        // loss
-                                        $dokumenStok->losses()->create([
-                                            'jenis_losses_id' => $jenisLosses->jenis_losses_id,
-                                            'tanggal' => date('2024-' . $bln . '-' . ($tgl + $i) . ' H:i:s'),
-                                            'simbol' => 'kurang',
-                                            'jumlah' => ($k['2'] - $k['0']) - $k['1']
-                                        ]);
-                                    } else {
-                                        // Profit
-                                        $dokumenStok->losses()->create([
-                                            'jenis_losses_id' => $jenisLosses->jenis_losses_id,
-                                            'tanggal' => date('2024-' . $bln . '-' . ($tgl + $i) . ' H:i:s'),
-                                            'simbol' => 'lebih',
-                                            'jumlah' => $k['1'] - ($k['2'] - $k['0'])
-                                        ]);
-                                    }
-
-                                    $stokAwal = $k['2'];
-                                    $stokHelper = $k['2'];
-
-                                    // Update Stok
-                                    $stok_inventory->update([
-                                        'stok' => $stok_inventory->stok + ($k['2'] - $k['0'])
-                                    ]);
-                                    $stok_inventory->stok_inventory_dombak()->where('dombak_id', $dombak->dombak_id)->first()->update([
-                                        'stok' => $stok_inventory->stok_inventory_dombak()->where('dombak_id', $dombak->dombak_id)->first()->stok + ($k['2'] - $k['0'])
-                                    ]);
-
-                                    // Buat relasi Konversi ke dokumen
-                                    $konversi = $dombak->konversi()->where('volume', ($k['2']))->first();
-                                    if (!is_null($konversi)) {
-                                        DB::table('konversi_dokumen_stok')->insert([
-                                            'konversi_id' => $konversi->konversi_id,
-                                            'dokumen_stok_id' => $dokumenStokPenerimaan->dokumen_stok_id
-                                        ]);
-                                    }
-                                    // End Penerimaan
-                                } else {
-                                    $penerimaanLoop = false;
-                                    $stokAwal = $stokHelper;
-                                }
-                            } while ($penerimaanLoop);
-                        }
-                    } else {
-                        // Penerimaan satu kali dalam satu shift
-                        // Stok Taking Sebelum Penerimaan
+                if (!is_null($data[$i][$j]['1'])) {
+                    for ($k = 0; $k < count($data[$i][$j]['1']); $k++) {
+                        // stok taking sebelum penerimaan
                         $dokumenStok = $type_dokumen_stock->dokumen_stok()->create([
                             'stok_inventory_id' => $stok_inventory->stok_inventory_id,
-                            'jam_kerja_id' => $jadwalKerja[$j],
+                            'jam_kerja_id' => $jamKerja[$j],
                             'member_id' => Auth::user()->member_id,
                             'dombak_id' => $dombak->dombak_id,
                             'tanggal' => date('2024-' . $bln . '-' . ($tgl + $i)),
-                            'stok_awal' => $data[$i][$j]['0'],
-                            'stok_akhir' => $data[$i][$j]['1']['0'],
+                            'stok_awal' => $stokAwal,
+                            'stok_akhir' => $data[$i][$j]['1'][$k]['0'],
                             'is_confirmation' => true
                         ]);
+                        $stokAwal = $data[$i][$j]['1'][$k]['0'];
 
                         // Update Stok
                         $stok_inventory->update([
-                            'stok' => $stok_inventory->stok + ($data[$i][$j]['1']['0'] - $data[$i][$j]['0'])
+                            'stok' => $stok_inventory->stok + ($data[$i][$j]['1'][$k]['0'] - $stokAwal)
                         ]);
                         $stok_inventory->stok_inventory_dombak()->where('dombak_id', $dombak->dombak_id)->first()->update([
-                            'stok' => $stok_inventory->stok_inventory_dombak()->where('dombak_id', $dombak->dombak_id)->first()->stok + ($data[$i][$j]['1']['0'] - $data[$i][$j]['0'])
+                            'stok' => $stok_inventory->stok_inventory_dombak()->where('dombak_id', $dombak->dombak_id)->first()->stok + ($data[$i][$j]['1'][$k]['0'] - $data[$i][$j]['0'])
                         ]);
 
                         // Buat Relasi Konversi ke Dokumen Stok
-                        $konversi = $dombak->konversi()->where('volume', $data[$i][$j]['1']['0'])->first();
+                        $konversi = $dombak->konversi()->where('volume', $data[$i][$j]['1'][$k]['0'])->first();
 
                         if (!is_null($konversi)) {
                             DB::table('konversi_dokumen_stok')->insert([
@@ -309,22 +449,22 @@ class DumpController extends Controller
                         // Penerimaan
                         $dokumenStokPenerimaan = $type_dokumen_stock_penerimaan->dokumen_stok()->create([
                             'stok_inventory_id' => $stok_inventory->stok_inventory_id,
-                            'jam_kerja_id' => $jadwalKerja[$j],
+                            'jam_kerja_id' => $jamKerja[$j],
                             'member_id' => Auth::user()->member_id,
                             'dombak_id' => $dombak->dombak_id,
                             'tanggal' => date('2024-' . $bln . '-' . ($tgl + $i)),
-                            'stok_awal' => $data[$i][$j]['1']['0'],
-                            'stok_akhir' => $data[$i][$j]['1']['2'],
+                            'stok_awal' => $stokAwal,
+                            'stok_akhir' => $data[$i][$j]['1'][$k]['2'],
                             'is_confirmation' => true
                         ]);
 
-                        if (($data[$i][$j]['1']['2'] - $data[$i][$j]['1']['0']) < $data[$i][$j]['1']['1']) {
+                        if ($data[$i][$j]['1'][$k]['1'] > ($data[$i][$j]['1'][$k]['2'] - $data[$i][$j]['1'][$k]['0'])) {
                             // loss
                             $dokumenStok->losses()->create([
                                 'jenis_losses_id' => $jenisLosses->jenis_losses_id,
                                 'tanggal' => date('2024-' . $bln . '-' . ($tgl + $i) . ' H:i:s'),
                                 'simbol' => 'kurang',
-                                'jumlah' => ($data[$i][$j]['1']['2'] - $data[$i][$j]['1']['0']) - $data[$i][$j]['1']['1']
+                                'jumlah' => $data[$i][$j]['1'][$k]['1'] - ($data[$i][$j]['1'][$k]['2'] - $data[$i][$j]['1'][$k]['0'])
                             ]);
                         } else {
                             // Profit
@@ -332,22 +472,22 @@ class DumpController extends Controller
                                 'jenis_losses_id' => $jenisLosses->jenis_losses_id,
                                 'tanggal' => date('2024-' . $bln . '-' . ($tgl + $i) . ' H:i:s'),
                                 'simbol' => 'lebih',
-                                'jumlah' => $data[$i][$j]['1']['1'] - ($data[$i][$j]['1']['2'] - $data[$i][$j]['1']['0'])
+                                'jumlah' => $data[$i][$j]['1'][$k]['1'] - ($data[$i][$j]['1'][$k]['2'] - $data[$i][$j]['1'][$k]['0'])
                             ]);
                         }
 
-                        $stokAwal = $data[$i][$j]['1']['2'];
+                        $stokAwal = $data[$i][$j]['1'][$k]['2'];
 
                         // Update Stok
                         $stok_inventory->update([
-                            'stok' => $stok_inventory->stok + ($data[$i][$j]['1']['2'] - $data[$i][$j]['1']['0'])
+                            'stok' => $stok_inventory->stok + ($data[$i][$j]['1'][$k]['2'] - $data[$i][$j]['1'][$k]['0'])
                         ]);
                         $stok_inventory->stok_inventory_dombak()->where('dombak_id', $dombak->dombak_id)->first()->update([
-                            'stok' => $stok_inventory->stok_inventory_dombak()->where('dombak_id', $dombak->dombak_id)->first()->stok + ($data[$i][$j]['1']['2'] - $data[$i][$j]['1']['0'])
+                            'stok' => $stok_inventory->stok_inventory_dombak()->where('dombak_id', $dombak->dombak_id)->first()->stok + ($data[$i][$j]['1'][$k]['2'] - $data[$i][$j]['1'][$k]['0'])
                         ]);
 
                         // Buat relasi Konversi ke dokumen
-                        $konversi = $dombak->konversi()->where('volume', ($data[$i][$j]['1']['2']))->first();
+                        $konversi = $dombak->konversi()->where('volume', ($data[$i][$j]['1'][$k]['2']))->first();
                         if (!is_null($konversi)) {
                             DB::table('konversi_dokumen_stok')->insert([
                                 'konversi_id' => $konversi->konversi_id,
@@ -355,147 +495,33 @@ class DumpController extends Controller
                             ]);
                         }
                     }
+                    // end of penerimaan
                 }
-                if ($data[$i][$j]['2'] !== 0) {
-                    // Ada Penjualan
-                    if (is_array($data[$i][$j]['2'])) {
-                        // penjualan lebih dari satu nozzle
-
-                        $checkPenjualan1 = true;
-                        $stokAwalLoop = $stokAwal;
-                        $stokHelper = 0;
-                        do {
-                            $stokAwal = $stokAwalLoop;
-                            if (is_null($type_dokumen_stock_penjualan->dokumen_stok()->where('stok_inventory_id', $stok_inventory->stok_inventory_id)->where('jam_kerja_id', $jadwalKerja[$j])->where('member_id', Auth::user()->member_id)->where('dombak_id', $dombak->dombak_id)->where('tanggal', date('2024-' . $bln . '-' . ($tgl + $i)))->where('stok_awal', $stokAwal)->where('stok_akhir', $stokAwal - $data[$i][$j]['2']['0'])->where('is_confirmation', true)->first())) {
-                                $dokumenStokPenjualan = $type_dokumen_stock_penjualan->dokumen_stok()->create([
-                                    'stok_inventory_id' => $stok_inventory->stok_inventory_id,
-                                    'jam_kerja_id' => $jadwalKerja[$j],
-                                    'member_id' => Auth::user()->member_id,
-                                    'dombak_id' => $dombak->dombak_id,
-                                    'tanggal' => date('2024-' . $bln . '-' . ($tgl + $i)),
-                                    'stok_awal' => $stokAwal,
-                                    'stok_akhir' => $stokAwal - $data[$i][$j]['2']['0'],
-                                    'is_confirmation' => true
-                                ]);
-                                $stokAwal = $stokAwal - $data[$i][$j]['2']['0'];
-                                $stokHelper = $stokAwal - $data[$i][$j]['2']['0'];
-                                // Update Stok
-                                $stok_inventory->update([
-                                    'stok' => $stok_inventory->stok - $data[$i][$j]['2']['0']
-                                ]);
-                                $stok_inventory->stok_inventory_dombak()->where('dombak_id', $dombak->dombak_id)->first()->update([
-                                    'stok' => $stok_inventory->stok_inventory_dombak()->where('dombak_id', $dombak->dombak_id)->first()->stok - $data[$i][$j]['2']['0']
-                                ]);
-
-                                // Relasi Konversi ke dokumen stok
-                                $konversi = $dombak->konversi()->where('volume', ($stokAwal - $data[$i][$j]['2']['0']))->first();
-
-                                if (!is_null($konversi)) {
-                                    DB::table('konversi_dokumen_stok')->insert([
-                                        'konversi_id' => $konversi->konversi_id,
-                                        'dokumen_stok_id' => $dokumenStokPenjualan->dokumen_stok_id
-                                    ]);
-                                }
-
-                                $standMeter = $nozzle1->stand_meter()->create([
-                                    'dombak_id' => $dombak->dombak_id,
-                                    'jam_kerja_id' => $jadwalKerja[$j],
-                                    'tanggal' => '2024-01-' . ($tgl + $i),
-                                    'stand_meter_awal' => $standMeterLast1,
-                                    'stand_meter_akhir' => $standMeterLast1 + $data[$i][$j]['2']['0'],
-                                    'is_confirmation' => true
-                                ]);
-                                $standMeterLast1 += $data[$i][$j]['2']['0'];
-
-                                DB::table('stand_meter_dokumen_stok')->insert([
-                                    'stand_meter_id' => $standMeter->stand_meter_id,
-                                    'dokumen_stok_id' => $dokumenStokPenjualan->dokumen_stok_id
-                                ]);
-                            } else {
-                                $checkPenjualan1 = false;
-                                $stokAwal = $stokHelper;
-                            }
-                        } while ($checkPenjualan1);
-
-                        // SM 2
-                        $checkPenjualan2 = true;
-                        $stokAwalLoop = $stokAwal;
-                        $stokHelper = 0;
-                        do {
-                            $stokAwal = $stokAwalLoop;
-                            if (is_null($type_dokumen_stock_penjualan->dokumen_stok()->where('stok_inventory_id', $stok_inventory->stok_inventory_id)->where('jam_kerja_id', $jadwalKerja[$j])->where('member_id', Auth::user()->member_id)->where('dombak_id', $dombak->dombak_id)->where('tanggal', date('2024-' . $bln . '-' . ($tgl + $i)))->where('stok_awal', $stokAwal)->where('stok_akhir', $stokAwal - $data[$i][$j]['2']['1'])->where('is_confirmation', true)->first())) {
-                                $dokumenStokPenjualan = $type_dokumen_stock_penjualan->dokumen_stok()->create([
-                                    'stok_inventory_id' => $stok_inventory->stok_inventory_id,
-                                    'jam_kerja_id' => $jadwalKerja[$j],
-                                    'member_id' => Auth::user()->member_id,
-                                    'dombak_id' => $dombak->dombak_id,
-                                    'tanggal' => date('2024-' . $bln . '-' . ($tgl + $i)),
-                                    'stok_awal' => $stokAwal,
-                                    'stok_akhir' => $stokAwal - $data[$i][$j]['2']['1'],
-                                    'is_confirmation' => true
-                                ]);
-                                $stokAwal = $stokAwal - $data[$i][$j]['2']['1'];
-                                $stokHelper = $stokAwal - $data[$i][$j]['2']['1'];
-                                // Update Stok
-                                $stok_inventory->update([
-                                    'stok' => $stok_inventory->stok - $data[$i][$j]['2']['1']
-                                ]);
-                                $stok_inventory->stok_inventory_dombak()->where('dombak_id', $dombak->dombak_id)->first()->update([
-                                    'stok' => $stok_inventory->stok_inventory_dombak()->where('dombak_id', $dombak->dombak_id)->first()->stok - $data[$i][$j]['2']['1']
-                                ]);
-                                // Relasi Konversi ke dokumen stok
-                                $konversi = $dombak->konversi()->where('volume', ($stokAwal - $data[$i][$j]['2']['1']))->first();
-
-                                if (!is_null($konversi)) {
-                                    DB::table('konversi_dokumen_stok')->insert([
-                                        'konversi_id' => $konversi->konversi_id,
-                                        'dokumen_stok_id' => $dokumenStokPenjualan->dokumen_stok_id
-                                    ]);
-                                }
-
-                                $standMeter = $nozzle2->stand_meter()->create([
-                                    'dombak_id' => $dombak->dombak_id,
-                                    'jam_kerja_id' => $jadwalKerja[$j],
-                                    'tanggal' => '2024-' . $bln . '-' . ($tgl + $i),
-                                    'stand_meter_awal' => $standMeterLast2,
-                                    'stand_meter_akhir' => $standMeterLast2 + $data[$i][$j]['2']['1'],
-                                    'is_confirmation' => true
-                                ]);
-                                $standMeterLast2 += $data[$i][$j]['2']['1'];
-
-                                DB::table('stand_meter_dokumen_stok')->insert([
-                                    'stand_meter_id' => $standMeter->stand_meter_id,
-                                    'dokumen_stok_id' => $dokumenStokPenjualan->dokumen_stok_id
-                                ]);
-                            } else {
-                                $checkPenjualan2 = false;
-                                $stokAwal = $stokHelper;
-                            }
-                        } while ($checkPenjualan2);
-                    } else {
-                        // Ada Penjualan satu nozle
+                // penjualan
+                if (!is_null($data[$i][$j]['2'])) {
+                    for ($k = 0; $k < count($data[$i][$j]['2']); $k++) {
                         $dokumenStokPenjualan = $type_dokumen_stock_penjualan->dokumen_stok()->create([
                             'stok_inventory_id' => $stok_inventory->stok_inventory_id,
-                            'jam_kerja_id' => $jadwalKerja[$j],
+                            'jam_kerja_id' => $jamKerja[$j],
                             'member_id' => Auth::user()->member_id,
                             'dombak_id' => $dombak->dombak_id,
                             'tanggal' => date('2024-' . $bln . '-' . ($tgl + $i)),
                             'stok_awal' => $stokAwal,
-                            'stok_akhir' => $stokAwal - $data[$i][$j]['2'],
+                            'stok_akhir' => $stokAwal - $data[$i][$j]['2'][$k],
                             'is_confirmation' => true
                         ]);
-                        $stokAwal = $stokAwal - $data[$i][$j]['2'];
+                        $stokAwal = $stokAwal - $data[$i][$j]['2'][$k];
 
                         // Update Stok
                         $stok_inventory->update([
-                            'stok' => $stok_inventory->stok - $data[$i][$j]['2']
+                            'stok' => $stok_inventory->stok - $data[$i][$j]['2'][$k]
                         ]);
                         $stok_inventory->stok_inventory_dombak()->where('dombak_id', $dombak->dombak_id)->first()->update([
-                            'stok' => $stok_inventory->stok_inventory_dombak()->where('dombak_id', $dombak->dombak_id)->first()->stok - $data[$i][$j]['2']
+                            'stok' => $stok_inventory->stok_inventory_dombak()->where('dombak_id', $dombak->dombak_id)->first()->stok - $data[$i][$j]['2'][$k]
                         ]);
 
                         // Relasi Konversi ke dokumen stok
-                        $konversi = $dombak->konversi()->where('volume', ($stokAwal - $data[$i][$j]['2']))->first();
+                        $konversi = $dombak->konversi()->where('volume', ($stokAwal - $data[$i][$j]['2'][$k]))->first();
 
                         if (!is_null($konversi)) {
                             DB::table('konversi_dokumen_stok')->insert([
@@ -504,32 +530,33 @@ class DumpController extends Controller
                             ]);
                         }
 
-                        // Isi Stand Meter
-                        $standMeter = $nozzle1->stand_meter()->create([
+                        $standMeter = $nozzle[$k]->stand_meter()->create([
                             'dombak_id' => $dombak->dombak_id,
-                            'jam_kerja_id' => $jadwalKerja[$j],
+                            'jam_kerja_id' => $jamKerja[$j],
                             'tanggal' => '2024-' . $bln . '-' . ($tgl + $i),
-                            'stand_meter_awal' => $standMeterLast1,
-                            'stand_meter_akhir' => $standMeterLast1 + $data[$i][$j]['2'],
+                            'stand_meter_awal' => $standMeterLast[$k],
+                            'stand_meter_akhir' => $standMeterLast[$k] + $data[$i][$j]['2'][$k],
                             'is_confirmation' => true
                         ]);
-                        $standMeterLast1 += $data[$i][$j]['2'];
+                        $standMeterLast[$k] += $data[$i][$j]['2'][$k];
 
                         DB::table('stand_meter_dokumen_stok')->insert([
                             'stand_meter_id' => $standMeter->stand_meter_id,
                             'dokumen_stok_id' => $dokumenStokPenjualan->dokumen_stok_id
                         ]);
                     }
+                    // end of penjualan
                 }
+
                 // Stok Taking
                 $dokumenStok = $type_dokumen_stock->dokumen_stok()->create([
                     'stok_inventory_id' => $stok_inventory->stok_inventory_id,
-                    'jam_kerja_id' => $jadwalKerja[$j] ?? $j,
+                    'jam_kerja_id' => $jamKerja[$j],
                     'member_id' => Auth::user()->member_id,
                     'dombak_id' => $dombak->dombak_id,
                     'tanggal' => date('2024-' . $bln .  '-' . ($tgl + $i)),
                     'stok_awal' => $stokAwal,
-                    'stok_akhir' => $data[$i][$j]['4'] ?? $j,
+                    'stok_akhir' => $data[$i][$j]['4'],
                     'is_confirmation' => true
                 ]);
 
@@ -550,7 +577,6 @@ class DumpController extends Controller
                         'dokumen_stok_id' => $dokumenStok->dokumen_stok_id
                     ]);
                 }
-
                 // Losses
                 if ($stokAwal > $data[$i][$j]['4']) {
                     // loss
@@ -572,7 +598,6 @@ class DumpController extends Controller
                 $stokAwal = $data[$i][$j]['4'];
             }
         }
-
 
         return response()->json([
             'status' => 'ok'

@@ -37,13 +37,19 @@ class DetailRencanaPembelianController extends Controller
         return view('procurement/perencanaan_detail/index', compact('rencana'));
     }
 
+    public function getRandomKode(RencanaPembelian $rencana)
+    {
+        $temp = $rencana->kode_pembelian;
+        return $temp . '-' . ($rencana->detail_rencana_pembelian()->count() + 1);
+    }
     /**
      * Show the form for creating a new resource.
      */
     public function create(RencanaPembelian $rencana)
     {
         $produk = Produk::all();
-        return view('procurement/perencanaan_detail/create', compact('rencana', 'produk'));
+        $kode = $this->getRandomKode($rencana);
+        return view('procurement/perencanaan_detail/create', compact('rencana', 'produk', 'kode'));
     }
 
     /**
@@ -55,18 +61,20 @@ class DetailRencanaPembelianController extends Controller
             "produk_id" => ["required"],
             "jumlah" => ["required"],
             "satuan_jumlah" => ["required"],
+            'kode' => ['required']
         ]);
 
         $harga = $this->getHargaSatuanProduk(request('produk_id'));
 
-        $detail = $rencana->detail_rencana_pembelian()->where("produk_id", request('produk_id'))->where("jumlah", str_replace(',', '', request('jumlah')))->where("satuan_jumlah", request('satuan_jumlah'))->where("rit", $this->checkRecommendedRit(str_replace(',', '', request('jumlah'))))->where("harga", $harga)->where("total_harga", $harga * str_replace(',', '', request('jumlah')))->where("is_confirmation", false)->where("ms2", false)->where("delivery", false)->first();
+        $detail = $rencana->detail_rencana_pembelian()->where("produk_id", request('produk_id'))->where("satuan_jumlah", request('satuan_jumlah'))->where("rit", $this->checkRecommendedRit(str_replace(',', '', request('jumlah'))))->where("harga", $harga)->where("total_harga", $harga * str_replace(',', '', request('jumlah')))->where("is_confirmation", false)->where('kode_detail', $request->kode)->where("ms2", false)->where("delivery", false)->first();
+
         if (is_null($detail)) {
-            $detail = $rencana->detail_rencana_pembelian()->create($this->detailData());
+            $detail = $rencana->detail_rencana_pembelian()->create($this->detailData(request('kode')));
             $rencana->update(['grand_total' => $rencana->grand_total + ($harga * str_replace(',', '', request('jumlah')))]);
         }
 
-
         return redirect('/procurement/perencanaan/' . $rencana->rencana_pembelian_id . '/produk/' . $detail->detail_rencana_pembelian_id)->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> Data Produk Rencana Pembelian sudah ditambah.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
+        exit;
     }
 
     /**
@@ -93,7 +101,7 @@ class DetailRencanaPembelianController extends Controller
     {
         $totalHargaProduk = $rencana->detail_rencana_pembelian()->where('produk_id', $request->produk_id)->first()->total_harga;
 
-        $detail->update($this->detailData());
+        $detail->update($this->detailData($detail->kode_detail));
 
         $harga = $this->getHargaSatuanProduk(request('produk_id'));
         $rencana->update(['grand_total' => ($rencana->grand_total - $totalHargaProduk) + $harga * str_replace(',', '', request('jumlah'))]);
@@ -111,7 +119,7 @@ class DetailRencanaPembelianController extends Controller
         return redirect('/procurement/perencanaan/' . $rencana->rencana_pembelian_id . '/produk')->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> Data Produk Rencana Pembelian sudah dihapus.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
     }
 
-    public function detailData()
+    public function detailData($kode)
     {
         $harga = $this->getHargaSatuanProduk(request('produk_id'));
         return [
@@ -124,6 +132,7 @@ class DetailRencanaPembelianController extends Controller
             "is_confirmation" => false,
             "ms2" => false,
             "delivery" => false,
+            'kode_detail' => $kode
         ];
     }
 
