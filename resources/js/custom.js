@@ -3,6 +3,7 @@
 const { default: Swal } = require("sweetalert2");
 import Cleave from "cleave.js"
 import { Chart, registerables } from "chart.js/auto";
+import QrScanner from 'qr-scanner';
 
 $(function () {
     let routeName = ($('meta[name=route]')[0].content);
@@ -2179,6 +2180,155 @@ $(function () {
                 error: function(err) {console.error(err)}
             });
         })
+    }
+    if(routeName == 'menu.kehadiran') {
+        $('.table-jadwal-kerja').DataTable({
+            language: {
+                url: cdnDatatableIdn,
+            },
+            processing: true,
+            serverSide: true,
+            ajax: document.location.href,
+            columns: [
+                {data: 'status', name: 'status'},
+                {data: 'tanggal', name: 'tanggal'},
+                {data: 'jam_kerja', name: 'jam_kerja'},
+                {data: 'nozzle', name: 'nozzle'},
+                {data: 'action', name: 'action', orderable: false, searchable: false},
+            ]
+        });
+    }
+    if(routeName == 'kehadiran.show') {
+        if($('#jenis_jam').val() == 'in') {
+            $('.btn-from-one-to-two').on('click', function() {
+                $('.wizard-content.one').addClass('d-none');
+                $('.wizard-step.two').addClass('wizard-step-active')
+                $('.wizard-content.two').removeClass('d-none')
+            });
+            $('.btn-two-to-one').on('click', function() {
+                $('.wizard-content.one').removeClass('d-none');
+                $('.wizard-step.two').removeClass('wizard-step-active')
+                $('.wizard-content.two').addClass('d-none')
+            });
+            $('.btn-two-to-three').on('click', function() {
+                $('.wizard-content.two').addClass('d-none');
+                $('.wizard-step.three').addClass('wizard-step-active')
+                $('.wizard-content.three').removeClass('d-none')
+            });
+            $('.btn-three-to-two').on('click', function() {
+                $('.wizard-content.two').removeClass('d-none');
+                $('.wizard-step.three').removeClass('wizard-step-active');
+                $('.wizard-content.three').addClass('d-none');
+            })
+
+            const scanner = new QrScanner(document.getElementById('qr-video'), result => {
+                $('#cam-qr-result').append(result)
+                if(result != '') {
+                    stopCamera();
+                    checkAndSubmitAttendance(result)
+                }
+            });
+
+            const checkAndSubmitAttendance = (val) => {
+                $.ajax({
+                    url: document.location.href + '/api',
+                    method: 'put',
+                    data: {
+                        '_token': $('meta[name="csrf-token"]').attr('content'),
+                        abs: val,
+                        code: document.location.href.split('/')[document.location.href.split('/').length - 1]
+                    },
+                    dataType: 'json',
+                    beforeSend: function() {
+                        $('#start_cam').attr('disabled', '')
+                        $('.btn-three-to-two').attr('disabled', '')
+                        $('.waiting-alert').removeClass('d-none');
+                    },
+                    success: function(res) {
+                        $('#start_cam').removeAttr('disabled', '')
+                        $('.btn-three-to-two').removeAttr('disabled', '')
+                        $('.waiting-alert').addClass('d-none');
+                        if(res.message == 'qrcode not valid') {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Not Valid',
+                                text: 'QR Code Tidak Valid!',
+                                timer: 2000
+                            });
+                        }
+                        if(res.message == 'qrcode wrong') {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Not Valid',
+                                text: 'QR Code Salah!',
+                                timer: 2000
+                            });
+                        }
+                        if(res.status) {
+                            $('.wizard-steps').addClass('d-none');
+                            $('.wizard-content.three').addClass('d-none');
+                            $('.wizard-content.complete').removeClass('d-none');
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Absen Berhasil',
+                                text: 'Absen Masuk berhasil dicatat',
+                                timer: 2000
+                            });
+                        }
+                    },
+                    error: function(err) {console.error(err)}
+                });
+            }
+
+            function stopCamera() {
+                scanner.stop();
+                $('#start_cam').removeAttr('disabled')
+                $('#stop_cam').attr('disabled', '')
+            }
+
+            $('#camList').on('change', event => {
+                scanner.setCamera(event.target.value).then(() => {});
+            });
+
+            QrScanner.listCameras(true).then(cameras => cameras.forEach(camera => {
+                $('#cam-list').append('<option value="'+ camera.id +'">' + camera.label + '</option>');
+            }));
+
+            $('#start_cam').on('click',function() {
+                scanner.start().then(() => {
+                });
+                $('#start_cam').attr('disabled', '')
+                $('#stop_cam').removeAttr('disabled')
+            });
+
+            $('#stop_cam').on('click',function () {
+                stopCamera();
+            });
+        } else {
+            $('.close-btn-from-one-to-two').on('click', function() {
+                $.ajax({
+                    url: document.location.href + '/api/out',
+                    method: 'put',
+                    data: {
+                        '_token': $('meta[name="csrf-token"]').attr('content'),
+                    },
+                    dataType: 'json',
+                    beforeSend: function() {
+                        $('#start_cam').attr('disabled', '')
+                        $('.btn-three-to-two').attr('disabled', '')
+                        $('.waiting-alert').removeClass('d-none');
+                    },
+                    success: function(res) {
+                        if(res.status) {
+                            $('.wizard-content.close-one').addClass('d-none')
+                            $('.wizard-step.close-two').addClass('wizard-step-active')
+                            $('.wizard-content.close-complete').removeClass('d-none')
+                        }
+                    },
+                    error: function(err) {console.error(err)}
+                });
+            })
+        }
     }
 
     $('.table-file-fasilitas').DataTable({

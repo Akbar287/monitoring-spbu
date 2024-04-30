@@ -32,6 +32,9 @@ class Penjadwalan extends Model
         'deskripsi',
         'is_attended',
         'is_confirm',
+        'start_time',
+        'finish_time',
+        'kode_penjadwalan',
         'attended'
     ];
 

@@ -89,7 +89,7 @@ class DetailPembelianController extends Controller
             $pembelian->pajak_pembelian()->delete();
         }
 
-        if ($pembelian->pajak_pembelian()->where('pajak_pembelian_lib_id', $pajakLib->pajak_pembelian_lib_id)->where('ppn', ($pajakLib->ppn / 100) * $grandTotal)->where('pph', ($pajakLib->pph / 100) * $grandTotal)->where('ppbkb', ($pajakLib->ppbkb / 100) * $grandTotal)->where('net_price', $grandTotal)->where('total_amount', $grandTotal + (($pajakLib->ppn / 100) * $grandTotal) + (($pajakLib->pph / 100) * $grandTotal) + (($pajakLib->ppbkb / 100) * $grandTotal))->first()) {
+        if (is_null($pembelian->pajak_pembelian()->where('pajak_pembelian_lib_id', $pajakLib->pajak_pembelian_lib_id)->where('ppn', $pajak['ppn'])->where('pph', $pajak['pph'])->where('ppbkb', $pajak['ppbkb'])->where('net_price', $pajak['net_price'])->where('total_amount', $pajak['total_amount'])->first())) {
             $pembelian->pajak_pembelian()->create($pajak);
         }
 

@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\JadwalKerjaController;
+use App\Http\Controllers\KehadiranOperatorController;
 use App\Http\Controllers\OpenPenjualanController;
 use App\Http\Controllers\PjOperasionalSetoranController;
 use Illuminate\Support\Facades\Route;

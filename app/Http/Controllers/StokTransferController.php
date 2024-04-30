@@ -266,22 +266,30 @@ class StokTransferController extends Controller
             unset($dombakKeduaLiterKedua);
 
             // Relasi
-            DB::table('dombak_transfer_dokumen_stok')->insert([
-                'dombak_transfer_id' => $dt->dombak_transfer_id,
-                'dokumen_stok_id' => $stokSend->dokumen_stok_id
-            ]);
-            DB::table('dombak_transfer_dokumen_stok')->insert([
-                'dombak_transfer_id' => $dt->dombak_transfer_id,
-                'dokumen_stok_id' => $stokReceive->dokumen_stok_id
-            ]);
-            DB::table('dombak_transfer_dokumen_stok')->insert([
-                'dombak_transfer_id' => $dt->dombak_transfer_id,
-                'dokumen_stok_id' => $send->dokumen_stok_id
-            ]);
-            DB::table('dombak_transfer_dokumen_stok')->insert([
-                'dombak_transfer_id' => $dt->dombak_transfer_id,
-                'dokumen_stok_id' => $receive->dokumen_stok_id
-            ]);
+            if (is_null(DB::table('dombak_transfer_dokumen_stok')->where('dombak_transfer_id', $dt->dombak_transfer_id)->where('dokumen_stok_id', $stokSend->dokumen_stok_id)->first())) {
+                DB::table('dombak_transfer_dokumen_stok')->insert([
+                    'dombak_transfer_id' => $dt->dombak_transfer_id,
+                    'dokumen_stok_id' => $stokSend->dokumen_stok_id
+                ]);
+            }
+            if (is_null(DB::table('dombak_transfer_dokumen_stok')->where('dombak_transfer_id', $dt->dombak_transfer_id)->where('dokumen_stok_id', $stokReceive->dokumen_stok_id)->first())) {
+                DB::table('dombak_transfer_dokumen_stok')->insert([
+                    'dombak_transfer_id' => $dt->dombak_transfer_id,
+                    'dokumen_stok_id' => $stokReceive->dokumen_stok_id
+                ]);
+            }
+            if (is_null(DB::table('dombak_transfer_dokumen_stok')->where('dombak_transfer_id', $dt->dombak_transfer_id)->where('dokumen_stok_id', $send->dokumen_stok_id)->first())) {
+                DB::table('dombak_transfer_dokumen_stok')->insert([
+                    'dombak_transfer_id' => $dt->dombak_transfer_id,
+                    'dokumen_stok_id' => $send->dokumen_stok_id
+                ]);
+            }
+            if (is_null(DB::table('dombak_transfer_dokumen_stok')->where('dombak_transfer_id', $dt->dombak_transfer_id)->where('dokumen_stok_id', $receive->dokumen_stok_id)->first())) {
+                DB::table('dombak_transfer_dokumen_stok')->insert([
+                    'dombak_transfer_id' => $dt->dombak_transfer_id,
+                    'dokumen_stok_id' => $receive->dokumen_stok_id
+                ]);
+            }
 
             return redirect('/stok/stok-transfer/' . $dt->dokumen_transfer_id)->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> Data Stok Transfer sudah dicatat.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
         } else {

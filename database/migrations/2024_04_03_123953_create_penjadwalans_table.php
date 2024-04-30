@@ -22,6 +22,9 @@ return new class extends Migration
             $table->timestamp('attended')->nullable();
             $table->boolean('is_attended')->default(false);
             $table->boolean('is_confirm')->default(false);
+            $table->timestamp('start_time')->nullable();
+            $table->timestamp('finish_time')->nullable();
+            $table->string('kode_penjadwalan', 36)->nullable()->unique();
             $table->timestamps();
 
             $table->foreign('status_kehadiran_id')->references('status_kehadiran_id')->on('status_kehadiran')->cascadeOnDelete();

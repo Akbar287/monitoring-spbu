@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\PembayaranRequest;
 use App\Models\FilePembayaran;
 use App\Models\Member;
+use App\Models\PajakPembelian;
 use App\Models\Pembayaran;
 use App\Models\RencanaPembelian;
 use App\Models\StatusPurchase;
@@ -92,7 +93,8 @@ class PembayaranController extends Controller
                 }
             }
         }
-        return view('procurement/pembayaran/show', compact('rencana', 'continue'));
+        $pajak = $rencana->pajak_pembelian()->first();
+        return view('procurement/pembayaran/show', compact('rencana', 'continue', 'pajak'));
     }
 
     public function konfirmasi_delivery(RencanaPembelian $rencana)

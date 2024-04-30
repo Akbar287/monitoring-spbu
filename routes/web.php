@@ -586,12 +586,10 @@ Route::middleware(['auth', 'cache.header'])->group(function ($route) {
     $route->get('/konfigurasi/import', [App\Http\Controllers\ImportController::class, 'index'])->name('import.index');
     $route->post('/konfigurasi/import', [App\Http\Controllers\ImportController::class, 'store'])->name('import.store');
 
-    // Operator
-    $route->get('/stand-meter', [App\Http\Controllers\StandMeterOperatorController::class, 'index'])->name('menu.stand-meter');
-
-    $route->get('/setoran-uang', [App\Http\Controllers\SetoranUangOperatorController::class, 'index'])->name('menu.setoran-uang');
-
     $route->get('/kehadiran', [App\Http\Controllers\KehadiranOperatorController::class, 'index'])->name('menu.kehadiran');
+    $route->get('/kehadiran/{penjadwalan}', [App\Http\Controllers\KehadiranOperatorController::class, 'show'])->name('kehadiran.show');
+    $route->put('/kehadiran/{penjadwalan}/api', [App\Http\Controllers\KehadiranOperatorController::class, 'store'])->name('kehadiran.store');
+    $route->put('/kehadiran/{penjadwalan}/api/out', [App\Http\Controllers\KehadiranOperatorController::class, 'close'])->name('kehadiran.close');
 });
 
 Route::get('/', [App\Http\Controllers\WelcomeController::class, 'index'])->name('welcome');

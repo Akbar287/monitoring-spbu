@@ -192,9 +192,12 @@ class AbsensiController extends Controller
 
     public function confirm(Penjadwalan $penjadwalan)
     {
+        $status_penjadwalan = StatusKehadiran::where('nama_kehadiran', 'Hadir')->first();
         $penjadwalan->update([
-            'is_confirm' => true
+            'is_confirm' => true,
+            'status_kehadiran_id' => $status_penjadwalan->status_kehadiran_id
         ]);
+
 
         return redirect('/jadwal_absensi/absensi/' . $penjadwalan->penjadwalan_id)->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> Status Konfirmasi sudah di konfirmasi.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
     }
@@ -202,8 +205,10 @@ class AbsensiController extends Controller
 
     public function unconfirm(Penjadwalan $penjadwalan)
     {
+        $status_penjadwalan = StatusKehadiran::where('nama_kehadiran', 'Dijadwalkan')->first();
         $penjadwalan->update([
-            'is_confirm' => false
+            'is_confirm' => false,
+            'status_kehadiran_id' => $status_penjadwalan->status_kehadiran_id
         ]);
 
         return redirect('/jadwal_absensi/absensi/' . $penjadwalan->penjadwalan_id)->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> Status Konfirmasi sudah di batalkan.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
