@@ -24,11 +24,11 @@ class DetailPembelianController extends Controller
                     return $actionBtn;
                 })
                 ->addColumn('harga', function ($row) {
-                    $actionBtn = 'Rp. ' . number_format($row->harga, 2, ".", ",");
+                    $actionBtn = 'Rp. ' . number_format($row->harga, 6, ".", ",");
                     return $actionBtn;
                 })
                 ->addColumn('total_harga', function ($row) {
-                    $actionBtn = 'Rp. ' . number_format($row->total_harga, 2, ".", ",");
+                    $actionBtn = 'Rp. ' . number_format($row->total_harga, 6, ".", ",");
                     return $actionBtn;
                 })
                 ->addColumn('action', function ($row) {

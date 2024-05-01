@@ -13,7 +13,8 @@ $(function () {
         $('.thousand-style').toArray().forEach(e => {
             new Cleave(e, {
                 numeral: true,
-                numeralThousandsGroupStyle: 'thousand'
+                numeralThousandsGroupStyle: 'thousand',
+                numeralDecimalScale: 6
             });
         });
     }
@@ -620,7 +621,7 @@ $(function () {
             let harga = $('input#harga').val().replaceAll(',', '')
             let jml = ((($('input#jumlah').val()).split('.')[0]).replace(',', ''))
 
-            $('input#total_harga').val(new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR" }).format(jml * harga))
+            $('input#total_harga').val(new Intl.NumberFormat("id-ID", { style: "decimal", maximumFractionDigits: 6 }).format(jml * harga))
         })
     }
     if (routeName == 'pembayaran.index') {
@@ -939,7 +940,7 @@ $(function () {
                                 if(data.data != null){
                                     let calc = parseFloat($('input#volume_setelah').val().replace(',', '')) - parseFloat(data.data.volume.replace(',', ''))
                                     $('input#volume_sebelumnya').val(data.data.volume)
-                                    $('input#volume').val(Intl.NumberFormat('id-ID', {style: 'decimal' }).format(calc).replaceAll('.', ','))
+                                    $('input#volume').val(Intl.NumberFormat('id-ID', {style: 'decimal', maximumFractionDigits: 6 }).format(calc).replaceAll('.', ','))
                                 }
                                 else {
                                     $('input#volume_sebelumnya').val("Tidak ada Data")
@@ -967,7 +968,7 @@ $(function () {
                                 if(data.data != null){
                                     let calc = parseFloat(data.data.volume.replace(',', '')) - parseFloat($('input#volume_sebelumnya').val().replace(',', ''))
                                     $('input#volume_setelah').val(data.data.volume)
-                                    $('input#volume').val(Intl.NumberFormat('id-ID', {style: 'decimal' }).format(calc).replaceAll('.', ','))
+                                    $('input#volume').val(Intl.NumberFormat('id-ID', {style: 'decimal', maximumFractionDigits: 6 }).format(calc).replaceAll('.', ','))
                                 }
                                 else {
                                     $('input#volume_setelah').val("Tidak ada Data")
@@ -1042,8 +1043,8 @@ $(function () {
                                     let calc = parseFloat($('input#volume_sebelumnya_kedua').val().replace(',', '')) - parseFloat(data.data.volume.replace(',', ''))
                                     let calc_ = (parseFloat(data.data.volume.replace(',', '')) - parseFloat($('input#volume_sebelumnya_kedua').val().replace(',', ''))) - (parseFloat($('input#volume').val().replace(',', '')) * -1);
                                     $('input#volume_sebelumnya_kedua').val(data.data.volume)
-                                    $('input#volume_kedua').val(Intl.NumberFormat('id-ID', {style: 'decimal' }).format(calc).replaceAll('.', ','));
-                                    $('input#volume_selisih_kedua').val(Intl.NumberFormat('id-ID', {style: 'decimal' }).format(calc_).replaceAll('.', ','));
+                                    $('input#volume_kedua').val(Intl.NumberFormat('id-ID', {style: 'decimal', maximumFractionDigits: 6 }).format(calc).replaceAll('.', ','));
+                                    $('input#volume_selisih_kedua').val(Intl.NumberFormat('id-ID', {style: 'decimal', maximumFractionDigits: 6 }).format(calc_).replaceAll('.', ','));
                                 }
                                 else {
                                     $('input#volume_sebelumnya_kedua').val("Tidak ada Data")
@@ -1073,8 +1074,8 @@ $(function () {
                                     let calc = parseFloat(data.data.volume.replace(',', '')) - parseFloat($('input#volume_sebelumnya_kedua').val().replace(',', ''));
                                     let calc_ = (parseFloat(data.data.volume.replace(',', '')) - parseFloat($('input#volume_sebelumnya_kedua').val().replace(',', ''))) - (parseFloat($('input#volume').val().replace(',', '')) * -1);
                                     $('input#volume_sebelumnya_kedua_setelah').val(data.data.volume)
-                                    $('input#volume_kedua').val(Intl.NumberFormat('id-ID', {style: 'decimal' }).format(calc).replaceAll('.', ','));
-                                    $('input#volume_selisih_kedua').val(Intl.NumberFormat('id-ID', {style: 'decimal' }).format(calc_).replaceAll('.', ','));
+                                    $('input#volume_kedua').val(Intl.NumberFormat('id-ID', {style: 'decimal', maximumFractionDigits: 6 }).format(calc).replaceAll('.', ','));
+                                    $('input#volume_selisih_kedua').val(Intl.NumberFormat('id-ID', {style: 'decimal', maximumFractionDigits: 6 }).format(calc_).replaceAll('.', ','));
                                     $('button[type=submit]').removeAttr('disabled');
                                 }
                                 else {
@@ -1295,7 +1296,7 @@ $(function () {
                             let calc = data.data.volume.replace(',', '') - $('input#volume_sebelumnya').val().replace(',', '');
                             if(data.data != null){
                                 $('input#volume').val(data.data.volume)
-                                $('input#volume_selisih').val(Intl.NumberFormat('id-ID', {style: 'decimal' }).format(calc).replaceAll('.', ','));
+                                $('input#volume_selisih').val(Intl.NumberFormat('id-ID', {style: 'decimal', maximumFractionDigits: 6 }).format(calc).replaceAll('.', ','));
                                 $('button[type=submit]').removeAttr('disabled');
                             }
                             else {
@@ -1594,17 +1595,17 @@ $(function () {
         $('input[name=ppn]').on('change', function(e) {
             let calc = gross_cleansing - $('input[name=ppn]').val().replaceAll(',', '') -  $('input[name=pph]').val().replaceAll(',', '') -  $('input[name=ppbkb]').val().replaceAll(',', '');
 
-            $('input[name=net_price]').val(Intl.NumberFormat('id-ID', {style: 'decimal' }).format(calc).replaceAll('.', ','))
+            $('input[name=net_price]').val(Intl.NumberFormat('id-ID', {style: 'decimal', maximumFractionDigits: 6 }).format(calc).replaceAll('.', ','))
         })
         $('input[name=pph]').on('change', function(e) {
             let calc = gross_cleansing - $('input[name=ppn]').val().replaceAll(',', '') -  $('input[name=pph]').val().replaceAll(',', '') -  $('input[name=ppbkb]').val().replaceAll(',', '');
 
-            $('input[name=net_price]').val(Intl.NumberFormat('id-ID', {style: 'decimal' }).format(calc).replaceAll('.', ','))
+            $('input[name=net_price]').val(Intl.NumberFormat('id-ID', {style: 'decimal', maximumFractionDigits: 6 }).format(calc).replaceAll('.', ','))
         })
         $('input[name=ppbkb]').on('change', function(e) {
             let calc = gross_cleansing - $('input[name=ppn]').val().replaceAll(',', '') -  $('input[name=pph]').val().replaceAll(',', '') -  $('input[name=ppbkb]').val().replaceAll(',', '');
 
-            $('input[name=net_price]').val(Intl.NumberFormat('id-ID', {style: 'decimal' }).format(calc).replaceAll('.', ','))
+            $('input[name=net_price]').val(Intl.NumberFormat('id-ID', {style: 'decimal', maximumFractionDigits: 6 }).format(calc).replaceAll('.', ','))
         })
     }
     if(routeName == 'setoran.penitipan') {
@@ -1761,13 +1762,13 @@ $(function () {
     }
     if(routeName == 'pembelian.detail.edit_pajak') {
         $('#ppn').on('keyup', function(e) {
-            $('#total_amount').val(new Intl.NumberFormat("id-ID", { style: "decimal" }).format(parseInt($('#net_price').val().replaceAll(',', '')) + parseInt(e.target.value.replaceAll(',', '')) + parseInt($('#pph').val().replaceAll(',', '')) + parseInt($('#ppbkb').val().replaceAll(',', ''))));
+            $('#total_amount').val(new Intl.NumberFormat("id-ID", { style: "decimal", maximumFractionDigits: 6 }).format(parseInt($('#net_price').val().replaceAll(',', '')) + parseInt(e.target.value.replaceAll(',', '')) + parseInt($('#pph').val().replaceAll(',', '')) + parseInt($('#ppbkb').val().replaceAll(',', ''))));
         });
         $('#pph').on('keyup', function(e) {
-            $('#total_amount').val(new Intl.NumberFormat("id-ID", { style: "decimal" }).format(parseInt($('#net_price').val().replaceAll(',', '')) + parseInt($('#ppn').val().replaceAll(',', '')) + parseInt(e.target.value.replaceAll(',', '')) + parseInt($('#ppbkb').val().replaceAll(',', ''))));
+            $('#total_amount').val(new Intl.NumberFormat("id-ID", { style: "decimal", maximumFractionDigits: 6 }).format(parseInt($('#net_price').val().replaceAll(',', '')) + parseInt($('#ppn').val().replaceAll(',', '')) + parseInt(e.target.value.replaceAll(',', '')) + parseInt($('#ppbkb').val().replaceAll(',', ''))));
         });
         $('#ppbkb').on('keyup', function(e) {
-            $('#total_amount').val(new Intl.NumberFormat("id-ID", { style: "decimal" }).format(parseInt($('#net_price').val().replaceAll(',', '')) + parseInt($('#ppn').val().replaceAll(',', '')) + parseInt($('#pph').val().replaceAll(',', '')) + parseInt(e.target.value.replaceAll(',', ''))));
+            $('#total_amount').val(new Intl.NumberFormat("id-ID", { style: "decimal", maximumFractionDigits: 6 }).format(parseInt($('#net_price').val().replaceAll(',', '')) + parseInt($('#ppn').val().replaceAll(',', '')) + parseInt($('#pph').val().replaceAll(',', '')) + parseInt(e.target.value.replaceAll(',', ''))));
         });
 
     }
@@ -2041,8 +2042,8 @@ $(function () {
                     url: document.location.origin + '/api/jadwalkerja/cek',
                     type: 'POST',
                     data: {
-                      _token: $('meta[name="csrf-token"]').attr('content'),
-                      member_id: user
+                        _token: $('meta[name="csrf-token"]').attr('content'),
+                        member_id: user
                     },
                     beforeSend: function() {},
                     success: function(res) {
@@ -2070,7 +2071,7 @@ $(function () {
                         if(confirm('Ingin Menghapus Jadwal Kerja Terpilih?')) {
                             deleteSchedule(arg)
                         }
-                      },
+                    },
                     dayMaxEvents: true,
                     editable: false,
                     droppable: false,
@@ -2085,10 +2086,10 @@ $(function () {
                     url: document.location.origin + '/api/jadwalkerja/delete',
                     type: 'POST',
                     data: {
-                      _token: $('meta[name="csrf-token"]').attr('content'),
-                      date: arg.start._i,
-                      title: arg.title,
-                      member_id: $('.input-employee-sch-id').val()
+                        _token: $('meta[name="csrf-token"]').attr('content'),
+                        date: arg.start._i,
+                        title: arg.title,
+                        member_id: $('.input-employee-sch-id').val()
                     },
                     beforeSend: function() {},
                     success: async function(res) {

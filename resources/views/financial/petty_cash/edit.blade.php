@@ -30,11 +30,11 @@
                                 <div class="row mb-3 justify-content-center">
                                     <label for="spbu_id" class="col-md-4 col-form-label text-md-end">{{ __('SPBU')
                                         }}</label>
-            
+
                                     <div class="col-md-6">
                                         <input id="spbu_id" type="text" readonly
                                             class="form-control @error('spbu_id') is-invalid @enderror" name="spbu_id" value="{{ $pettyCash->spbu()->first()->nama_spbu . ' ('.$pettyCash->spbu()->first()->nomor_spbu.')' }}">
-            
+
                                         @error('spbu_id')
                                         <span class="invalid-feedback" role="alert">
                                             <strong>{{ $message }}</strong>
@@ -46,13 +46,13 @@
                                 <div class="row mb-3 justify-content-center">
                                     <label for="no_kode" class="col-md-4 col-form-label text-md-end">{{ __('No. Kode')
                                         }}</label>
-            
+
                                     <div class="col-md-6">
                                         <input id="no_kode" type="text"
                                             class="form-control @error('no_kode') is-invalid @enderror" name="no_kode"
                                             value="{{ $pettyCash->no_kode }}" autocomplete="name"
                                             autofocus>
-            
+
                                         @error('no_kode')
                                         <span class="invalid-feedback" role="alert">
                                             <strong>{{ $message }}</strong>
@@ -64,13 +64,13 @@
                                 <div class="row mb-3 justify-content-center">
                                     <label for="no_bukti" class="col-md-4 col-form-label text-md-end">{{ __('No. Bukti')
                                         }}</label>
-            
+
                                     <div class="col-md-6">
                                         <input id="no_bukti" type="text"
                                             class="form-control @error('no_bukti') is-invalid @enderror" name="no_bukti"
                                             value="{{ $pettyCash->no_bukti }}" autocomplete="name"
                                             autofocus>
-            
+
                                         @error('no_bukti')
                                         <span class="invalid-feedback" role="alert">
                                             <strong>{{ $message }}</strong>
@@ -82,13 +82,13 @@
                                 <div class="row mb-3 justify-content-center">
                                     <label for="jenis" class="col-md-4 col-form-label text-md-end">{{ __('Jenis')
                                         }}</label>
-            
+
                                     <div class="col-md-6">
                                         <select class="custom-select @error('jenis') is-invalid @enderror" name="jenis" id="jenis">
                                             <option {{ $pettyCash->jenis == 'debit' ? 'selected' : '' }} value="{{ 'debit' }}">Debit</option>
                                             <option {{ $pettyCash->jenis == 'kredit' ? 'selected' : '' }} value="{{ 'kredit' }}">Kredit</option>
                                         </select>
-            
+
                                         @error('jenis')
                                         <span class="invalid-feedback" role="alert">
                                             <strong>{{ $message }}</strong>
@@ -96,11 +96,11 @@
                                         @enderror
                                     </div>
                                 </div>
-                                
+
                                 <div class="row mb-3 justify-content-center">
                                     <label for="jumlah" class="col-md-4 col-form-label text-md-end">{{ __('Jumlah')
                                         }}</label>
-            
+
                                     <div class="col-md-6">
                                         <div class="form-group">
                                             <div class="input-group mb-2">
@@ -110,7 +110,7 @@
                                                 <input id="jumlah" type="text" class="form-control thousand-style @error('jumlah') is-invalid @enderror" name="jumlah" value="{{ $pettyCash->jumlah }}">
                                             </div>
                                         </div>
-            
+
                                         @error('jumlah')
                                         <span class="invalid-feedback" role="alert">
                                             <strong>{{ $message }}</strong>
@@ -118,17 +118,17 @@
                                         @enderror
                                     </div>
                                 </div>
-                                
+
                                 <div class="row mb-3 justify-content-center">
                                     <label for="tanggal" class="col-md-4 col-form-label text-md-end">{{ __('Tanggal')
                                         }}</label>
-            
+
                                     <div class="col-md-6">
                                         <input id="tanggal" type="date"
                                             class="form-control @error('tanggal') is-invalid @enderror" name="tanggal"
-                                            value="{{ $pettyCash->tanggal }}" autocomplete="name"
+                                            value="{{  $pettyCash->tanggal }}" autocomplete="name"
                                             autofocus>
-            
+
                                         @error('tanggal')
                                         <span class="invalid-feedback" role="alert">
                                             <strong>{{ $message }}</strong>
@@ -136,17 +136,17 @@
                                         @enderror
                                     </div>
                                 </div>
-                                
+
                                 <div class="row mb-3 justify-content-center">
                                     <label for="keterangan" class="col-md-4 col-form-label text-md-end">{{ __('Keterangan')
                                         }}</label>
-            
+
                                     <div class="col-md-6">
                                         <textarea id="keterangan" type="text" rows="3" cols="3"
                                             class="form-control @error('keterangan') is-invalid @enderror" name="keterangan"
                                             value="" autocomplete="name"
                                             autofocus>{{ $pettyCash->keterangan }}</textarea>
-            
+
                                         @error('keterangan')
                                         <span class="invalid-feedback" role="alert">
                                             <strong>{{ $message }}</strong>

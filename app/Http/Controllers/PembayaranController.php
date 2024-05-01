@@ -45,7 +45,7 @@ class PembayaranController extends Controller
                     return $actionBtn;
                 })
                 ->addColumn('grand_total', function ($row) {
-                    $actionBtn = "Rp. " . number_format($row->grand_total, 2, '.', ',');
+                    $actionBtn = "Rp. " . number_format($row->grand_total, 6, '.', ',');
                     return $actionBtn;
                 })
                 ->addColumn('action', function ($row) {
@@ -72,7 +72,7 @@ class PembayaranController extends Controller
                     return $actionBtn;
                 })
                 ->addColumn('total_setoran', function ($row) {
-                    $actionBtn = "Rp. " . number_format($row->total_setoran, 2, '.', ',');
+                    $actionBtn = "Rp. " . number_format($row->total_setoran, 6, '.', ',');
                     return $actionBtn;
                 })
                 ->addColumn('tanggal', function ($row) {

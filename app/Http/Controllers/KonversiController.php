@@ -193,8 +193,8 @@ class KonversiController extends Controller
             'status' => 200,
             'message' => 'converting successfully',
             'data' => [
-                'tinggi' => number_format((is_null($data)) ? 0 : $data->tinggi, 2, ".", ","),
-                'volume' => number_format((is_null($data)) ? 0 : $data->volume, 2, ".", ","),
+                'tinggi' => number_format((is_null($data)) ? 0 : $data->tinggi, 6, ".", ","),
+                'volume' => number_format((is_null($data)) ? 0 : $data->volume, 6, ".", ","),
             ]
         ], 200);
     }

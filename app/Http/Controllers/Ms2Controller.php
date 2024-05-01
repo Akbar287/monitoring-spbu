@@ -22,7 +22,7 @@ class Ms2Controller extends Controller
             return DataTables::of($data)
                 ->addIndexColumn()
                 ->addColumn('stok', function ($row) {
-                    return number_format($row->detail_rencana_pembelian()->selectRaw('SUM("jumlah") as stok')->join('rencana_pembelian', 'rencana_pembelian.rencana_pembelian_id', 'detail_rencana_pembelian.rencana_pembelian_id')->join('status_purchase', 'status_purchase.status_purchase_id', 'rencana_pembelian.status_purchase_id')->where('status_purchase.nama_status', 'MS2')->where('detail_rencana_pembelian.ms2', true)->first()->stok, 2, ".", ",") ?? 0;
+                    return number_format($row->detail_rencana_pembelian()->selectRaw('SUM("jumlah") as stok')->join('rencana_pembelian', 'rencana_pembelian.rencana_pembelian_id', 'detail_rencana_pembelian.rencana_pembelian_id')->join('status_purchase', 'status_purchase.status_purchase_id', 'rencana_pembelian.status_purchase_id')->where('status_purchase.nama_status', 'MS2')->where('detail_rencana_pembelian.ms2', true)->first()->stok, 6, ".", ",") ?? 0;
                 })
                 ->addColumn('total_pembelian', function ($row) {
                     return $row->detail_rencana_pembelian()->join('rencana_pembelian', 'rencana_pembelian.rencana_pembelian_id', 'detail_rencana_pembelian.rencana_pembelian_id')->join('status_purchase', 'status_purchase.status_purchase_id', 'rencana_pembelian.status_purchase_id')->where('status_purchase.nama_status', 'MS2')->where('detail_rencana_pembelian.ms2', true)->count();
@@ -46,7 +46,7 @@ class Ms2Controller extends Controller
                     return Carbon::createFromFormat('Y-m-d', $row->tanggal_pembelian)->format('d F Y') ?? 0;
                 })
                 ->addColumn('jumlah', function ($row) {
-                    return number_format($row->jumlah, 2, ".", ",") ?? 0;
+                    return number_format($row->jumlah, 6, ".", ",") ?? 0;
                 })
                 ->addColumn('action', function ($row) {
                     $actionBtn = '<a href="' . route('ms2.detail.show', [$row->produk_id, $row->detail_rencana_pembelian_id]) . '" class="edit btn btn-success btn-sm">Detail</a>';
@@ -126,7 +126,7 @@ class Ms2Controller extends Controller
                     return $row->kode_pembelian;
                 })
                 ->addColumn('stok', function ($row) {
-                    return number_format($row->jumlah, 2, ".", ",") ?? 0;
+                    return number_format($row->jumlah, 6, ".", ",") ?? 0;
                 })
                 ->addColumn('action', function ($row) {
                     $actionBtn = '<a href="' . route('ms2.pengiriman.file_lo_show', [$row->pengiriman_id, $row->file_lo_id]) . '" class="edit btn btn-success btn-sm">Detail</a>';

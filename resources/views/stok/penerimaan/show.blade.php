@@ -99,7 +99,7 @@
                                 <div class="col-md-6">
                                     <input id="jumlah" type="text" readonly
                                         class="form-control @error('jumlah') is-invalid @enderror" name="jumlah"
-                                        value="{{ number_format($fileLo->detail_rencana_pembelian()->first()->jumlah, 2, ".", ',') }}" />
+                                        value="{{ number_format($fileLo->detail_rencana_pembelian()->first()->jumlah, 6, ".", ',') }}" />
                                 </div>
                             </div>
 
@@ -125,7 +125,7 @@
                                         </div>
                                         <input id="harga" type="text" readonly
                                             class="form-control" name="harga"
-                                            value="{{ number_format($fileLo->detail_rencana_pembelian()->first()->harga, 2, ".", ",") }}" />
+                                            value="{{ number_format($fileLo->detail_rencana_pembelian()->first()->harga, 6, ".", ",") }}" />
                                       </div>
                                 </div>
                             </div>
@@ -141,7 +141,7 @@
                                         </div>
                                         <input id="total_harga" type="text" readonly
                                             class="form-control" name="total_harga"
-                                            value="{{ number_format($fileLo->detail_rencana_pembelian()->first()->total_harga, 2, ".", ",") }}" />
+                                            value="{{ number_format($fileLo->detail_rencana_pembelian()->first()->total_harga, 6, ".", ",") }}" />
 
                                       </div>
                                 </div>
@@ -220,7 +220,7 @@
                                 <div class="col-md-6">
                                     <input readonly id="detail_rencana_pembelian_id" type="text"
                                         class="form-control @error('detail_rencana_pembelian_id') is-invalid @enderror" name="detail_rencana_pembelian_id"
-                                        value="{{ $fileLo->produk()->first()->nama_produk . ' (' . number_format($fileLo->jumlah, 0, ",", ".") . ' ' . $fileLo->satuan_jumlah .')' }}" >
+                                        value="{{ $fileLo->produk()->first()->nama_produk . ' (' . number_format($fileLo->jumlah, 6, ",", ".") . ' ' . $fileLo->satuan_jumlah .')' }}" >
                                 </div>
                             </div>
 
@@ -427,7 +427,7 @@
                                     <div class="col-md-6">
                                         <input id="volume_dibeli" type="text"
                                             class="form-control thousand-style @error('volume_dibeli') is-invalid @enderror" name="volume_dibeli"
-                                            value="{{ number_format($fileLo->jumlah, 2, ".", ',') }}" readonly />
+                                            value="{{ number_format($fileLo->jumlah, 6, ".", ',') }}" readonly />
                                         <span class="text-muted">Volume Yang Dibeli adalah jumlah volume yang seharusnya didapatkan/dibayarkan</span>
 
                                         @error('volume_dibeli')

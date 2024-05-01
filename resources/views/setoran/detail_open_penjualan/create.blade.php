@@ -36,7 +36,7 @@
                                         <select class="custom-select @error('nozzle_id') is-invalid @enderror" name="nozzle_id" id="nozzle_id">
                                             <option value="0">Silakan Pilih Nozzle</option>
                                             @foreach($nozzle as $s)
-                                            <option {{ old('nozzle_id') == $s->nozzle_id ? 'selected' : '' }} data-smaw="{{ number_format($s->stand_meter_awal, 0, ".", ",") }}" data-smak="{{ number_format($s->stand_meter_akhir, 0, ".", ",") }}" data-hj="{{ number_format($s->harga_jual, 2, ".", ",") }}" data-thj="{{ number_format(($s->stand_meter_akhir - $s->stand_meter_awal) * $s->harga_jual, 2, ".", ",") }}" value="{{ $s->nozzle_id }}">{{ $s->nama_nozzle . ' (' . $s->stand_meter_awal . ' - '.$s->stand_meter_akhir .')' }}</option>
+                                            <option {{ old('nozzle_id') == $s->nozzle_id ? 'selected' : '' }} data-smaw="{{ number_format($s->stand_meter_awal, 6, ".", ",") }}" data-smak="{{ number_format($s->stand_meter_akhir, 6, ".", ",") }}" data-hj="{{ number_format($s->harga_jual, 6, ".", ",") }}" data-thj="{{ number_format(($s->stand_meter_akhir - $s->stand_meter_awal) * $s->harga_jual, 6, ".", ",") }}" value="{{ $s->nozzle_id }}">{{ $s->nama_nozzle . ' (' . $s->stand_meter_awal . ' - '.$s->stand_meter_akhir .')' }}</option>
                                             @endforeach
                                         </select>
 

@@ -104,7 +104,7 @@
                                         </div>
                                         <input id="total_setoran" type="text" readonly
                                             class="form-control @error('total_setoran') is-invalid @enderror" name="total_setoran"
-                                            value="{{ number_format($pembayaran->total_setoran, 2, ".", ",") }}" />
+                                            value="{{ number_format($pembayaran->total_setoran, 6, ".", ",") }}" />
                                     </div>
                                 </div>
                             </div>

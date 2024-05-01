@@ -28,10 +28,10 @@ class HargaController extends Controller
                     return $row->jam_kerja()->first()->nama_jam_kerja;
                 })
                 ->addColumn('harga_beli', function ($row) {
-                    return 'Rp. ' . number_format($row->harga_beli, 2, ".", ",");
+                    return 'Rp. ' . number_format($row->harga_beli, 6, ".", ",");
                 })
                 ->addColumn('harga_jual', function ($row) {
-                    return 'Rp. ' . number_format($row->harga_jual, 2, ".", ",");
+                    return 'Rp. ' . number_format($row->harga_jual, 6, ".", ",");
                 })
                 ->addColumn('action', function ($row) {
                     $actionBtn = '<a href="' . route('harga.riwayat.show', $row->harga_id) . '" class="edit btn btn-success btn-sm">Detail</a>';
@@ -65,10 +65,10 @@ class HargaController extends Controller
                     return Carbon::createFromFormat('Y-m-d', $row->tanggal)->format('d F Y');
                 })
                 ->addColumn('harga_beli', function ($row) {
-                    return 'Rp. ' . number_format($row->harga_beli, 2, ".", ",");
+                    return 'Rp. ' . number_format($row->harga_beli, 6, ".", ",");
                 })
                 ->addColumn('harga_jual', function ($row) {
-                    return 'Rp. ' . number_format($row->harga_jual, 2, ".", ",");
+                    return 'Rp. ' . number_format($row->harga_jual, 6, ".", ",");
                 })
                 ->addColumn('action', function ($row) {
                     $actionBtn = '<a href="' . route('harga.show', $row->harga_id) . '" class="edit btn btn-success btn-sm">Detail</a>';

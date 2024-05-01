@@ -64,7 +64,7 @@
                                 <div class="col-md-6">
                                     <input id="grand_total" type="text" readonly
                                         class="form-control @error('grand_total') is-invalid @enderror" name="grand_total"
-                                        value="{{ 'Rp. ' . number_format($rencana->grand_total, 2, '.', ',') }}" / />
+                                        value="{{ 'Rp. ' . number_format($rencana->grand_total, 6, '.', ',') }}" / />
                                 </div>
                             </div>
 
@@ -73,7 +73,7 @@
                                     }}</label>
 
                                 <div class="col-md-6">
-                                    <input id="grand_total" type="text" readonly class="form-control @error('grand_total') is-invalid @enderror" name="grand_total" value="{{ $rencana->pajak_pembelian()->count() > 0 ? 'Rp. '. number_format($rencana->pajak_pembelian()->first()->total_amount, 2, ".", ",")  : 'Rp. ' . number_format($rencana->grand_total + ($rencana->grand_total * ($pajak->ppn / 100)) + ($rencana->grand_total * ($pajak->ppbkb / 100)) + ($rencana->grand_total * ($pajak->pph / 100)), 2, '.', ',') }}" />
+                                    <input id="grand_total" type="text" readonly class="form-control @error('grand_total') is-invalid @enderror" name="grand_total" value="{{ $rencana->pajak_pembelian()->count() > 0 ? 'Rp. '. number_format($rencana->pajak_pembelian()->first()->total_amount, 6, ".", ",")  : 'Rp. ' . number_format($rencana->grand_total + ($rencana->grand_total * ($pajak->ppn / 100)) + ($rencana->grand_total * ($pajak->ppbkb / 100)) + ($rencana->grand_total * ($pajak->pph / 100)), 6, '.', ',') }}" />
                                 </div>
                             </div>
                         </div>

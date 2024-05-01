@@ -49,7 +49,7 @@ class SetoranUangOperatorController extends Controller
                     return count($actionBtn) == 0 ? '-' : (count($actionBtn) > 1 ? implode(', ', $actionBtn) : $actionBtn['0']);
                 })
                 ->addColumn('total_uang_penjualan', function ($row) {
-                    $actionBtn = 'Rp. ' . number_format($row->total_penjualan, 0, ".", ",");
+                    $actionBtn = 'Rp. ' . number_format($row->total_penjualan, 6, ".", ",");
                     return $actionBtn;
                 })
                 ->addColumn('action', function ($row) {
@@ -92,7 +92,7 @@ class SetoranUangOperatorController extends Controller
                     return $actionBtn;
                 })
                 ->addColumn('total_uang', function ($row) {
-                    $actionBtn = 'Rp. ' . number_format($row->total_uang, 0, ".", ",");
+                    $actionBtn = 'Rp. ' . number_format($row->total_uang, 6, ".", ",");
                     return $actionBtn;
                 })
                 ->addColumn('status', function ($row) {

@@ -34,7 +34,7 @@
                                     <div class="col-md-6">
                                         <select class="custom-select @error('dombak_id') is-invalid @enderror" name="dombak_id" id="dombak_id">
                                             @foreach($dombak as $s)
-                                            <option {{ old('dombak_id') == $s->dombak_id ? 'selected' : '' }} value="{{ $s->dombak_id }}">{{ $s->nama_dombak . ' ('. $s->stok_inventory_dombak()->first()->stok_inventory()->first()->produk()->first()->nama_produk . ': ' . number_format($s->stok_inventory_dombak()->first()->stok,2, ".", ",") .'Liter)' }}</option>
+                                            <option {{ old('dombak_id') == $s->dombak_id ? 'selected' : '' }} value="{{ $s->dombak_id }}">{{ $s->nama_dombak . ' ('. $s->stok_inventory_dombak()->first()->stok_inventory()->first()->produk()->first()->nama_produk . ': ' . number_format($s->stok_inventory_dombak()->first()->stok,6, ".", ",") .'Liter)' }}</option>
                                             @endforeach
                                         </select>
 

@@ -176,8 +176,8 @@ class OpenPenjualanController extends Controller
             if (!is_null($sm)) {
                 return response()->json([
                     'data' => [
-                        'stand_meter_awal' => number_format($sm->stand_meter_awal, 0, ".", ","),
-                        'stand_meter_akhir' => number_format($sm->stand_meter_akhir, 0, ".", ","),
+                        'stand_meter_awal' => number_format($sm->stand_meter_awal, 6, ".", ","),
+                        'stand_meter_akhir' => number_format($sm->stand_meter_akhir, 6, ".", ","),
                     ],
                     'message' => 'Stand Meter has been catched',
                     'status' => 'success'

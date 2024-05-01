@@ -35,7 +35,7 @@ class MonitoringController extends Controller
                     return $actionBtn;
                 })
                 ->addColumn('stok', function ($row) {
-                    $actionBtn = number_format($row->stok, 2, ".", ",");
+                    $actionBtn = number_format($row->stok, 6, ".", ",");
                     return $actionBtn;
                 })
                 ->addColumn('action', function ($row) {
@@ -210,7 +210,7 @@ class MonitoringController extends Controller
                     return $actionBtn;
                 })
                 ->addColumn('stok', function ($row) {
-                    $actionBtn = number_format($row->stok != null ? $row->stok : 0, 2, ".", ",");
+                    $actionBtn = number_format($row->stok != null ? $row->stok : 0, 6, ".", ",");
                     return $actionBtn;
                 })
                 ->addColumn('action', function ($row) {
@@ -296,13 +296,13 @@ class MonitoringController extends Controller
                     return $actionBtn . ' ' . $row->nama_jam_kerja;
                 })
                 ->addColumn('stok_awal', function ($row) {
-                    return number_format($row->stok_awal, 2, ".", ",");
+                    return number_format($row->stok_awal, 6, ".", ",");
                 })
                 ->addColumn('stok_akhir', function ($row) {
-                    return number_format($row->stok_akhir, 2, ".", ',');
+                    return number_format($row->stok_akhir, 6, ".", ',');
                 })
                 ->addColumn('total_loss', function ($row) {
-                    return ($row->simbol == 'lebih' ? '+' : '-') . number_format($row->jumlah > 0 ? $row->jumlah : $row->jumlah * -1, 2, ".", ',');
+                    return ($row->simbol == 'lebih' ? '+' : '-') . number_format($row->jumlah > 0 ? $row->jumlah : $row->jumlah * -1, 6, ".", ',');
                 })
                 ->addColumn('action', function ($row) {
                     $actionBtn = '<a href="' . route('monitoring.show_detail_riwayat', [$row->stok_inventory_id, $row->dokumen_stok_id]) . '" class="edit btn btn-success btn-sm">Detail</a>';
@@ -324,10 +324,10 @@ class MonitoringController extends Controller
             $stok_akhir_pl = ($dokumenStok->losses()->first()->simbol == 'lebih') ? $dokumenStok->losses()->first()->jumlah : $dokumenStok->losses()->first()->jumlah * -1;
         }
         $stokHitung = [
-            'stok_awal' => number_format($dokumenStok->stok_awal, 2, ".", ","),
-            'stok_akhir' => number_format($stok_akhir_teori, 2, ".", ","),
-            'stok_akhir_teoritis' => number_format($dokumenStok->stok_akhir, 2, ".", ","),
-            'stok_akhir_pl' => number_format($stok_akhir_pl, 2, ".", ","),
+            'stok_awal' => number_format($dokumenStok->stok_awal, 6, ".", ","),
+            'stok_akhir' => number_format($stok_akhir_teori, 6, ".", ","),
+            'stok_akhir_teoritis' => number_format($dokumenStok->stok_akhir, 6, ".", ","),
+            'stok_akhir_pl' => number_format($stok_akhir_pl, 6, ".", ","),
         ];
         return view('stok/monitoring/show_detail_riwayat', compact('stok', 'dokumenStok', 'stokHitung'));
     }

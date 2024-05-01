@@ -99,7 +99,7 @@
                                 <div class="col-md-6">
                                     <input id="jumlah" type="text" readonly
                                         class="form-control @error('jumlah') is-invalid @enderror" name="jumlah"
-                                        value="{{ number_format($penerimaan->file_lo()->first()->detail_rencana_pembelian()->first()->jumlah, 2, ".", ',') }}" />
+                                        value="{{ number_format($penerimaan->file_lo()->first()->detail_rencana_pembelian()->first()->jumlah, 6, ".", ',') }}" />
                                 </div>
                             </div>
 
@@ -125,7 +125,7 @@
                                         </div>
                                         <input id="harga" type="text" readonly
                                             class="form-control" name="harga"
-                                            value="{{ number_format($penerimaan->file_lo()->first()->detail_rencana_pembelian()->first()->harga, 2, ".", ",") }}" autocomplete="name"
+                                            value="{{ number_format($penerimaan->file_lo()->first()->detail_rencana_pembelian()->first()->harga, 6, ".", ",") }}" autocomplete="name"
                                             >
                                       </div>
                                 </div>
@@ -142,7 +142,7 @@
                                         </div>
                                         <input id="total_harga" type="text" readonly
                                             class="form-control" name="total_harga"
-                                            value="{{ number_format($penerimaan->file_lo()->first()->detail_rencana_pembelian()->first()->total_harga, 2, ".", ",") }}" autocomplete="name"
+                                            value="{{ number_format($penerimaan->file_lo()->first()->detail_rencana_pembelian()->first()->total_harga, 6, ".", ",") }}" autocomplete="name"
                                             >
 
                                       </div>
@@ -222,7 +222,7 @@
                                 <div class="col-md-6">
                                     <input readonly id="detail_rencana_pembelian_id" type="text"
                                         class="form-control @error('detail_rencana_pembelian_id') is-invalid @enderror" name="detail_rencana_pembelian_id"
-                                        value="{{ $penerimaan->file_lo()->first()->produk()->first()->nama_produk . ' (' . number_format($penerimaan->file_lo()->first()->jumlah, 0, ",", ".") . ' ' . $penerimaan->file_lo()->first()->satuan_jumlah .')' }}" >
+                                        value="{{ $penerimaan->file_lo()->first()->produk()->first()->nama_produk . ' (' . number_format($penerimaan->file_lo()->first()->jumlah, 6, ",", ".") . ' ' . $penerimaan->file_lo()->first()->satuan_jumlah .')' }}" >
                                 </div>
                             </div>
 
@@ -373,7 +373,7 @@
                                 <div class="col-md-6">
                                     <input id="volume_dibeli" type="text" readonly
                                         class="form-control thousand-style" name="volume_dibeli"
-                                        value="{{ number_format($penerimaan->file_lo()->first()->jumlah, 2, ".", ',') }}" readonly
+                                        value="{{ number_format($penerimaan->file_lo()->first()->jumlah, 6, ".", ',') }}" readonly
                                         >
                                     @error('volume_dibeli')
                                     <span class="invalid-feedback" role="alert">

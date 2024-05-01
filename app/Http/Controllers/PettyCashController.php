@@ -20,7 +20,7 @@ class PettyCashController extends Controller
             return DataTables::of($data)
                 ->addIndexColumn()
                 ->addColumn('jumlah', function ($row) {
-                    $actionBtn = 'Rp. ' . number_format($row->jumlah, 2, '.', ',');
+                    $actionBtn = 'Rp. ' . number_format($row->jumlah, 6, '.', ',');
                     return $actionBtn;
                 })
                 ->addColumn('action', function ($row) {

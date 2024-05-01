@@ -22,19 +22,19 @@ class OpenPenjualanDetailController extends Controller
                     return $row->stand_meter()->first()->nozzle()->first()->nama_nozzle;
                 })
                 ->addColumn('stand_meter_awal', function ($row) {
-                    return number_format($row->stand_meter()->first()->stand_meter_awal, 0, ".", ",");
+                    return number_format($row->stand_meter()->first()->stand_meter_awal, 6, ".", ",");
                 })
                 ->addColumn('stand_meter_akhir', function ($row) {
-                    return number_format($row->stand_meter()->first()->stand_meter_akhir, 0, ".", ",");
+                    return number_format($row->stand_meter()->first()->stand_meter_akhir, 6, ".", ",");
                 })
                 ->addColumn('harga', function ($row) {
-                    return 'Rp. ' . number_format($row->harga()->first()->harga_jual, 2, ".", ",");
+                    return 'Rp. ' . number_format($row->harga()->first()->harga_jual, 6, ".", ",");
                 })
                 ->addColumn('liter', function ($row) {
-                    return number_format($row->liter, 0, ".", ",");
+                    return number_format($row->liter, 6, ".", ",");
                 })
                 ->addColumn('total_detail_jual', function ($row) {
-                    return 'Rp. ' . number_format($row->total_detail_jual, 2, ".", ",");
+                    return 'Rp. ' . number_format($row->total_detail_jual, 6, ".", ",");
                 })
                 ->addColumn('action', function ($row) {
                     $actionBtn = '<a href="' . route('setoran.open.detail.show', [$row->penjualan()->first()->penjualan_id, $row->detail_penjualan_id]) . '" class="edit btn btn-success btn-sm">Detail</a>';
@@ -74,10 +74,10 @@ class OpenPenjualanDetailController extends Controller
         } else {
             return response()->json([
                 'data' => [
-                    'stand_meter_awal' => number_format($sm->stand_meter_awal, 0, ".", ','),
-                    'stand_meter_akhir' => number_format($sm->stand_meter_akhir, 0, ".", ','),
-                    'harga_jual' => number_format($harga->harga_jual, 0, '.', ','),
-                    'total_penjualan' => number_format(($sm->stand_meter_akhir - $sm->stand_meter_awal) * $harga->harga_jual, 0, '.', ',')
+                    'stand_meter_awal' => number_format($sm->stand_meter_awal, 6, ".", ','),
+                    'stand_meter_akhir' => number_format($sm->stand_meter_akhir, 6, ".", ','),
+                    'harga_jual' => number_format($harga->harga_jual, 6, '.', ','),
+                    'total_penjualan' => number_format(($sm->stand_meter_akhir - $sm->stand_meter_awal) * $harga->harga_jual, 6, '.', ',')
                 ],
                 'message' => 'success',
                 'code' => 200

@@ -81,7 +81,7 @@
                                 <div class="col-md-6">
                                     <input id="stand_meter_awal" type="text" readonly
                                         class="form-control" name="stand_meter_awal"
-                                        value="{{ number_format($standMeter->stand_meter_awal, 0, ".", ",") }}" />
+                                        value="{{ number_format($standMeter->stand_meter_awal, 6, ".", ",") }}" />
                                 </div>
                             </div>
 
@@ -92,7 +92,7 @@
                                 <div class="col-md-6">
                                     <input id="stand_meter_akhir" type="text" readonly
                                         class="form-control" name="stand_meter_akhir"
-                                        value="{{ number_format($standMeter->stand_meter_akhir, 0, ".", ",") }}" />
+                                        value="{{ number_format($standMeter->stand_meter_akhir, 6, ".", ",") }}" />
                                 </div>
                             </div>
 
@@ -104,7 +104,7 @@
                                 <div class="col-md-6">
                                     <input id="selisih" type="text" readonly
                                         class="form-control thousand-style" name="selisih"
-                                        value="{{ number_format($standMeter->stand_meter_akhir - $standMeter->stand_meter_awal, 0, ".", ",") }}" />
+                                        value="{{ number_format($standMeter->stand_meter_akhir - $standMeter->stand_meter_awal, 6, ".", ",") }}" />
                                 </div>
                             </div>
                             @endif

@@ -146,7 +146,7 @@ class DombakController extends Controller
             'status' => 200,
             'message' => 'stok konversi not found',
             'data' => [
-                'stok' => number_format($data->stok, 2, ".", ",")
+                'stok' => number_format($data->stok, 6, ".", ",")
             ],
             'tinggi' => $tinggi,
             'dombak' => $dombakLain

@@ -57,7 +57,7 @@ class StokTransferController extends Controller
                     $d2 = $row->dokumen_stok()->where('type_dokumen_stok_id', TypeDokumenStok::where('type_movement', 'Good Transfer Receive')->first()->type_dokumen_stok_id)->first();
 
                     $p = ($d1->stok_akhir - $d1->stok_awal) - ($d2->stok_awal - $d2->stok_akhir);
-                    return number_format($d1->stok_awal - $d1->stok_akhir, 2, ',', '.') . ' (' . number_format($p > 0 ? $p * -1 : $p, 2, ".", ',') . ')';
+                    return number_format($d1->stok_awal - $d1->stok_akhir, 6, ',', '.') . ' (' . number_format($p > 0 ? $p * -1 : $p, 6, ".", ',') . ')';
                 })
                 ->addColumn('action', function ($row) {
                     return '<a href="' . route('stok-transfer.show', $row->dombak_transfer_id) . '" class="edit btn btn-success btn-sm">Detail</a>';
@@ -107,7 +107,7 @@ class StokTransferController extends Controller
                     $d2 = $row->dokumen_stok()->where('type_dokumen_stok_id', TypeDokumenStok::where('type_movement', 'Good Transfer Receive')->first()->type_dokumen_stok_id)->first();
 
                     $p = ($d1->stok_akhir - $d1->stok_awal) - ($d2->stok_awal - $d2->stok_akhir);
-                    return number_format($d1->stok_awal - $d1->stok_akhir, 2, ',', '.') . ' (' . number_format($p > 0 ? $p * -1 : $p, 2, ".", ',') . ')';
+                    return number_format($d1->stok_awal - $d1->stok_akhir, 6, ',', '.') . ' (' . number_format($p > 0 ? $p * -1 : $p, 6, ".", ',') . ')';
                 })
                 ->addColumn('action', function ($row) {
                     return '<a href="' . route('stok-transfer.show', $row->dombak_transfer_id) . '" class="edit btn btn-success btn-sm">Detail</a>';

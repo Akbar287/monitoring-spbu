@@ -41,7 +41,7 @@
                                     }}</label>
 
                                 <div class="col-md-6">
-                                    <input type="text" readonly name="stand_meter_awal" id="stand_meter_awal" class="thousand-style form-control @error('stand_meter_awal') is-invalid @enderror" value="{{ number_format($detail->stand_meter()->first()->stand_meter_awal, 0, ".", ",") }}" />
+                                    <input type="text" readonly name="stand_meter_awal" id="stand_meter_awal" class="thousand-style form-control @error('stand_meter_awal') is-invalid @enderror" value="{{ number_format($detail->stand_meter()->first()->stand_meter_awal, 6, ".", ",") }}" />
                                 </div>
                             </div>
 
@@ -50,7 +50,7 @@
                                     }}</label>
 
                                 <div class="col-md-6">
-                                    <input type="text" readonly name="stand_meter_akhir" id="stand_meter_akhir" class="thousand-style form-control @error('stand_meter_akhir') is-invalid @enderror" value="{{ number_format($detail->stand_meter()->first()->stand_meter_akhir, 0, ".", ",") }}" />
+                                    <input type="text" readonly name="stand_meter_akhir" id="stand_meter_akhir" class="thousand-style form-control @error('stand_meter_akhir') is-invalid @enderror" value="{{ number_format($detail->stand_meter()->first()->stand_meter_akhir, 6, ".", ",") }}" />
                                 </div>
                             </div>
 
@@ -65,7 +65,7 @@
                                                 Rp
                                             </div>
                                         </div>
-                                        <input type="text" readonly name="harga_jual" id="harga_jual" class="form-control thousand-style @error('harga_jual') is-invalid @enderror" value="{{ number_format($detail->harga()->first()->harga_jual, 0, ".", ",") }}" />
+                                        <input type="text" readonly name="harga_jual" id="harga_jual" class="form-control thousand-style @error('harga_jual') is-invalid @enderror" value="{{ number_format($detail->harga()->first()->harga_jual, 6, ".", ",") }}" />
                                     </div>
                                 </div>
                             </div>
@@ -81,7 +81,7 @@
                                                 Rp
                                             </div>
                                         </div>
-                                        <input type="text" readonly name="total_detail_jual" id="total_detail_jual" class="thousand-style form-control @error('total_detail_jual') is-invalid @enderror" value="{{ number_format(($detail->stand_meter()->first()->stand_meter_akhir - $detail->stand_meter()->first()->stand_meter_awal) * $detail->harga()->first()->harga_jual, 0, ".", ",") }}" />
+                                        <input type="text" readonly name="total_detail_jual" id="total_detail_jual" class="thousand-style form-control @error('total_detail_jual') is-invalid @enderror" value="{{ number_format(($detail->stand_meter()->first()->stand_meter_akhir - $detail->stand_meter()->first()->stand_meter_awal) * $detail->harga()->first()->harga_jual, 6, ".", ",") }}" />
                                     </div>
                                 </div>
                             </div>

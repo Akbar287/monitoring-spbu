@@ -30,7 +30,7 @@ class PenerimaanController extends Controller
                     return $actionBtn;
                 })
                 ->addColumn('jumlah', function ($row) {
-                    $actionBtn = number_format($row->jumlah, 2, ".", ",") . ' (' . $row->satuan_jumlah . ')';
+                    $actionBtn = number_format($row->jumlah, 6, ".", ",") . ' (' . $row->satuan_jumlah . ')';
                     return $actionBtn;
                 })
                 ->addColumn('tanggal_upload', function ($row) {
@@ -69,7 +69,7 @@ class PenerimaanController extends Controller
                     return $actionBtn;
                 })
                 ->addColumn('jumlah', function ($row) {
-                    $actionBtn = number_format($row->file_lo()->first()->jumlah, 2, ".", ",") . ' (' . $row->file_lo()->first()->satuan_jumlah . ')';
+                    $actionBtn = number_format($row->file_lo()->first()->jumlah, 6, ".", ",") . ' (' . $row->file_lo()->first()->satuan_jumlah . ')';
                     return $actionBtn;
                 })
                 ->addColumn('tanggal', function ($row) {
@@ -108,7 +108,7 @@ class PenerimaanController extends Controller
                     return $actionBtn;
                 })
                 ->addColumn('jumlah', function ($row) {
-                    $actionBtn = number_format($row->file_lo()->first()->jumlah, 2, ".", ",") . ' (' . $row->file_lo()->first()->satuan_jumlah . ')';
+                    $actionBtn = number_format($row->file_lo()->first()->jumlah, 6, ".", ",") . ' (' . $row->file_lo()->first()->satuan_jumlah . ')';
                     return $actionBtn;
                 })
                 ->addColumn('tanggal', function ($row) {

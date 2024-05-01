@@ -64,7 +64,7 @@
                                 <div class="col-md-6">
                                     <input id="grand_total" type="text" readonly
                                         class="form-control @error('grand_total') is-invalid @enderror" name="grand_total"
-                                        value="{{ 'Rp. ' . number_format($detail->rencana_pembelian()->first()->grand_total, 2, '.', ',') }}"  />
+                                        value="{{ 'Rp. ' . number_format($detail->rencana_pembelian()->first()->grand_total, 6, '.', ',') }}"  />
                                 </div>
                             </div>
                         </div>
@@ -145,7 +145,7 @@
                                 </div>
                                 <input id="total_setoran" type="text" readonly
                                     class="form-control @error('total_setoran') is-invalid @enderror" name="total_setoran"
-                                    value="{{ number_format($p->total_setoran, 2, ".", ",") }}" />
+                                    value="{{ number_format($p->total_setoran, 6, ".", ",") }}" />
                             </div>
                         </div>
                     </div>
@@ -251,7 +251,7 @@
                                 <div class="col-md-6">
                                     <input id="rit" type="text" readonly
                                         class="form-control @error('rit') is-invalid @enderror" name="rit"
-                                        value="{{ number_format($detail->rit, 2, ".", ',') }}" />
+                                        value="{{ number_format($detail->rit, 6, ".", ',') }}" />
                                 </div>
                             </div>
 
@@ -262,7 +262,7 @@
                                 <div class="col-md-6">
                                     <input id="jumlah" type="text" readonly
                                         class="form-control @error('jumlah') is-invalid @enderror" name="jumlah"
-                                        value="{{ number_format($detail->jumlah, 2, ".", ',') }}" />
+                                        value="{{ number_format($detail->jumlah, 6, ".", ',') }}" />
                                 </div>
                             </div>
 
@@ -284,12 +284,12 @@
                                 <div class="col-md-6">
                                     <div class="input-group mb-2">
                                         <div class="input-group-prepend">
-                                          <div class="input-group-text">Rp</div>
+                                            <div class="input-group-text">Rp</div>
                                         </div>
                                         <input id="harga" type="text" readonly
                                             class="form-control" name="harga"
-                                            value="{{ number_format($detail->harga, 2, ".", ",") }}" />
-                                      </div>
+                                            value="{{ number_format($detail->harga, 6, ".", ",") }}" />
+                                    </div>
                                 </div>
                             </div>
 
@@ -300,13 +300,12 @@
                                 <div class="col-md-6">
                                     <div class="input-group mb-2">
                                         <div class="input-group-prepend">
-                                          <div class="input-group-text">Rp</div>
+                                            <div class="input-group-text">Rp</div>
                                         </div>
                                         <input id="total_harga" type="text" readonly
                                             class="form-control" name="total_harga"
-                                            value="{{ number_format($detail->total_harga, 2, ".", ",") }}" />
-
-                                      </div>
+                                            value="{{ number_format($detail->total_harga, 6, ".", ",") }}" />
+                                    </div>
                                 </div>
                             </div>
                         </div>

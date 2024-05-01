@@ -42,11 +42,11 @@
                             <div class="row mb-3 justify-content-center">
                                 <label for="rit" class="col-md-4 col-form-label text-md-end">{{ __('RIT')
                                     }}</label>
-        
+
                                 <div class="col-md-6">
                                     <input id="rit" type="text" readonly
                                         class="form-control @error('rit') is-invalid @enderror" name="rit"
-                                        value="{{ number_format($detail->rit, 2, ".", ',') }}" autocomplete="name"
+                                        value="{{ number_format($detail->rit, 6, ".", ',') }}" autocomplete="name"
                                         autofocus>
                                 </div>
                             </div>
@@ -54,11 +54,11 @@
                             <div class="row mb-3 justify-content-center">
                                 <label for="jumlah" class="col-md-4 col-form-label text-md-end">{{ __('Jumlah / Quantity')
                                     }}</label>
-        
+
                                 <div class="col-md-6">
                                     <input id="jumlah" type="text" readonly
                                         class="form-control @error('jumlah') is-invalid @enderror" name="jumlah"
-                                        value="{{ number_format($detail->jumlah, 2, ".", ',') }}" autocomplete="name"
+                                        value="{{ number_format($detail->jumlah, 6, ".", ',') }}" autocomplete="name"
                                         autofocus>
                                 </div>
                             </div>
@@ -66,7 +66,7 @@
                             <div class="row mb-3 justify-content-center">
                                 <label for="satuan_jumlah" class="col-md-4 col-form-label text-md-end">{{ __('Satuan Jumlah')
                                     }}</label>
-        
+
                                 <div class="col-md-6">
                                     <input id="satuan_jumlah" type="text" readonly
                                         class="form-control" name="satuan_jumlah"
@@ -74,11 +74,11 @@
                                         autofocus>
                                 </div>
                             </div>
-                            
+
                             <div class="row mb-3 justify-content-center">
                                 <label for="harga" class="col-md-4 col-form-label text-md-end">{{ __('Harga')
                                     }}</label>
-        
+
                                 <div class="col-md-6">
                                     <div class="input-group mb-2">
                                         <div class="input-group-prepend">
@@ -86,16 +86,16 @@
                                         </div>
                                         <input id="harga" type="text" readonly
                                             class="form-control" name="harga"
-                                            value="{{ number_format($detail->harga, 2, ".", ",") }}" autocomplete="name"
+                                            value="{{ number_format($detail->harga, 6, ".", ",") }}" autocomplete="name"
                                             autofocus>
                                       </div>
                                 </div>
                             </div>
-                            
+
                             <div class="row mb-3 justify-content-center">
                                 <label for="total_harga" class="col-md-4 col-form-label text-md-end">{{ __('Total Harga')
                                     }}</label>
-        
+
                                 <div class="col-md-6">
                                     <div class="input-group mb-2">
                                         <div class="input-group-prepend">
@@ -103,9 +103,9 @@
                                         </div>
                                         <input id="total_harga" type="text" readonly
                                             class="form-control" name="total_harga"
-                                            value="{{ number_format($detail->total_harga, 2, ".", ",") }}" autocomplete="name"
+                                            value="{{ number_format($detail->total_harga, 6, ".", ",") }}" autocomplete="name"
                                             autofocus>
-                                        
+
                                       </div>
                                 </div>
                             </div>

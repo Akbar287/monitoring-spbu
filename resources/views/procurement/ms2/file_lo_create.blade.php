@@ -35,7 +35,7 @@
                                     <div class="col-md-6">
                                         <select class="custom-select @error('detail_rencana_pembelian_id') is-invalid @enderror" name="detail_rencana_pembelian_id" id="detail_rencana_pembelian_id">
                                             @foreach($detail_rencana_pembelian as $s)
-                                            <option {{ old('detail_rencana_pembelian_id') == $s->detail_rencana_pembelian_id ? 'selected' : '' }} value="{{ $s->detail_rencana_pembelian_id }}">{{ $s->produk()->first()->nama_produk . ' ' . number_format($s->jumlah, 2, ".", ",") . ' ' . $s->satuan_jumlah . ' ' . '('.$s->rencana_pembelian()->first()->kode_pembelian . ')'  }}</option>
+                                            <option {{ old('detail_rencana_pembelian_id') == $s->detail_rencana_pembelian_id ? 'selected' : '' }} value="{{ $s->detail_rencana_pembelian_id }}">{{ $s->produk()->first()->nama_produk . ' ' . number_format($s->jumlah, 6, ".", ",") . ' ' . $s->satuan_jumlah . ' ' . '('.$s->rencana_pembelian()->first()->kode_pembelian . ')'  }}</option>
                                             @endforeach
                                         </select>
 

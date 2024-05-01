@@ -57,13 +57,13 @@ class StandMeterController extends Controller
                     return $row->jam_kerja()->first()->nama_jam_kerja;
                 })
                 ->addColumn('stand_meter_awal', function ($row) {
-                    return number_format($row->stand_meter_awal, 2, ".", ",");
+                    return number_format($row->stand_meter_awal, 6, ".", ",");
                 })
                 ->addColumn('stand_meter_akhir', function ($row) {
-                    return number_format($row->stand_meter_akhir, 2, ".", ",");
+                    return number_format($row->stand_meter_akhir, 6, ".", ",");
                 })
                 ->addColumn('selisih', function ($row) {
-                    return number_format($row->stand_meter_akhir - $row->stand_meter_awal, 2, ".", ",");
+                    return number_format($row->stand_meter_akhir - $row->stand_meter_awal, 6, ".", ",");
                 })
                 ->addColumn('status', function ($row) {
                     return is_null($row->stand_meter_akhir) ? '<div class="badge badge-warning">Berjalan</div>' : ($row->is_confirmation ? '<div class="badge badge-success">Terkonfirmasi</div>' : '<div class="badge badge-danger">Belum Dikonfirmasi</div>');
@@ -109,13 +109,13 @@ class StandMeterController extends Controller
                     return $row->jam_kerja()->first()->nama_jam_kerja;
                 })
                 ->addColumn('stand_meter_awal', function ($row) {
-                    return number_format($row->stand_meter_awal, 2, ".", ",");
+                    return number_format($row->stand_meter_awal, 6, ".", ",");
                 })
                 ->addColumn('stand_meter_akhir', function ($row) {
-                    return number_format($row->stand_meter_akhir, 2, ".", ",");
+                    return number_format($row->stand_meter_akhir, 6, ".", ",");
                 })
                 ->addColumn('selisih', function ($row) {
-                    return number_format($row->stand_meter_akhir - $row->stand_meter_awal, 2, ".", ",");
+                    return number_format($row->stand_meter_akhir - $row->stand_meter_awal, 6, ".", ",");
                 })
                 ->addColumn('status', function ($row) {
                     return $row->is_confirmation ? '<div class="badge badge-success">Terkonfirmasi</div>' : '<div class="badge badge-danger">Belum Dikonfirmasi</div>';
@@ -186,7 +186,7 @@ class StandMeterController extends Controller
                     'data' => [
                         'tanggal' => $tanggal ??  date('Y-m-d'),
                         'jam_kerja' => $shift,
-                        'stand_meter_akhir' => is_null($standMeter) ? 0 : number_format($standMeter->stand_meter_akhir, 2, ".", ","),
+                        'stand_meter_akhir' => is_null($standMeter) ? 0 : number_format($standMeter->stand_meter_akhir, 6, ".", ","),
                         'receive' => !is_null($dokStok),
                         'jam_kerja_id' => $jam_kerja
                     ],

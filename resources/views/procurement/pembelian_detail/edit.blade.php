@@ -54,7 +54,7 @@
                                     <div class="col-md-6">
                                         <input id="rit" type="text"
                                             class="form-control thousand-style @error('rit') is-invalid @enderror" name="rit"
-                                            value="{{ number_format($detail->rit, 2, ".", ',') }}" autocomplete="name"
+                                            value="{{ number_format($detail->rit, 6, ".", ',') }}" autocomplete="name"
                                             autofocus>
 
                                         @error('rit')
@@ -72,7 +72,7 @@
                                     <div class="col-md-6">
                                         <input id="jumlah" type="text" readonly
                                             class="form-control thousand-style @error('jumlah') is-invalid @enderror" name="jumlah"
-                                            value="{{ number_format($detail->jumlah , 2, ".", ",")}}" autocomplete="name"
+                                            value="{{ number_format($detail->jumlah , 6, ".", ",")}}" autocomplete="name"
                                             autofocus>
 
                                         @error('jumlah')
@@ -125,7 +125,7 @@
                                     <div class="col-md-6">
                                             <input id="total_harga" type="text"
                                                 class="form-control" name="total_harga" readonly
-                                                value="{{ 'Rp ' .number_format($detail->total_harga, 2, ".", ",") }}" autocomplete="name"
+                                                value="{{ 'Rp ' .number_format($detail->total_harga, 6, ".", ",") }}" autocomplete="name"
                                                 autofocus>
                                     </div>
                                 </div>

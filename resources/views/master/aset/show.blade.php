@@ -32,20 +32,20 @@
                         <div class="col-md-12">
                             <div class="row mb-3 justify-content-center">
                                 <label for="aset_id" class="col-md-4 col-form-label text-md-end">{{ __('Id Aset')}}</label>
-        
+
                                 <div class="col-md-6">
-                                    <input readonly id="aset_id" type="text" 
+                                    <input readonly id="aset_id" type="text"
                                         class="form-control @error('aset_id') is-invalid @enderror" name="aset_id"
                                         value="{{ $aset->aset_id }}" autocomplete="name"
                                         autofocus>
                                 </div>
                             </div>
-                            
+
                             <div class="row mb-3 justify-content-center">
                                 <label for="spbu_id" class="col-md-4 col-form-label text-md-end">{{ __('SPBU')}}</label>
-        
+
                                 <div class="col-md-6">
-                                    <input readonly id="spbu_id" type="text" 
+                                    <input readonly id="spbu_id" type="text"
                                         class="form-control @error('spbu_id') is-invalid @enderror" name="spbu_id"
                                         value="{{ $aset->spbu()->first()->nama_spbu }}" autocomplete="name"
                                         autofocus>
@@ -55,7 +55,7 @@
                             <div class="row mb-3 justify-content-center">
                                 <label for="nama_aset" class="col-md-4 col-form-label text-md-end">{{ __('Nama Aset')
                                     }}</label>
-        
+
                                 <div class="col-md-6">
                                     <input id="nama_aset" type="text" readonly
                                         class="form-control @error('nama_aset') is-invalid @enderror" name="nama_aset"
@@ -63,11 +63,11 @@
                                         autofocus>
                                 </div>
                             </div>
-                            
+
                             <div class="row mb-3 justify-content-center">
                                 <label for="jumlah" class="col-md-4 col-form-label text-md-end">{{ __('Jumlah')
                                     }}</label>
-        
+
                                 <div class="col-md-6">
                                     <input id="jumlah" type="text" readonly
                                         class="form-control @error('jumlah') is-invalid @enderror" name="jumlah"
@@ -75,11 +75,11 @@
                                         autofocus>
                                 </div>
                             </div>
-                            
+
                             <div class="row mb-3 justify-content-center">
                                 <label for="tanggal_digunakan" class="col-md-4 col-form-label text-md-end">{{ __('Tanggal Digunakan')
                                     }}</label>
-        
+
                                 <div class="col-md-6">
                                     <input id="tanggal_digunakan" type="date" readonly
                                         class="form-control @error('tanggal_digunakan') is-invalid @enderror" name="tanggal_digunakan"
@@ -87,11 +87,11 @@
                                         autofocus>
                                 </div>
                             </div>
-                            
+
                             <div class="row mb-3 justify-content-center">
                                 <label for="harga" class="col-md-4 col-form-label text-md-end">{{ __('Harga')
                                     }}</label>
-        
+
                                 <div class="col-md-6">
                                     <div class="input-group">
                                         <div class="input-group-prepend">
@@ -101,16 +101,16 @@
                                         </div>
                                         <input id="harga" type="currency" readonly
                                             class="form-control @error('harga') is-invalid @enderror" name="harga"
-                                            value="{{ number_format($aset->harga, 2, '.', ',') }}" autocomplete="name"
+                                            value="{{ number_format($aset->harga, 6, '.', ',') }}" autocomplete="name"
                                             autofocus>
                                     </div>
                                 </div>
                             </div>
-                            
+
                             <div class="row mb-3 justify-content-center">
                                 <label for="penyusutan_per_hari" class="col-md-4 col-form-label text-md-end">{{ __('Penyusutan Per Hari')
                                     }}</label>
-        
+
                                 <div class="col-md-6">
                                     <div class="input-group">
                                         <div class="input-group-prepend">
@@ -120,16 +120,16 @@
                                         </div>
                                         <input id="penyusutan_per_hari" type="currency" readonly
                                             class="form-control @error('penyusutan_per_hari') is-invalid @enderror" name="penyusutan_per_hari"
-                                            value="{{ number_format($aset->penyusutan_per_hari, 2, '.', ',')}}" autocomplete="name"
+                                            value="{{ number_format($aset->penyusutan_per_hari, 6, '.', ',')}}" autocomplete="name"
                                             autofocus>
                                     </div>
                                 </div>
                             </div>
-                            
+
                             <div class="row mb-3 justify-content-center">
                                 <label for="is_digunakan" class="col-md-4 col-form-label text-md-end">{{ __('Digunakan')
                                     }}</label>
-        
+
                                 <div class="col-md-6">
                                     <input id="is_digunakan" type="currency" readonly
                                             class="form-control @error('is_digunakan') is-invalid @enderror" name="is_digunakan"
@@ -137,11 +137,11 @@
                                             autofocus>
                                 </div>
                             </div>
-                            
+
                             <div class="row mb-3 justify-content-center">
                                 <label for="keterangan" class="col-md-4 col-form-label text-md-end">{{ __('Keterangan')
                                     }}</label>
-        
+
                                 <div class="col-md-6">
                                     <textarea id="keterangan" type="text" rows="3" cols="3" readonly
                                         class="form-control @error('keterangan') is-invalid @enderror" name="keterangan"

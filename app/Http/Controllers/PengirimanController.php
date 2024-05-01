@@ -64,7 +64,7 @@ class PengirimanController extends Controller
                     return $actionBtn;
                 })
                 ->addColumn('jumlah', function ($row) {
-                    $actionBtn = number_format($row->jumlah, 2, ".", ",") . ' ' . $row->satuan_jumlah;
+                    $actionBtn = number_format($row->jumlah, 6, ".", ",") . ' ' . $row->satuan_jumlah;
                     return $actionBtn;
                 })
                 ->addColumn('action', function ($row) {

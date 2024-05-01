@@ -24,7 +24,7 @@ class DetailRencanaPembelianController extends Controller
                     return $actionBtn;
                 })
                 ->addColumn('jumlah', function ($row) {
-                    $actionBtn = number_format($row->jumlah, 2, ".", ",");
+                    $actionBtn = number_format($row->jumlah, 6, ".", ",");
                     return $actionBtn;
                 })
                 ->addColumn('action', function ($row) {

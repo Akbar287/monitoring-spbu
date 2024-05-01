@@ -32,8 +32,7 @@
                                 <div class="col-md-6">
                                     <input id="rencana_pembelian_id" type="text" readonly
                                         class="form-control @error('rencana_pembelian_id') is-invalid @enderror" name="rencana_pembelian_id"
-                                        value="{{ $rencana->rencana_pembelian_id }}" autocomplete="name"
-                                        autofocus>
+                                        value="{{ $rencana->rencana_pembelian_id }}">
                                 </div>
                             </div>
 
@@ -43,8 +42,7 @@
                                 <div class="col-md-6">
                                     <input readonly id="nama_spbu" type="text"
                                         class="form-control @error('nama_spbu') is-invalid @enderror" name="nama_spbu"
-                                        value="{{ $rencana->spbu()->first()->nama_spbu }}" autocomplete="name"
-                                        autofocus>
+                                        value="{{ $rencana->spbu()->first()->nama_spbu }}">
                                 </div>
                             </div>
 
@@ -55,8 +53,7 @@
                                 <div class="col-md-6">
                                     <textarea id="keterangan" type="text" rows="3" cols="3" readonly
                                         class="form-control @error('keterangan') is-invalid @enderror" name="keterangan"
-                                        value="" autocomplete="name"
-                                        autofocus>{{ $rencana->keterangan }}</textarea>
+                                        value="">{{ $rencana->keterangan }}</textarea>
                                 </div>
                             </div>
 
@@ -67,8 +64,7 @@
                                 <div class="col-md-6">
                                     <input id="grand_total" type="text" readonly
                                         class="form-control @error('grand_total') is-invalid @enderror" name="grand_total"
-                                        value="{{ 'Rp. ' . number_format($rencana->grand_total, 2, '.', ',') }}" autocomplete="name"
-                                        autofocus />
+                                        value="{{ 'Rp. ' . number_format($rencana->grand_total, 6, '.', ',') }}" />
                                 </div>
                             </div>
 
@@ -77,7 +73,7 @@
                                     }}</label>
 
                                 <div class="col-md-6">
-                                    <input id="grand_total" type="text" readonly class="form-control @error('grand_total') is-invalid @enderror" name="grand_total" value="{{ $rencana->pajak_pembelian()->count() > 0 ? 'Rp. '. number_format($rencana->pajak_pembelian()->first()->total_amount, 2, ".", ",")  : 'Rp. ' . number_format($rencana->grand_total + ($rencana->grand_total * ($pajak->ppn / 100)) + ($rencana->grand_total * ($pajak->ppbkb / 100)) + ($rencana->grand_total * ($pajak->pph / 100)), 2, '.', ',') }}" />
+                                    <input id="grand_total" type="text" readonly class="form-control @error('grand_total') is-invalid @enderror" name="grand_total" value="{{ $rencana->pajak_pembelian()->count() > 0 ? 'Rp. '. number_format($rencana->pajak_pembelian()->first()->total_amount, 6, ".", ",")  : 'Rp. ' . number_format($rencana->grand_total + ($rencana->grand_total * ($pajak->ppn / 100)) + ($rencana->grand_total * ($pajak->ppbkb / 100)) + ($rencana->grand_total * ($pajak->pph / 100)), 6, '.', ',') }}" />
                                 </div>
                             </div>
                         </div>
@@ -263,13 +259,13 @@
                                             <td>
                                                 <input id="jumlah" type="text" min="0" readonly
                                                     class="form-control" name="jumlah[]"
-                                                    value="{{number_format($p->rit, 2, ".", ',') }}" autocomplete="name"
+                                                    value="{{number_format($p->rit, 6, ".", ',') }}" autocomplete="name"
                                                     autofocus>
                                             </td>
                                             <td>
                                                 <input id="jumlah" type="text" min="0" readonly
                                                     class="form-control" name="jumlah[]"
-                                                    value="{{number_format($p->jumlah, 2, ".", ',') }}" autocomplete="name"
+                                                    value="{{number_format($p->jumlah, 6, ".", ',') }}" autocomplete="name"
                                                     autofocus>
                                             </td>
                                             <td>
@@ -283,7 +279,7 @@
                                                         <div class="input-group-prepend">
                                                             <div class="input-group-text">Rp. </div>
                                                         </div>
-                                                        <input id="harga" type="text" min="0" readonly class="form-control" name="harga[]" value="{{number_format($p->harga, 2, ".", ',') }}" autocomplete="name" autofocus>
+                                                        <input id="harga" type="text" min="0" readonly class="form-control" name="harga[]" value="{{number_format($p->harga, 6, ".", ',') }}" autocomplete="name" autofocus>
                                                     </div>
                                             </td>
                                             <td>
@@ -291,7 +287,7 @@
                                                     <div class="input-group-prepend">
                                                         <div class="input-group-text">Rp. </div>
                                                     </div>
-                                                    <input id="total_harga" type="text" min="0" readonly class="form-control" name="total_harga[]" value="{{number_format($p->total_harga, 2, ".", ',') }}" autocomplete="name" autofocus>
+                                                    <input id="total_harga" type="text" min="0" readonly class="form-control" name="total_harga[]" value="{{number_format($p->total_harga, 6, ".", ',') }}" autocomplete="name" autofocus>
                                                 </div>
                                             </td>
                                         </tr>

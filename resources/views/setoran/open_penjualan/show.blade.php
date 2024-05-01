@@ -133,7 +133,7 @@
 
                         <div class="col-md-6">
                             <div class="input-group">
-                                <input id="stand_meter_awal" type="text" readonly class="form-control stand_meter_awal thousand-style que-{{ $loop->iteration }}" name="stand_meter_awal" value="{{ number_format($dp->stand_meter()->first()->stand_meter_awal, 0, ".", ",") }}" />
+                                <input id="stand_meter_awal" type="text" readonly class="form-control stand_meter_awal thousand-style que-{{ $loop->iteration }}" name="stand_meter_awal" value="{{ number_format($dp->stand_meter()->first()->stand_meter_awal, 6, ".", ",") }}" />
                             </div>
                         </div>
                     </div>
@@ -144,7 +144,7 @@
 
                         <div class="col-md-6">
                             <div class="input-group">
-                                <input id="stand_meter_akhir" type="text" readonly class="form-control stand_meter_akhir thousand-style que-{{ $loop->iteration }}" name="stand_meter_akhir" value="{{ number_format($dp->stand_meter()->first()->stand_meter_akhir, 0, ".", ",") }}" />
+                                <input id="stand_meter_akhir" type="text" readonly class="form-control stand_meter_akhir thousand-style que-{{ $loop->iteration }}" name="stand_meter_akhir" value="{{ number_format($dp->stand_meter()->first()->stand_meter_akhir, 6, ".", ",") }}" />
                             </div>
                         </div>
                     </div>

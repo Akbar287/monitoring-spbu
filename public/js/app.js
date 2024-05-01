@@ -102,7 +102,8 @@ $(function () {
     $('.thousand-style').toArray().forEach(function (e) {
       new cleave_js__WEBPACK_IMPORTED_MODULE_0__["default"](e, {
         numeral: true,
-        numeralThousandsGroupStyle: 'thousand'
+        numeralThousandsGroupStyle: 'thousand',
+        numeralDecimalScale: 6
       });
     });
   }
@@ -1021,8 +1022,8 @@ $(function () {
       var harga = $('input#harga').val().replaceAll(',', '');
       var jml = $('input#jumlah').val().split('.')[0].replace(',', '');
       $('input#total_harga').val(new Intl.NumberFormat("id-ID", {
-        style: "currency",
-        currency: "IDR"
+        style: "decimal",
+        maximumFractionDigits: 6
       }).format(jml * harga));
     });
   }
@@ -1476,7 +1477,8 @@ $(function () {
                   var calc = parseFloat($('input#volume_setelah').val().replace(',', '')) - parseFloat(data.data.volume.replace(',', ''));
                   $('input#volume_sebelumnya').val(data.data.volume);
                   $('input#volume').val(Intl.NumberFormat('id-ID', {
-                    style: 'decimal'
+                    style: 'decimal',
+                    maximumFractionDigits: 6
                   }).format(calc).replaceAll('.', ','));
                 } else {
                   $('input#volume_sebelumnya').val("Tidak ada Data");
@@ -1507,7 +1509,8 @@ $(function () {
                   var calc = parseFloat(data.data.volume.replace(',', '')) - parseFloat($('input#volume_sebelumnya').val().replace(',', ''));
                   $('input#volume_setelah').val(data.data.volume);
                   $('input#volume').val(Intl.NumberFormat('id-ID', {
-                    style: 'decimal'
+                    style: 'decimal',
+                    maximumFractionDigits: 6
                   }).format(calc).replaceAll('.', ','));
                 } else {
                   $('input#volume_setelah').val("Tidak ada Data");
@@ -1572,10 +1575,12 @@ $(function () {
                   var calc_ = parseFloat(data.data.volume.replace(',', '')) - parseFloat($('input#volume_sebelumnya_kedua').val().replace(',', '')) - parseFloat($('input#volume').val().replace(',', '')) * -1;
                   $('input#volume_sebelumnya_kedua').val(data.data.volume);
                   $('input#volume_kedua').val(Intl.NumberFormat('id-ID', {
-                    style: 'decimal'
+                    style: 'decimal',
+                    maximumFractionDigits: 6
                   }).format(calc).replaceAll('.', ','));
                   $('input#volume_selisih_kedua').val(Intl.NumberFormat('id-ID', {
-                    style: 'decimal'
+                    style: 'decimal',
+                    maximumFractionDigits: 6
                   }).format(calc_).replaceAll('.', ','));
                 } else {
                   $('input#volume_sebelumnya_kedua').val("Tidak ada Data");
@@ -1607,10 +1612,12 @@ $(function () {
                   var calc_ = parseFloat(data.data.volume.replace(',', '')) - parseFloat($('input#volume_sebelumnya_kedua').val().replace(',', '')) - parseFloat($('input#volume').val().replace(',', '')) * -1;
                   $('input#volume_sebelumnya_kedua_setelah').val(data.data.volume);
                   $('input#volume_kedua').val(Intl.NumberFormat('id-ID', {
-                    style: 'decimal'
+                    style: 'decimal',
+                    maximumFractionDigits: 6
                   }).format(calc).replaceAll('.', ','));
                   $('input#volume_selisih_kedua').val(Intl.NumberFormat('id-ID', {
-                    style: 'decimal'
+                    style: 'decimal',
+                    maximumFractionDigits: 6
                   }).format(calc_).replaceAll('.', ','));
                   $('button[type=submit]').removeAttr('disabled');
                 } else {
@@ -1874,7 +1881,8 @@ $(function () {
               if (data.data != null) {
                 $('input#volume').val(data.data.volume);
                 $('input#volume_selisih').val(Intl.NumberFormat('id-ID', {
-                  style: 'decimal'
+                  style: 'decimal',
+                  maximumFractionDigits: 6
                 }).format(calc).replaceAll('.', ','));
                 $('button[type=submit]').removeAttr('disabled');
               } else {
@@ -2290,19 +2298,22 @@ $(function () {
     $('input[name=ppn]').on('change', function (e) {
       var calc = gross_cleansing - $('input[name=ppn]').val().replaceAll(',', '') - $('input[name=pph]').val().replaceAll(',', '') - $('input[name=ppbkb]').val().replaceAll(',', '');
       $('input[name=net_price]').val(Intl.NumberFormat('id-ID', {
-        style: 'decimal'
+        style: 'decimal',
+        maximumFractionDigits: 6
       }).format(calc).replaceAll('.', ','));
     });
     $('input[name=pph]').on('change', function (e) {
       var calc = gross_cleansing - $('input[name=ppn]').val().replaceAll(',', '') - $('input[name=pph]').val().replaceAll(',', '') - $('input[name=ppbkb]').val().replaceAll(',', '');
       $('input[name=net_price]').val(Intl.NumberFormat('id-ID', {
-        style: 'decimal'
+        style: 'decimal',
+        maximumFractionDigits: 6
       }).format(calc).replaceAll('.', ','));
     });
     $('input[name=ppbkb]').on('change', function (e) {
       var calc = gross_cleansing - $('input[name=ppn]').val().replaceAll(',', '') - $('input[name=pph]').val().replaceAll(',', '') - $('input[name=ppbkb]').val().replaceAll(',', '');
       $('input[name=net_price]').val(Intl.NumberFormat('id-ID', {
-        style: 'decimal'
+        style: 'decimal',
+        maximumFractionDigits: 6
       }).format(calc).replaceAll('.', ','));
     });
   }
@@ -2558,17 +2569,20 @@ $(function () {
   if (routeName == 'pembelian.detail.edit_pajak') {
     $('#ppn').on('keyup', function (e) {
       $('#total_amount').val(new Intl.NumberFormat("id-ID", {
-        style: "decimal"
+        style: "decimal",
+        maximumFractionDigits: 6
       }).format(parseInt($('#net_price').val().replaceAll(',', '')) + parseInt(e.target.value.replaceAll(',', '')) + parseInt($('#pph').val().replaceAll(',', '')) + parseInt($('#ppbkb').val().replaceAll(',', ''))));
     });
     $('#pph').on('keyup', function (e) {
       $('#total_amount').val(new Intl.NumberFormat("id-ID", {
-        style: "decimal"
+        style: "decimal",
+        maximumFractionDigits: 6
       }).format(parseInt($('#net_price').val().replaceAll(',', '')) + parseInt($('#ppn').val().replaceAll(',', '')) + parseInt(e.target.value.replaceAll(',', '')) + parseInt($('#ppbkb').val().replaceAll(',', ''))));
     });
     $('#ppbkb').on('keyup', function (e) {
       $('#total_amount').val(new Intl.NumberFormat("id-ID", {
-        style: "decimal"
+        style: "decimal",
+        maximumFractionDigits: 6
       }).format(parseInt($('#net_price').val().replaceAll(',', '')) + parseInt($('#ppn').val().replaceAll(',', '')) + parseInt($('#pph').val().replaceAll(',', '')) + parseInt(e.target.value.replaceAll(',', ''))));
     });
   }

@@ -74,7 +74,7 @@
                                 <div class="col-md-6">
                                     <input id="grand_total" type="text" readonly
                                         class="form-control @error('grand_total') is-invalid @enderror" name="grand_total"
-                                        value="{{ 'Rp. ' . number_format($pembelian->grand_total, 2, '.', ',') }}" autocomplete="name"
+                                        value="{{ 'Rp. ' . number_format($pembelian->grand_total, 6, '.', ',') }}" autocomplete="name"
                                         autofocus />
                                 </div>
                             </div>
@@ -84,7 +84,7 @@
                                     }}</label>
 
                                 <div class="col-md-6">
-                                    <input id="grand_total" type="text" readonly class="form-control @error('grand_total') is-invalid @enderror" name="grand_total" value="{{ $pembelian->pajak_pembelian()->count() > 0 ? 'Rp. '. number_format($pembelian->pajak_pembelian()->first()->total_amount, 0, ".", ",")  : 'Rp. ' . number_format($pembelian->grand_total + ($pembelian->grand_total * ($pajak->ppn / 100)) + ($pembelian->grand_total * ($pajak->ppbkb / 100)) + ($pembelian->grand_total * ($pajak->pph / 100)), 2, '.', ',') }}" />
+                                    <input id="grand_total" type="text" readonly class="form-control @error('grand_total') is-invalid @enderror" name="grand_total" value="{{ $pembelian->pajak_pembelian()->count() > 0 ? 'Rp. '. number_format($pembelian->pajak_pembelian()->first()->total_amount, 6, ".", ",")  : 'Rp. ' . number_format($pembelian->grand_total + ($pembelian->grand_total * ($pajak->ppn / 100)) + ($pembelian->grand_total * ($pajak->ppbkb / 100)) + ($pembelian->grand_total * ($pajak->pph / 100)), 6, '.', ',') }}" />
                                 </div>
                             </div>
                             <h2 class="section-title">Pajak</h2>
@@ -107,21 +107,21 @@
                                                 @if(!is_null($pajak))
                                                 <tr>
                                                     <td>PPN</td>
-                                                    <td>{{ 'Rp. '. number_format($pembelian->pajak_pembelian()->count() > 0 ? $pembelian->pajak_pembelian()->first()->net_price : $pembelian->grand_total, 0, ".", ",") }}</td>
+                                                    <td>{{ 'Rp. '. number_format($pembelian->pajak_pembelian()->count() > 0 ? $pembelian->pajak_pembelian()->first()->net_price : $pembelian->grand_total, 6, ".", ",") }}</td>
                                                     <td>{{ $pajak->ppn }}</td>
-                                                    <td>{{ 'Rp. '. number_format($pembelian->pajak_pembelian()->count() > 0 ? $pembelian->pajak_pembelian()->first()->ppn : $pembelian->grand_total * ($pajak->ppn / 100), 0, ".", ",") }}</td>
+                                                    <td>{{ 'Rp. '. number_format($pembelian->pajak_pembelian()->count() > 0 ? $pembelian->pajak_pembelian()->first()->ppn : $pembelian->grand_total * ($pajak->ppn / 100), 6, ".", ",") }}</td>
                                                 </tr>
                                                 <tr>
                                                     <td>PPPBKB</td>
-                                                    <td>{{ 'Rp. '. number_format($pembelian->pajak_pembelian()->count() > 0 ? $pembelian->pajak_pembelian()->first()->net_price : $pembelian->grand_total, 0, ".", ",") }}</td>
+                                                    <td>{{ 'Rp. '. number_format($pembelian->pajak_pembelian()->count() > 0 ? $pembelian->pajak_pembelian()->first()->net_price : $pembelian->grand_total, 6, ".", ",") }}</td>
                                                     <td>{{ $pajak->ppbkb }}</td>
-                                                    <td>{{ 'Rp. '. number_format($pembelian->pajak_pembelian()->count() > 0 ? $pembelian->pajak_pembelian()->first()->ppbkb : $pembelian->grand_total * ($pajak->ppbkb / 100), 0, ".", ",") }}</td>
+                                                    <td>{{ 'Rp. '. number_format($pembelian->pajak_pembelian()->count() > 0 ? $pembelian->pajak_pembelian()->first()->ppbkb : $pembelian->grand_total * ($pajak->ppbkb / 100), 6, ".", ",") }}</td>
                                                 </tr>
                                                 <tr>
                                                     <td>PPH</td>
-                                                    <td>{{ 'Rp. '. number_format($pembelian->pajak_pembelian()->count() > 0 ? $pembelian->pajak_pembelian()->first()->net_price : $pembelian->grand_total, 0, ".", ",") }}</td>
+                                                    <td>{{ 'Rp. '. number_format($pembelian->pajak_pembelian()->count() > 0 ? $pembelian->pajak_pembelian()->first()->net_price : $pembelian->grand_total, 6, ".", ",") }}</td>
                                                     <td>{{ $pajak->pph }}</td>
-                                                    <td>{{ 'Rp. '. number_format($pembelian->pajak_pembelian()->count() > 0 ? $pembelian->pajak_pembelian()->first()->pph : $pembelian->grand_total * ($pajak->pph / 100), 0, ".", ",") }}</td>
+                                                    <td>{{ 'Rp. '. number_format($pembelian->pajak_pembelian()->count() > 0 ? $pembelian->pajak_pembelian()->first()->pph : $pembelian->grand_total * ($pajak->pph / 100), 6, ".", ",") }}</td>
                                                 </tr>
                                                 <tr>
                                                     <td colspan="3">Total</td>
@@ -132,7 +132,7 @@
 
                                                         ($pembelian->pajak_pembelian()->count() > 0 ? $pembelian->pajak_pembelian()->first()->pph : $pembelian->grand_total * ($pajak->pph / 100))
 
-                                                        , 0, ".", ",") }}</td>
+                                                        , 6, ".", ",") }}</td>
                                                 </tr>
                                                 @else
                                                 <tr>
@@ -171,13 +171,13 @@
                                                     <td>
                                                         <input id="jumlah" type="text" min="0" readonly
                                                             class="form-control" name="jumlah[]"
-                                                            value="{{number_format($p->rit, 2, ".", ',') }}" autocomplete="name"
+                                                            value="{{number_format($p->rit, 6, ".", ',') }}" autocomplete="name"
                                                             autofocus>
                                                     </td>
                                                     <td>
                                                         <input id="jumlah" type="text" min="0" readonly
                                                             class="form-control" name="jumlah[]"
-                                                            value="{{number_format($p->jumlah, 2, ".", ',') }}" autocomplete="name"
+                                                            value="{{number_format($p->jumlah, 6, ".", ',') }}" autocomplete="name"
                                                             autofocus>
                                                     </td>
                                                     <td>
@@ -191,7 +191,7 @@
                                                                 <div class="input-group-prepend">
                                                                     <div class="input-group-text">Rp. </div>
                                                                 </div>
-                                                                <input id="harga" type="text" min="0" readonly class="form-control" name="harga[]" value="{{number_format($p->harga, 2, ".", ',') }}" autocomplete="name" autofocus>
+                                                                <input id="harga" type="text" min="0" readonly class="form-control" name="harga[]" value="{{number_format($p->harga, 6, ".", ',') }}" autocomplete="name" autofocus>
                                                             </div>
                                                     </td>
                                                     <td>
@@ -199,7 +199,7 @@
                                                             <div class="input-group-prepend">
                                                                 <div class="input-group-text">Rp. </div>
                                                             </div>
-                                                            <input id="total_harga" type="text" min="0" readonly class="form-control" name="total_harga[]" value="{{number_format($p->total_harga, 2, ".", ',') }}" autocomplete="name" autofocus>
+                                                            <input id="total_harga" type="text" min="0" readonly class="form-control" name="total_harga[]" value="{{number_format($p->total_harga, 6, ".", ',') }}" autocomplete="name" autofocus>
                                                         </div>
                                                     </td>
                                                 </tr>

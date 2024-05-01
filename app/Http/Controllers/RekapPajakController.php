@@ -50,19 +50,19 @@ class RekapPajakController extends Controller
                     return $actionBtn;
                 })
                 ->addColumn('ppn', function ($row) {
-                    $actionBtn = "Rp. " . number_format($row->ppn, 2, '.', ',');
+                    $actionBtn = "Rp. " . number_format($row->ppn, 6, '.', ',');
                     return $actionBtn;
                 })
                 ->addColumn('ppbkb', function ($row) {
-                    $actionBtn = "Rp. " . number_format($row->ppbkb, 2, '.', ',');
+                    $actionBtn = "Rp. " . number_format($row->ppbkb, 6, '.', ',');
                     return $actionBtn;
                 })
                 ->addColumn('pph', function ($row) {
-                    $actionBtn = "Rp. " . number_format($row->pph, 2, '.', ',');
+                    $actionBtn = "Rp. " . number_format($row->pph, 6, '.', ',');
                     return $actionBtn;
                 })
                 ->addColumn('total_pajak', function ($row) {
-                    $actionBtn = "Rp. " . number_format($row->ppn + $row->ppbkb + $row->pph, 2, '.', ',');
+                    $actionBtn = "Rp. " . number_format($row->ppn + $row->ppbkb + $row->pph, 6, '.', ',');
                     return $actionBtn;
                 })
                 ->addColumn('action', function ($row) {

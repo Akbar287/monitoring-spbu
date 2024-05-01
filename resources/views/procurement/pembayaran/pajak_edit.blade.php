@@ -35,7 +35,7 @@
                                     <div class="input-group-prepend">
                                         <div class="input-group-text">Rp.</div>
                                     </div>
-                                    <input type="text" readonly id="net_price" class="form-control @error('net_price') is-invalid @enderror" name="net_price" value="{{ number_format($rencana->pajak_pembelian()->first()->net_price ?? $rencana->grand_total, 0, ".", ",") }}" />
+                                    <input type="text" readonly id="net_price" class="form-control @error('net_price') is-invalid @enderror" name="net_price" value="{{ number_format($rencana->pajak_pembelian()->first()->net_price ?? $rencana->grand_total, 6, ".", ",") }}" />
                                 </div>
                             </div>
                         </div>
@@ -48,7 +48,7 @@
                                     <div class="input-group-prepend">
                                         <div class="input-group-text">Rp.</div>
                                     </div>
-                                    <input type="text" id="ppn" class="form-control thousand-style @error('ppn') is-invalid @enderror" name="ppn" value="{{ number_format($rencana->pajak_pembelian()->first()->ppn ?? 0, 0, ".", ",") }}" />
+                                    <input type="text" id="ppn" class="form-control thousand-style @error('ppn') is-invalid @enderror" name="ppn" value="{{ number_format($rencana->pajak_pembelian()->first()->ppn ?? 0, 6, ".", ",") }}" />
                                 </div>
                             </div>
                         </div>
@@ -61,7 +61,7 @@
                                     <div class="input-group-prepend">
                                         <div class="input-group-text">Rp.</div>
                                     </div>
-                                    <input type="text" id="ppbkb" class="form-control thousand-style @error('ppbkb') is-invalid @enderror" name="ppbkb" value="{{ number_format($rencana->pajak_pembelian()->first()->ppbkb ?? 0, 0, ".", ",") }}" />
+                                    <input type="text" id="ppbkb" class="form-control thousand-style @error('ppbkb') is-invalid @enderror" name="ppbkb" value="{{ number_format($rencana->pajak_pembelian()->first()->ppbkb ?? 0, 6, ".", ",") }}" />
                                 </div>
                             </div>
                         </div>
@@ -73,7 +73,7 @@
                                     <div class="input-group-prepend">
                                         <div class="input-group-text">Rp.</div>
                                     </div>
-                                    <input type="text" id="pph" class="form-control thousand-style @error('pph') is-invalid @enderror" name="pph" value="{{ number_format($rencana->pajak_pembelian()->first()->pph ?? 0, 0, ".", ",") }}" />
+                                    <input type="text" id="pph" class="form-control thousand-style @error('pph') is-invalid @enderror" name="pph" value="{{ number_format($rencana->pajak_pembelian()->first()->pph ?? 0, 6, ".", ",") }}" />
                                 </div>
                             </div>
                         </div>
@@ -86,7 +86,7 @@
                                     <div class="input-group-prepend">
                                         <div class="input-group-text">Rp.</div>
                                     </div>
-                                    <input type="text" id="total_amount" readonly class="form-control @error('total_amount') is-invalid @enderror" name="total_amount" value="{{ number_format($rencana->pajak_pembelian()->first()->total_amount ?? $rencana->grand_total, 0, ".", ",") }}" />
+                                    <input type="text" id="total_amount" readonly class="form-control @error('total_amount') is-invalid @enderror" name="total_amount" value="{{ number_format($rencana->pajak_pembelian()->first()->total_amount ?? $rencana->grand_total, 6, ".", ",") }}" />
 
                                     <input type="hidden" value="{{ $rencana->grand_total }}" data-type="gross_price_check">
                                 </div>
