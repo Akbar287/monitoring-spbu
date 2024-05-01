@@ -15,8 +15,8 @@ return new class extends Migration
             $table->uuid('gaji_id')->primary();
             $table->uuid('jabatan_id');
             $table->date('tanggal_berlaku');
-            $table->decimal('total_gaji', 16, 2);
-            $table->decimal('potongan_pajak', 16, 2);
+            $table->decimal('total_gaji', 16, 6);
+            $table->decimal('potongan_pajak', 16, 6);
             $table->text('keterangan')->nullable();
             $table->boolean('is_aktif');
             $table->timestamps();

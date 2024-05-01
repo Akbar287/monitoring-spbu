@@ -16,8 +16,8 @@ return new class extends Migration
             $table->uuid('produk_id');
             $table->uuid('jam_kerja_id');
             $table->date('tanggal');
-            $table->decimal('harga_jual', 16, 2);
-            $table->decimal('harga_beli', 16, 2);
+            $table->decimal('harga_jual', 16, 6);
+            $table->decimal('harga_beli', 16, 6);
             $table->boolean('is_default');
             $table->timestamps();
 

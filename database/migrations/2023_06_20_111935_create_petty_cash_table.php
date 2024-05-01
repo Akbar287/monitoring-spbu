@@ -17,7 +17,7 @@ return new class extends Migration
             $table->string('no_kode', 4);
             $table->string('no_bukti', 8);
             $table->text('keterangan');
-            $table->decimal('jumlah', 16, 2);
+            $table->decimal('jumlah', 16, 6);
             $table->enum('jenis', ['debit', 'kredit']);
             $table->date('tanggal');
             $table->timestamps();

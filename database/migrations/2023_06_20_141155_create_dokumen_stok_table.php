@@ -19,8 +19,8 @@ return new class extends Migration
             $table->uuid('jam_kerja_id');
             $table->uuid('type_dokumen_stok_id');
             $table->date('tanggal');
-            $table->decimal('stok_awal', 16, 2);
-            $table->decimal('stok_akhir', 16, 2);
+            $table->decimal('stok_awal', 16, 6);
+            $table->decimal('stok_akhir', 16, 6);
             $table->boolean('is_confirmation');
             $table->timestamps();
 

@@ -19,7 +19,7 @@ return new class extends Migration
             $table->string('nama_bank', 16);
             $table->string('no_referensi', 16);
             $table->string('metode_transfer', 64);
-            $table->decimal('total_uang', 18, 2);
+            $table->decimal('total_uang', 18, 6);
             $table->boolean('is_accepted');
             $table->timestamps();
 

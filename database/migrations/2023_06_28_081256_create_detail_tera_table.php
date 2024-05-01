@@ -15,8 +15,8 @@ return new class extends Migration
             $table->uuid('detail_tera_id')->primary();
             $table->uuid('dokumen_stok_id');
             $table->uuid('tera_id');
-            $table->decimal('quantity', 16, 2);
-            $table->decimal('harga', 16, 2);
+            $table->decimal('quantity', 16, 6);
+            $table->decimal('harga', 16, 6);
             $table->text('keterangan');
             $table->timestamps();
 

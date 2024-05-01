@@ -65,7 +65,7 @@
                                 <div class="col-md-6">
                                     <input id="grand_total" type="text" readonly
                                         class="form-control @error('grand_total') is-invalid @enderror" name="grand_total"
-                                        value="{{ 'Rp. ' . number_format($detail->rencana_pembelian()->first()->grand_total, 2, '.', ',') }}"  />
+                                        value="{{ 'Rp. ' . number_format($detail->rencana_pembelian()->first()->grand_total, 6, '.', ',') }}"  />
                                 </div>
                             </div>
                         </div>

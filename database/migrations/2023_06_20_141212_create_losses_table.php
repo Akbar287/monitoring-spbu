@@ -17,7 +17,7 @@ return new class extends Migration
             $table->uuid('dokumen_stok_id');
             $table->date('tanggal');
             $table->enum('simbol', ['lebih', 'kurang']);
-            $table->decimal('jumlah', 16, 2);
+            $table->decimal('jumlah', 16, 6);
             $table->timestamps();
 
             $table->foreign('jenis_losses_id')->references('jenis_losses_id')->on('jenis_losses')->cascadeOnDelete();

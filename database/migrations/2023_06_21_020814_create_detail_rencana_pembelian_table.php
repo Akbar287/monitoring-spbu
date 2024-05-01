@@ -15,11 +15,11 @@ return new class extends Migration
             $table->uuid('detail_rencana_pembelian_id')->primary();
             $table->uuid('rencana_pembelian_id');
             $table->uuid('produk_id');
-            $table->decimal('jumlah', 16, 2);
+            $table->decimal('jumlah', 16, 6);
             $table->string('satuan_jumlah', 16);
             $table->decimal('rit', 6, 2);
-            $table->decimal('harga', 16, 2);
-            $table->decimal('total_harga', 16, 2);
+            $table->decimal('harga', 16, 6);
+            $table->decimal('total_harga', 16, 6);
             $table->boolean('is_confirmation');
             $table->boolean('ms2');
             $table->boolean('delivery');

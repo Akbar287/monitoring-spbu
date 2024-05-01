@@ -16,7 +16,7 @@ return new class extends Migration
             $table->uuid('gaji_member_id');
             $table->uuid('nama_gaji');
             $table->enum('type', ['lebih', 'kurang']);
-            $table->decimal('total', 16, 2);
+            $table->decimal('total', 16, 6);
 
             $table->foreign('gaji_member_id')->references('gaji_member_id')->on('gaji_member')->cascadeOnDelete();
         });

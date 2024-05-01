@@ -15,7 +15,7 @@ return new class extends Migration
             $table->uuid('file_lo_id')->primary();
             $table->uuid('pengiriman_id');
             $table->uuid('produk_id');
-            $table->decimal('jumlah', 16, 2);
+            $table->decimal('jumlah', 16, 6);
             $table->string('satuan_jumlah', 16);
             $table->string('no_faktur', 16);
             $table->string('no_lo', 16);

@@ -15,11 +15,11 @@ return new class extends Migration
             $table->uuid('pajak_pembelian_id')->primary();
             $table->uuid('rencana_pembelian_id');
             $table->uuid('pajak_pembelian_lib_history_id');
-            $table->double('net_price', 13, 2);
-            $table->double('ppn', 13, 2);
-            $table->double('ppbkb', 13, 2);
-            $table->double('pph', 13, 2);
-            $table->double('total_amount', 13, 2);
+            $table->double('net_price', 16, 6);
+            $table->double('ppn', 16, 6);
+            $table->double('ppbkb', 16, 6);
+            $table->double('pph', 16, 6);
+            $table->double('total_amount', 16, 6);
             $table->timestamps();
 
             $table->foreign('rencana_pembelian_id')->references('rencana_pembelian_id')->on('rencana_pembelian')->cascadeOnDelete();

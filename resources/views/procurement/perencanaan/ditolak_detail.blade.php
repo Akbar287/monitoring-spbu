@@ -34,7 +34,7 @@
                             <div class="row mb-3 justify-content-center">
                                 <label for="rencana_pembelian_id" class="col-md-4 col-form-label text-md-end">{{ __('Id Rencana Pembelian')
                                     }}</label>
-        
+
                                 <div class="col-md-6">
                                     <input id="rencana_pembelian_id" type="text" readonly
                                         class="form-control @error('rencana_pembelian_id') is-invalid @enderror" name="rencana_pembelian_id"
@@ -45,7 +45,7 @@
 
                             <div class="row mb-3 justify-content-center">
                                 <label for="nama_spbu" class="col-md-4 col-form-label text-md-end">{{ __('SPBU')}}</label>
-        
+
                                 <div class="col-md-6">
                                     <input readonly id="nama_spbu" type="text"
                                         class="form-control @error('nama_spbu') is-invalid @enderror" name="nama_spbu"
@@ -53,11 +53,11 @@
                                         autofocus>
                                 </div>
                             </div>
-                            
+
                             <div class="row mb-3 justify-content-center">
                                 <label for="keterangan" class="col-md-4 col-form-label text-md-end">{{ __('Keterangan')
                                     }}</label>
-        
+
                                 <div class="col-md-6">
                                     <textarea id="keterangan" type="text" rows="3" cols="3" readonly
                                         class="form-control @error('keterangan') is-invalid @enderror" name="keterangan"
@@ -93,7 +93,7 @@
                                                     <td>
                                                         <input id="jumlah" type="text" min="0" readonly
                                                             class="form-control" name="jumlah[]"
-                                                            value="{{number_format($p->jumlah, 2, ".", ',') }}" autocomplete="name"
+                                                            value="{{number_format($p->jumlah, 6, ".", ',') }}" autocomplete="name"
                                                             autofocus>
                                                     </td>
                                                     <td>
@@ -109,7 +109,7 @@
                                     </div>
                                 </div>
                             </div>
-                            @else 
+                            @else
                             <div class="row mb-0">
                                 <div class="col-md-6 offset-md-4 d-flex align-items-end">
                                     <p>Belum ada Produk yang direncanakan untuk dibeli. Tambah dan atur produk dengan klik di kanan atas atau klik <a href="{{ route('perencanaan.detail.index', $rencana->rencana_pembelian_id) }}">Atur Produk</a></p>
@@ -121,7 +121,7 @@
                             <div class="row mb-3 justify-content-center">
                                 <label for="jenis" class="col-md-4 col-form-label text-md-end">{{ __('Jenis Konfirmasi')
                                     }}</label>
-        
+
                                 <div class="col-md-6">
                                     <div class="selectgroup w-100">
                                         @if(!$rencana->is_denied)
@@ -136,7 +136,7 @@
                                         </label>
                                         @endif
                                     </div>
-        
+
                                     @error('jenis')
                                     <span class="invalid-feedback" role="alert">
                                         <strong>{{ $message }}</strong>
@@ -148,13 +148,13 @@
                             <div class="row mb-3 justify-content-center">
                                 <label for="keterangan" class="col-md-4 col-form-label text-md-end">{{ __('Catatan')
                                     }}</label>
-        
+
                                 <div class="col-md-6">
                                     <textarea id="keterangan" type="text" rows="3" cols="3" readonly
                                         class="form-control @error('keterangan') is-invalid @enderror" name="keterangan"
                                         value="" autocomplete="name"
                                         autofocus>{{ $rencana->keterangan_denied }}</textarea>
-        
+
                                     @error('keterangan')
                                     <span class="invalid-feedback" role="alert">
                                         <strong>{{ $message }}</strong>

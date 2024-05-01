@@ -17,8 +17,8 @@ return new class extends Migration
             $table->uuid('spbu_id');
             $table->uuid('jam_kerja_id');
             $table->date('tanggal');
-            $table->decimal('total_penjualan', 16, 2);
-            $table->decimal('total_uang_kotak', 16, 2);
+            $table->decimal('total_penjualan', 16, 6);
+            $table->decimal('total_uang_kotak', 16, 6);
             $table->boolean('is_accepted_admin');
             $table->boolean('is_accepted_top');
             $table->timestamps();

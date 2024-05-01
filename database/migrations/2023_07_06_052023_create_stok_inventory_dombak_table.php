@@ -15,7 +15,7 @@ return new class extends Migration
             $table->uuid('stok_inventory_dombak_id')->primary();
             $table->uuid('stok_inventory_id');
             $table->uuid('dombak_id');
-            $table->decimal('stok', 16, 2);
+            $table->decimal('stok', 16, 6);
 
             $table->foreign('dombak_id')->references('dombak_id')->on('dombak')->cascadeOnDelete();
             $table->foreign('stok_inventory_id')->references('stok_inventory_id')->on('stok_inventory')->cascadeOnDelete();

@@ -19,7 +19,7 @@ return new class extends Migration
             $table->uuid('pembelian_id')->nullable();
             $table->string('kode_pembelian', 32)->nullable();
             $table->date('tanggal_pembelian')->nullable();
-            $table->decimal('grand_total', 16, 2)->nullable();
+            $table->decimal('grand_total', 16, 6)->nullable();
             $table->text('keterangan')->nullable();
             $table->boolean('is_confirmation');
             $table->boolean('is_denied');

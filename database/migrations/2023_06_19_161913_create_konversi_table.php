@@ -16,8 +16,8 @@ return new class extends Migration
             $table->uuid('satuan_ukur_tinggi_id');
             $table->uuid('satuan_ukur_volume_id');
             $table->uuid('dombak_id');
-            $table->decimal('tinggi', 16, 2);
-            $table->decimal('volume', 16, 2);
+            $table->decimal('tinggi', 16, 6);
+            $table->decimal('volume', 16, 6);
 
             $table->foreign('satuan_ukur_tinggi_id')->references('satuan_ukur_tinggi_id')->on('satuan_ukur_tinggi')->cascadeOnDelete();
             $table->foreign('satuan_ukur_volume_id')->references('satuan_ukur_volume_id')->on('satuan_ukur_volume')->cascadeOnDelete();

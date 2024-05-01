@@ -92,7 +92,7 @@
                                                     <td>
                                                         <input id="jumlah" type="text" min="0" readonly
                                                             class="form-control" name="jumlah[]"
-                                                            value="{{number_format($p->jumlah, 2, ".", ',') }}" autocomplete="name"
+                                                            value="{{number_format($p->jumlah, 6, ".", ',') }}" autocomplete="name"
                                                             autofocus>
                                                     </td>
                                                     <td>

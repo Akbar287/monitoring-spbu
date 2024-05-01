@@ -36,7 +36,7 @@
                                 <div class="col-md-6">
                                     <input readonly id="detail_rencana_pembelian_id" type="text"
                                         class="form-control @error('detail_rencana_pembelian_id') is-invalid @enderror" name="detail_rencana_pembelian_id"
-                                        value="{{ $file_lo->produk()->first()->nama_produk . ' (' . number_format($file_lo->jumlah, 0, ",", ".") . ' ' . $file_lo->satuan_jumlah .')' }}" >
+                                        value="{{ $file_lo->produk()->first()->nama_produk . ' (' . number_format($file_lo->jumlah, 6, ",", ".") . ' ' . $file_lo->satuan_jumlah .')' }}" >
                                 </div>
                             </div>
 

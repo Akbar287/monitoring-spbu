@@ -15,7 +15,7 @@ return new class extends Migration
             $table->uuid('tera_id')->primary();
             $table->uuid('spbu_id');
             $table->date('tanggal');
-            $table->decimal('grand_total', 16, 2);
+            $table->decimal('grand_total', 16, 6);
             $table->text('keterangan');
             $table->timestamps();
 

@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('stok_inventory', function (Blueprint $table) {
             $table->uuid('stok_inventory_id')->primary();
             $table->uuid('produk_id');
-            $table->decimal('stok', 16, 2);
+            $table->decimal('stok', 16, 6);
             $table->timestamps();
 
             $table->foreign('produk_id')->references('produk_id')->on('produk')->cascadeOnDelete();

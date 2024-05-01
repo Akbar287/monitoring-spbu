@@ -13,9 +13,9 @@ return new class extends Migration
     {
         Schema::create('pajak_pembelian_lib', function (Blueprint $table) {
             $table->uuid('pajak_pembelian_lib_id')->primary();
-            $table->double('ppn', 13, 2);
-            $table->double('ppbkb', 13, 2);
-            $table->double('pph', 13, 2);
+            $table->double('ppn', 16, 6);
+            $table->double('ppbkb', 16, 6);
+            $table->double('pph', 16, 6);
             $table->boolean('is_aktif');
             $table->timestamps();
         });

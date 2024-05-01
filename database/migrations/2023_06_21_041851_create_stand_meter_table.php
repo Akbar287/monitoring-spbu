@@ -17,8 +17,8 @@ return new class extends Migration
             $table->uuid('jam_kerja_id');
             $table->uuid('dombak_id');
             $table->date('tanggal');
-            $table->decimal('stand_meter_awal', 16, 2);
-            $table->decimal('stand_meter_akhir', 16, 2)->nullable();
+            $table->decimal('stand_meter_awal', 16, 6);
+            $table->decimal('stand_meter_akhir', 16, 6)->nullable();
             $table->tinyInteger('urutan');
             $table->boolean('is_confirmation');
             $table->timestamps();

@@ -16,8 +16,8 @@ return new class extends Migration
             $table->uuid('penjualan_id');
             $table->uuid('stand_meter_id');
             $table->uuid('harga_id');
-            $table->decimal('liter', 16, 2);
-            $table->decimal('total_detail_jual', 16, 2);
+            $table->decimal('liter', 16, 6);
+            $table->decimal('total_detail_jual', 16, 6);
             $table->boolean('is_confirmed')->default(false);
             $table->timestamps();
 

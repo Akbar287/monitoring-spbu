@@ -17,8 +17,8 @@ return new class extends Migration
             $table->string('nama_aset');
             $table->integer('jumlah');
             $table->date('tanggal_digunakan');
-            $table->decimal('harga', 16, 2);
-            $table->decimal('penyusutan_per_hari', 16, 2);
+            $table->decimal('harga', 16, 6);
+            $table->decimal('penyusutan_per_hari', 16, 6);
             $table->boolean('is_digunakan');
             $table->text('keterangan');
             $table->timestamps();

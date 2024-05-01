@@ -32,7 +32,7 @@
                                         }}</label>
 
                                     <div class="col-md-6">
-                                        <input id="no_faktur" type="text" readonly class="form-control" name="no_faktur" value="{{ $file_lo->produk()->first()->nama_produk . ' ' . number_format($file_lo->jumlah, 2, ".", ",") . ' ' . $file_lo->satuan_jumlah . ' ' . '('.$file_lo->detail_rencana_pembelian()->first()->rencana_pembelian()->first()->kode_pembelian . ')' }}" />
+                                        <input id="no_faktur" type="text" readonly class="form-control" name="no_faktur" value="{{ $file_lo->produk()->first()->nama_produk . ' ' . number_format($file_lo->jumlah, 6, ".", ",") . ' ' . $file_lo->satuan_jumlah . ' ' . '('.$file_lo->detail_rencana_pembelian()->first()->rencana_pembelian()->first()->kode_pembelian . ')' }}" />
                                     </div>
                                 </div>
 

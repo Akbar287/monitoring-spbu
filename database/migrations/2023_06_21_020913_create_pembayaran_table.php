@@ -19,7 +19,7 @@ return new class extends Migration
             $table->string('no_cek_bg', 64);
             $table->string('no_rekening', 32);
             $table->string('nama_rekening', 128);
-            $table->decimal('total_setoran', 18, 2);
+            $table->decimal('total_setoran', 18, 6);
             $table->boolean('is_confirmation_admin');
             $table->boolean('is_confirmation_top');
             $table->timestamps();
