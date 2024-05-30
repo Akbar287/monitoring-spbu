@@ -146,12 +146,6 @@ class HomeController extends Controller
                     "color" => "info"
                 ],
                 [
-                    "nama" => "Stand Meter",
-                    "icon" => "tint",
-                    "url" => route('menu.stand-meter'),
-                    "color" => "success"
-                ],
-                [
                     "nama" => "Setoran",
                     "icon" => "percent",
                     "url" => route('menu.setoran'),
@@ -181,12 +175,6 @@ class HomeController extends Controller
                     "color" => "info"
                 ],
                 [
-                    "nama" => "Stand Meter",
-                    "icon" => "tint",
-                    "url" => route('menu.stand-meter'),
-                    "color" => "success"
-                ],
-                [
                     "nama" => "Setoran",
                     "icon" => "percent",
                     "url" => route('menu.setoran'),
@@ -200,6 +188,7 @@ class HomeController extends Controller
                 ]
             ];
         }
+
 
         $pembayaran = StatusPurchase::where('nama_status', 'Pembayaran')->first()->rencana_pembelian()->get();
         $delivery = Pengiriman::where('is_confirmation_admin', true)->where('is_done', false)->get();

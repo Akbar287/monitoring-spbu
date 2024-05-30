@@ -223,7 +223,7 @@ class MemberController extends Controller
             ]);
             return redirect('/master/member/' . $member->member_id . '/jabatan')->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> Data Relasi Jabatan Member sudah ditambahkan.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
         }
-        return redirect('/master/member/' . $member->member_id . '/jabatan')->with('msg', '<div class="alert alert-info alert-dismissible fade show" role="alert"><strong>Tidak ada Perubahan!</strong> Data Relasi Jabatan Member sebelumnya sudah ditambahkan ke Payung.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
+        return redirect('/master/member/' . $member->member_id . '/jabatan')->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> Data Relasi Jabatan Member sudah ditambahkan.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
     }
 
     public function reset_pw(Member $member)

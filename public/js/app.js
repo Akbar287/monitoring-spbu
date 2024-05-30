@@ -3317,7 +3317,7 @@ $(function () {
   $("#logout-btn").on("click", function () {
     Swal.fire({
       title: "Keluar ?",
-      text: "Keluar dari sistem e-KPB!",
+      text: "Keluar dari sistem Monitoring SPBU!",
       icon: "question",
       showCancelButton: true,
       confirmButtonColor: "#3085d6",

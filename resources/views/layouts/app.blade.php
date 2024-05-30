@@ -206,7 +206,7 @@
                         </li>
                         @endif
 
-                        @if(Auth::user()->member()->first()->jabatan()->first()->level()->first()->nama_level == 'Operator')
+                        @if(Auth::user()->member()->first()->jabatan()->first()->level()->first()->nama_level == 'Operator' || Auth::user()->member()->first()->jabatan()->first()->level()->first()->nama_level == 'Keamanan' || Auth::user()->member()->first()->jabatan()->first()->level()->first()->nama_level == 'Penanggung Jawab')
                         <li class="{{ (Route::currentRouteName() == 'menu.kehadiran') ? 'active': '' }}"><a class="nav-link" href="{{ route('menu.kehadiran') }}"><i class="fas fa-calendar"></i><span>Kehadiran</span></a></li>
                         @endif
                         @endauth

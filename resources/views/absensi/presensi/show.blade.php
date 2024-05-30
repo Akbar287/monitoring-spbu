@@ -50,13 +50,13 @@
                             <div class="form-group row align-items-center">
                                 <label class="col-md-4 text-md-right text-left">Nama</label>
                                 <div class="col-lg-4 col-md-6">
-                                    <input type="text" name="nama" readonly value="{{ $penjadwalan->member()->first()->ktp()->select('nama')->first()->nama }}" class="form-control" />
+                                    <input type="text" name="nama" readonly value="{{ $penjadwalan->nama }}" class="form-control" />
                                 </div>
                             </div>
                             <div class="form-group row align-items-center">
                                 <label class="col-md-4 text-md-right text-left">Jabatan</label>
                                 <div class="col-lg-4 col-md-6">
-                                    <input type="text" name="jabatan" readonly value="{{ $penjadwalan->jabatan()->select('nama_jabatan')->first()->nama_jabatan }}" class="form-control" />
+                                    <input type="text" name="jabatan" readonly value="{{ $penjadwalan->nama_jabatan }}" class="form-control" />
                                 </div>
                             </div>
                             <div class="form-group row align-items-center">
@@ -68,7 +68,7 @@
                             <div class="form-group row align-items-center">
                                 <label class="col-md-4 text-md-right text-left">Jam Kerja</label>
                                 <div class="col-lg-4 col-md-6">
-                                    <input type="text" name="jam_kerja" readonly value="{{ $penjadwalan->jam_kerja()->select('nama_jam_kerja')->first()->nama_jam_kerja }}" class="form-control" />
+                                    <input type="text" name="jam_kerja" readonly value="{{ $penjadwalan->nama_jam_kerja }}" class="form-control" />
                                 </div>
                             </div>
                             <div class="form-group row align-items-center">
@@ -139,13 +139,13 @@
                             <div class="form-group row align-items-center">
                                 <label class="col-md-4 text-md-right text-left">Nama</label>
                                 <div class="col-lg-4 col-md-6">
-                                    <input type="text" name="nama" readonly value="{{ $penjadwalan->member()->first()->ktp()->select('nama')->first()->nama }}" class="form-control" />
+                                    <input type="text" name="nama" readonly value="{{ $penjadwalan->nama }}" class="form-control" />
                                 </div>
                             </div>
                             <div class="form-group row align-items-center">
                                 <label class="col-md-4 text-md-right text-left">Jabatan</label>
                                 <div class="col-lg-4 col-md-6">
-                                    <input type="text" name="jabatan" readonly value="{{ $penjadwalan->jabatan()->select('nama_jabatan')->first()->nama_jabatan }}" class="form-control" />
+                                    <input type="text" name="jabatan" readonly value="{{ $penjadwalan->nama_jabatan }}" class="form-control" />
                                 </div>
                             </div>
                             <div class="form-group row align-items-center">
@@ -157,7 +157,7 @@
                             <div class="form-group row align-items-center">
                                 <label class="col-md-4 text-md-right text-left">Jam Kerja</label>
                                 <div class="col-lg-4 col-md-6">
-                                    <input type="text" name="jam_kerja" readonly value="{{ $penjadwalan->jam_kerja()->select('nama_jam_kerja')->first()->nama_jam_kerja }}" class="form-control" />
+                                    <input type="text" name="jam_kerja" readonly value="{{ $penjadwalan->nama_jam_kerja }}" class="form-control" />
                                 </div>
                             </div>
                             <div class="form-group row">

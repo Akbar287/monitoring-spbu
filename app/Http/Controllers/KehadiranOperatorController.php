@@ -31,15 +31,15 @@ class KehadiranOperatorController extends Controller
         if ($request->ajax()) {
             $data = Penjadwalan::select('penjadwalan.penjadwalan_id', 'penjadwalan.tanggal', 'jam_kerja.nama_jam_kerja', 'nozzle.nama_nozzle', 'jam_kerja.urutan', 'penjadwalan.deskripsi', 'status_kehadiran.nama_kehadiran')
                 ->join('jam_kerja', 'penjadwalan.jam_kerja_id', 'jam_kerja.jam_kerja_id')
-                ->join('penjadwalan_nozzle', 'penjadwalan_nozzle.penjadwalan_id', 'penjadwalan.penjadwalan_id')
                 ->join('status_kehadiran', 'penjadwalan.status_kehadiran_id', 'status_kehadiran.status_kehadiran_id')
-                ->join('nozzle', 'penjadwalan_nozzle.nozzle_id', 'nozzle.nozzle_id')
+                ->leftJoin('penjadwalan_nozzle', 'penjadwalan_nozzle.penjadwalan_id', 'penjadwalan.penjadwalan_id')
+                ->leftJoin('nozzle', 'penjadwalan_nozzle.nozzle_id', 'nozzle.nozzle_id')
                 ->whereBetween('penjadwalan.tanggal', [$waktuMulai, $waktuSelesai])
                 ->where('member_id', Auth::user()->member_id)
-                ->orderBy('penjadwalan.tanggal', 'desc')
-                ->orderBy('jam_kerja.urutan', 'asc')
                 ->where('is_attended', false)
                 ->where('is_confirm', false)
+                ->orderBy('penjadwalan.tanggal', 'desc')
+                ->orderBy('jam_kerja.urutan', 'asc')
                 ->get();
             return DataTables::of($data)
                 ->addIndexColumn()
@@ -53,7 +53,7 @@ class KehadiranOperatorController extends Controller
                     return $row->nama_jam_kerja;
                 })
                 ->addColumn('nozzle', function ($row) {
-                    return $row->nama_nozzle;
+                    return $row->nama_nozzle ?? 'semua nozzle';
                 })
                 ->addColumn('action', function ($row) {
                     return '<a href="' . route('kehadiran.show', $row->penjadwalan_id) . '" class="edit btn btn-success btn-sm">Detail</a>';
@@ -172,10 +172,6 @@ class KehadiranOperatorController extends Controller
         $userAgent = $_SERVER['HTTP_USER_AGENT'];
         preg_match('/\((.*?)\)/', $userAgent, $matches);
         $osAndVersionOs = str_replace('; ', ', ', $matches[1]);
-
-        $user_ip = getenv('REMOTE_ADDR');
-        $geo = unserialize(file_get_contents("http://www.geoplugin.net/php.gp?ip=$user_ip"));
-
         $utility = [
             'ip' => $this->get_client_ip(),
             'typeDevice' => $this->getTypeDevices($osAndVersionOs),
@@ -186,6 +182,15 @@ class KehadiranOperatorController extends Controller
             'gmt' => $this->getGmt($geo['geoplugin_timezone'] ?? 0),
             'city' => $geo['geoplugin_city'] ?? 0,
         ];
+
+        $penjadwalan = Penjadwalan::select('penjadwalan.penjadwalan_id', 'penjadwalan.tanggal', 'penjadwalan.deskripsi', 'penjadwalan.is_attended', 'penjadwalan.is_confirm', 'penjadwalan.start_time', 'penjadwalan.finish_time', 'penjadwalan.attended', 'ktp.nama', 'jabatan.nama_jabatan', 'jam_kerja.nama_jam_kerja', 'status_kehadiran.nama_kehadiran')
+            ->join('member', 'member.member_id', 'penjadwalan.member_id')
+            ->join('ktp', 'ktp.ktp_id', 'member.ktp_id')
+            ->join('jabatan', 'jabatan.jabatan_id', 'penjadwalan.jabatan_id')
+            ->join('jam_kerja', 'jam_kerja.jam_kerja_id', 'penjadwalan.jam_kerja_id')
+            ->join('status_kehadiran', 'status_kehadiran.status_kehadiran_id', 'penjadwalan.status_kehadiran_id')
+            ->where('penjadwalan.penjadwalan_id', $penjadwalan->penjadwalan_id)
+            ->first();
 
         $ongoing = !is_null(Auth::user()->member()->first()->penjadwalan()->whereNotNull('start_time')->whereNull('finish_time')->first()); // jika ada nilainya true
 
@@ -210,6 +215,7 @@ class KehadiranOperatorController extends Controller
 
     public function getGmt($gmt_value)
     {
+        if ($gmt_value === 0) return 0;
         $timezone = new DateTimeZone($gmt_value);
         $now = new DateTime('now', $timezone);
         $offset_hours = $now->getOffset() / 3600;
