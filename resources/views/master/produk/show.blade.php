@@ -28,7 +28,7 @@
                             <div class="row mb-3 justify-content-center">
                                 <label for="produk_id" class="col-md-4 col-form-label text-md-end">{{ __('Id Produk')
                                     }}</label>
-        
+
                                 <div class="col-md-6">
                                     <input id="produk_id" type="text" readonly
                                         class="form-control @error('produk_id') is-invalid @enderror" name="produk_id"
@@ -39,7 +39,7 @@
 
                             <div class="row mb-3 justify-content-center">
                                 <label for="spbu_id" class="col-md-4 col-form-label text-md-end">{{ __('SPBU')}}</label>
-        
+
                                 <div class="col-md-6">
                                     <input readonly id="nama_divisi" type="text"
                                         class="form-control @error('nama_divisi') is-invalid @enderror" name="nama_divisi"
@@ -51,7 +51,7 @@
                             <div class="row mb-3 justify-content-center">
                                 <label for="nama_produk" class="col-md-4 col-form-label text-md-end">{{ __('Nama Produk')
                                     }}</label>
-        
+
                                 <div class="col-md-6">
                                     <input id="nama_produk" type="text" readonly
                                         class="form-control @error('nama_produk') is-invalid @enderror" name="nama_produk"
@@ -59,11 +59,23 @@
                                         autofocus>
                                 </div>
                             </div>
-                            
+
+                            <div class="row mb-3 justify-content-center">
+                                <label for="singkatan" class="col-md-4 col-form-label text-md-end">{{ __('Singkatan')
+                                    }}</label>
+
+                                <div class="col-md-6">
+                                    <input id="singkatan" type="text" readonly
+                                        class="form-control @error('singkatan') is-invalid @enderror" name="singkatan"
+                                        value="{{ $produk->singkatan }}" autocomplete="name"
+                                        autofocus>
+                                </div>
+                            </div>
+
                             <div class="row mb-3 justify-content-center">
                                 <label for="nama_jenis" class="col-md-4 col-form-label text-md-end">{{ __('Nama Jenis Produk')
                                     }}</label>
-        
+
                                 <div class="col-md-6">
                                     <input id="nama_jenis" type="text" readonly
                                         class="form-control @error('nama_jenis') is-invalid @enderror" name="nama_jenis"
@@ -71,11 +83,11 @@
                                         autofocus>
                                 </div>
                             </div>
-                            
+
                             <div class="row mb-3 justify-content-center">
                                 <label for="oktan" class="col-md-4 col-form-label text-md-end">{{ __('Oktan')
                                     }}</label>
-        
+
                                 <div class="col-md-6">
                                     <input id="oktan" type="text" readonly
                                         class="form-control @error('oktan') is-invalid @enderror" name="oktan"
@@ -83,11 +95,11 @@
                                         autofocus>
                                 </div>
                             </div>
-                            
+
                             <div class="row mb-3 justify-content-center">
                                 <label for="is_aktif" class="col-md-4 col-form-label text-md-end">{{ __('Aktifkan')
                                     }}</label>
-        
+
                                 <div class="col-md-6">
                                     <input readonly id="is_aktif" type="text" readonly
                                         class="form-control @error('is_aktif') is-invalid @enderror" name="is_aktif"

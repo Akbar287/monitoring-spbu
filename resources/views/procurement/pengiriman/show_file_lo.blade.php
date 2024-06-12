@@ -385,7 +385,7 @@
                                             <td>{{ $fl->nama_file }}</td>
                                             <td>{{ $fl->nama_dokumen }}</td>
                                             <td>{{ $fl->tanggal_upload }}</td>
-                                            <td><a type="button" target="_blank" href="{{ route('ms2.pengiriman.file_lo_show.lampiran.unduh', [$file_lo->pengiriman()->first()->pengiriman_id, $file_lo->file_lo_id, $fileLampiranLo->file_lampiran_lo_id]) }}" class="btn btn-info mr-2"><i class="fas fa-download"></i> Unduh</a></td>
+                                            <td><a type="button" target="_blank" href="{{ route('pengiriman.file_lo_show.lampiran.unduh', [$file_lo->pengiriman()->first()->pengiriman_id, $file_lo->file_lo_id, $fl->file_lampiran_lo_id]) }}" class="btn btn-info mr-2"><i class="fas fa-download"></i> Unduh</a></td>
                                         </tr>
                                         @endforeach
                                         @endif
@@ -403,8 +403,14 @@
                 </div>
                 <div class="card-body">
                     <div class="row mb-3">
-                        <div class="col-md-6 offset-md-4 d-flex align-items-end">
+                        <div class="col-md-8 offset-md-4 d-flex align-items-end">
                             <a type="button" href="{{ route('pengiriman.show', $pengiriman->pengiriman_id) }}" class="btn btn-primary mr-2"><i class="fas fa-arrow-left"></i> Kembali</a>
+                            @if(!$pengiriman->is_confirmation_admin && !$pengiriman->is_confirmation_top)
+                            <a type="button" href="{{ route('pengiriman.file_lo_show.lampiran.index', [$pengiriman->pengiriman_id, $file_lo->file_lo_id]) }}" class="btn btn-info mr-2"><i class="fas fa-file"></i> Lampiran File Lo</a>
+                            <form action="{{ route('pengiriman.file_lo.delete',[$pengiriman->pengiriman_id, $file_lo->file_lo_id]) }}" method="POST">@csrf @method('delete')
+                                <button type="submit" onclick="return confirm('Produk akan dikeluarkan dari pengiriman!\n Lanjutkan?')" title="Hapus Data" class="btn btn-danger"><i class="fas fa-trash"></i> Hapus</button>
+                            </form>
+                            @endif
                         </div>
                     </div>
                 </div>

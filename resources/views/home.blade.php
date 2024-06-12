@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
 @section('content')
-@if(Auth::user()->member()->first()->jabatan()->first()->level()->first()->nama_level == 'Penanggung Jawab' || Auth::user()->member()->first()->jabatan()->first()->level()->first()->nama_level == 'Komisaris')
+@if(Auth::user()->member()->first()->jabatan()->first()->level()->first()->nama_level == 'Penanggung Jawab' || Auth::user()->member()->first()->jabatan()->first()->level()->first()->nama_level == 'Komisaris' || Auth::user()->member()->first()->jabatan()->first()->level()->first()->nama_level == 'Direktur Utama' || Auth::user()->member()->first()->jabatan()->first()->level()->first()->nama_level == 'Direktur')
 <div class="row">
     <div class="col-lg-3 col-md-6 col-sm-6 col-12">
         <div class="card card-statistic-1">
@@ -64,6 +64,58 @@
         </div>
     </div>
 </div>
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h4>Apa yang Ingin saya lakukan ? </h4>
+            </div>
+            <div class="card-body">
+                    <div class="row justify-content-center">
+                        <div class="col-sm-12 col-12 col-md-6">
+                            <select name="doing" id="doing" class="custom-select">
+                                <option value="0">Saya Ingin Memperoleh data ... </option>
+                                <option value="how_many_stok_in_dombak">Berapa Stok Saya di Dombak Hari Ini</option>
+                                <option value="how_many_stok_in_pertamina">Berapa Stok Saya di Pertamina Hari Ini</option>
+                                <option value="how_many_sales_today">Berapa Banyak Penjualan Minyak Hari Ini</option>
+                                <option value="how_many_profit_or_loss_today">Berapa Akumulasi Profit / Loss Hari Ini</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row justify-content-center">
+                        <div class="col-sm-12 col-12 col-md-6">
+                            <div class="value_ai d-none py-2"></div>
+                        </div>
+                    </div>
+            </div>
+        </div>
+    </div>
+</div>
+{{-- <div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h4>Filter</h4>
+            </div>
+            <div class="card-body">
+                <form action="{{ route('home') }}" method="get">
+                    <div class="row">
+                        <div class="col-sm-12 col-12 col-md-6 col-lg-3">
+                            <input type="date" name="waktu_mulai" id="waktuMulai" class="form-control" value="{{ $waktuMulai }}" />
+                        </div>
+                        <div class="col-sm-12 col-12 col-md-6 col-lg-3">
+                            <input type="date" name="waktu_selesai" id="waktuSelesai" class="form-control" value="{{ $waktuSelesai }}" />
+                        </div>
+                        <div class="col-sm-12 col-12 col-md-6 col-lg-3">
+                            <button type="submit" class="btn btn-success btn-block">Filter</button>
+                        </div>
+                        <div class="col-sm-12 col-12 col-md-6 col-lg-3"></div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div> --}}
 <div class="row justify-content-center">
     <div class="col-md-12">
         <div class="card">
@@ -191,7 +243,7 @@
                     @if($delivery->count() > 0)
                     @foreach($delivery as $d)
                     @foreach($d->file_lo as $lo)
-                    <a href="{{ route('file_lo.show', [$lo->pengiriman()->first()->rencana_pembelian()->first()->rencana_pembelian_id, $lo->pengiriman()->first()->pengiriman_id, $lo->file_lo_id]) }}" class="ticket-item">
+                    <a href="{{ route('pengiriman.file_lo.show', [$lo->pengiriman()->first()->pengiriman_id, $lo->file_lo_id]) }}" class="ticket-item">
                         <div class="ticket-title">
                             <h4>{{ $lo->produk()->first()->nama_produk }}</h4>
                         </div>

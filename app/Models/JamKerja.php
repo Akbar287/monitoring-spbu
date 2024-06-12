@@ -74,4 +74,9 @@ class JamKerja extends Model
     {
         return $this->hasMany(Penjadwalan::class, 'jam_kerja_id', 'jam_kerja_id');
     }
+
+    public function detail_rencana_pembelian_ms2()
+    {
+        return $this->hasMany(DetailRencanaPembelianMs2::class, 'jam_kerja_id', 'jam_kerja_id');
+    }
 }

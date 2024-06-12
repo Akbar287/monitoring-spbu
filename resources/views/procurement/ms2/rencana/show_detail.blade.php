@@ -288,13 +288,13 @@
                                 <div class="col-md-6">
                                     <div class="input-group mb-2">
                                         <div class="input-group-prepend">
-                                          <div class="input-group-text">Rp</div>
+                                            <div class="input-group-text">Rp</div>
                                         </div>
                                         <input id="harga" type="text" readonly
                                             class="form-control" name="harga"
                                             value="{{ number_format($detail->harga, 6, ".", ",") }}" autocomplete="name"
                                             autofocus>
-                                      </div>
+                                    </div>
                                 </div>
                             </div>
 

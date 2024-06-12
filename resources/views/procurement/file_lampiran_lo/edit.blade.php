@@ -6,12 +6,11 @@
     <div class="section-header-breadcrumb">
         <div class="breadcrumb-item"><a href="{{ route('home') }}">Dashboard</a></div>
         <div class="breadcrumb-item"><a href="{{ route('menu.procurement') }}">Procurement</a></div>
-        <div class="breadcrumb-item"><a href="{{ route('ms2.produk.index') }}">MS2</a></div>
-        <div class="breadcrumb-item"><a href="{{ route('ms2.pengiriman') }}">Pengiriman MS2</a></div>
-        <div class="breadcrumb-item"><a href="{{ route('ms2.pengiriman.show', $pengiriman->pengiriman_id) }}">Detail Pengiriman</a></div>
-        <div class="breadcrumb-item"><a href="{{ route('ms2.pengiriman.file_lo_show', [$pengiriman->pengiriman_id, $file_lo->file_lo_id]) }}">Detail File LO</a></div>
-        <div class="breadcrumb-item"><a href="{{ route('ms2.pengiriman.file_lo_show.lampiran.index', [$pengiriman->pengiriman_id, $file_lo->file_lo_id]) }}">Lampiran LO</a></div>
-        <div class="breadcrumb-item"><a href="{{ route('ms2.pengiriman.file_lo_show.lampiran.show', [$pengiriman->pengiriman_id, $file_lo->file_lo_id, $fileLampiranLo->file_lampiran_lo_id]) }}">Detail Lampiran LO</a></div>
+        <div class="breadcrumb-item"><a href="{{ route('pengiriman.index') }}">Pengiriman</a></div>
+        <div class="breadcrumb-item"><a href="{{ route('pengiriman.show', $pengiriman->pengiriman_id) }}">Detail Pengiriman</a></div>
+        <div class="breadcrumb-item"><a href="{{ route('pengiriman.file_lo.show', [$pengiriman->pengiriman_id, $file_lo->file_lo_id]) }}">Detail File LO</a></div>
+        <div class="breadcrumb-item"><a href="{{ route('pengiriman.file_lo_show.lampiran.index', [$pengiriman->pengiriman_id, $file_lo->file_lo_id]) }}">Lampiran LO</a></div>
+        <div class="breadcrumb-item"><a href="{{ route('pengiriman.file_lo_show.lampiran.show', [$pengiriman->pengiriman_id, $file_lo->file_lo_id, $fileLampiranLo->file_lampiran_lo_id]) }}">Detail Lampiran LO</a></div>
         <div class="breadcrumb-item">Ubah Lampiran LO</div>
     </div>
 </div>
@@ -28,7 +27,7 @@
                 </div>
                 <div class="card-body">
                     @if(session('msg')){!! session('msg') !!} @endif
-                    <form action="{{ route('ms2.pengiriman.file_lo_show.lampiran.update', [$pengiriman->pengiriman_id, $file_lo->file_lo_id, $fileLampiranLo->file_lampiran_lo_id]) }}" method="post" enctype="multipart/form-data">@csrf @method('put')
+                    <form action="{{ route('pengiriman.file_lo_show.lampiran.update', [$pengiriman->pengiriman_id, $file_lo->file_lo_id, $fileLampiranLo->file_lampiran_lo_id]) }}" method="post" enctype="multipart/form-data">@csrf @method('put')
                         <div class="row">
                             <div class="col-md-12">
                                 <div class="row mb-3 justify-content-center">
@@ -54,7 +53,7 @@
 
                                 <div class="row mb-0">
                                     <div class="col-md-6 offset-md-4 d-flex align-items-end">
-                                        <a type="button" href="{{ route('ms2.pengiriman.file_lo_show.lampiran.show', [$pengiriman->pengiriman_id, $file_lo->file_lo_id, $fileLampiranLo->file_lampiran_lo_id]) }}" class="btn btn-primary mr-2"><i class="fas fa-arrow-left"></i> Kembali</a>
+                                        <a type="button" href="{{ route('pengiriman.file_lo_show.lampiran.show', [$pengiriman->pengiriman_id, $file_lo->file_lo_id, $fileLampiranLo->file_lampiran_lo_id]) }}" class="btn btn-primary mr-2"><i class="fas fa-arrow-left"></i> Kembali</a>
                                         <button type="submit" class="btn mx-2 btn-success"><i class="fas fa-pen"></i> Simpan</button>
                                     </div>
                                 </div>

@@ -268,7 +268,18 @@ class MonitoringController extends Controller
 
     public function show_riwayat(Request $request, StokInventory $stok)
     {
+        $waktuMulai = $request->has('waktu_mulai') ? Carbon::createFromFormat('Y-m-d', $request->waktu_mulai) : Carbon::now()->firstOfMonth();
+        $waktuSelesai = $request->has('waktu_selesai') ? Carbon::createFromFormat('Y-m-d', $request->waktu_selesai) : Carbon::now()->endOfMonth();
+        if ($waktuMulai->gt($waktuSelesai)) {
+            $temp = $waktuMulai;
+            $waktuMulai = $waktuSelesai;
+            $waktuSelesai = $temp;
+        }
+        $waktuMulai = $waktuMulai->format('Y-m-d');
+        $waktuSelesai = $waktuSelesai->format('Y-m-d');
+
         if ($request->ajax()) {
+
             $data = $stok->dokumen_stok()
                 ->select('stok_inventory.stok_inventory_id')
                 ->addSelect('dokumen_stok.dokumen_stok_id')
@@ -284,8 +295,9 @@ class MonitoringController extends Controller
                 ->join('type_dokumen_stok', 'type_dokumen_stok.type_dokumen_stok_id', 'dokumen_stok.type_dokumen_stok_id')
                 ->join('dombak', 'dombak.dombak_id', 'dokumen_stok.dombak_id')
                 ->join('jam_kerja', 'jam_kerja.jam_kerja_id', 'dokumen_stok.jam_kerja_id')
-                ->join('losses', 'losses.dokumen_stok_id', 'dokumen_stok.dokumen_stok_id')
+                ->leftJoin('losses', 'losses.dokumen_stok_id', 'dokumen_stok.dokumen_stok_id')
                 ->where('dokumen_stok.is_confirmation', true)
+                ->whereBetween('dokumen_stok.tanggal', [$waktuMulai, $waktuSelesai])
                 ->orderBy('tanggal', 'desc')
                 ->orderBy('jam_datang_in', 'desc')
                 ->get();
@@ -311,7 +323,7 @@ class MonitoringController extends Controller
                 ->rawColumns(['action'])
                 ->make(true);
         }
-        return view('stok/monitoring/show_riwayat', compact('stok'));
+        return view('stok/monitoring/show_riwayat', compact('stok', 'waktuMulai', 'waktuSelesai'));
     }
 
     public function show_detail_riwayat(StokInventory $stok, DokumenStok $dokumenStok)

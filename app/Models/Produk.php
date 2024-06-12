@@ -25,6 +25,7 @@ class Produk extends Model
     protected $fillable = [
         'spbu_id',
         'nama_produk',
+        'singkatan',
         'is_aktif',
     ];
 
@@ -32,6 +33,7 @@ class Produk extends Model
     {
         return $this->belongsTo(Spbu::class, 'spbu_id', 'spbu_id');
     }
+
     public function detail_produk()
     {
         return $this->hasOne(DetailProduk::class, 'produk_id', 'produk_id');

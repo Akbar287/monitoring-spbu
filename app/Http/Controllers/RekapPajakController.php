@@ -32,21 +32,23 @@ class RekapPajakController extends Controller
 
         if ($request->ajax()) {
             $data = is_null($request->spbu_id) ?
-                PajakPembelian::select()
-                ->whereBetween('created_at', [$waktuMulai, $waktuSelesai])
+                PajakPembelian::select('pajak_pembelian.pajak_pembelian_id', 'pajak_pembelian.ppn', 'pajak_pembelian.ppbkb', 'pajak_pembelian.pph', 'rencana_pembelian.tanggal_pembelian', 'rencana_pembelian.kode_pembelian')
+                ->join('rencana_pembelian', 'rencana_pembelian.rencana_pembelian_id', 'pajak_pembelian.rencana_pembelian_id')
+                ->whereBetween('rencana_pembelian.tanggal_pembelian', [$waktuMulai, $waktuSelesai])
                 ->get() :
-                PajakPembelian::join('rencana_pembelian', 'rencana_pembelian.rencana_pembelian_id', 'pajak_pembelian.rencana_pembelian_id')
+                PajakPembelian::select('pajak_pembelian.pajak_pembelian_id', 'pajak_pembelian.ppn', 'pajak_pembelian.ppbkb', 'pajak_pembelian.pph', 'rencana_pembelian.tanggal_pembelian', 'rencana_pembelian.kode_pembelian')
+                ->join('rencana_pembelian', 'rencana_pembelian.rencana_pembelian_id', 'pajak_pembelian.rencana_pembelian_id')
                 ->where('rencana_pembelian.spbu_id', $request->spbu_id)
-                ->whereBetween('pajak_pembelian.created_at', [$waktuMulai, $waktuSelesai])
+                ->whereBetween('rencana_pembelian.tanggal_pembelian', [$waktuMulai, $waktuSelesai])
                 ->get();
             return DataTables::of($data)
                 ->addIndexColumn()
                 ->addColumn('tanggal', function ($row) {
-                    $actionBtn = Carbon::createFromFormat('Y-m-d H:i:s', $row->created_at)->format('d F Y');
+                    $actionBtn = Carbon::createFromFormat('Y-m-d', $row->tanggal_pembelian)->format('d F Y');
                     return $actionBtn;
                 })
                 ->addColumn('kode_pembelian', function ($row) {
-                    $actionBtn = $row->rencana_pembelian()->first()->kode_pembelian;
+                    $actionBtn = $row->kode_pembelian;
                     return $actionBtn;
                 })
                 ->addColumn('ppn', function ($row) {
@@ -98,10 +100,10 @@ class RekapPajakController extends Controller
         }
 
         $pajak = PajakPembelian::select('tanggal_pembelian', 'kode_pembelian', 'ppn', 'pph', 'ppbkb')
-            // ->selectRaw('SUM(ppn + pph + ppbkb) as total_pajak')
             ->join('rencana_pembelian', 'rencana_pembelian.rencana_pembelian_id', 'pajak_pembelian.rencana_pembelian_id')
             ->where('rencana_pembelian.spbu_id', $request->spbu_id)
-            ->whereBetween('pajak_pembelian.created_at', [$waktuMulai, $waktuSelesai])
+            ->whereBetween('rencana_pembelian.tanggal_pembelian', [$waktuMulai, $waktuSelesai])
+            ->orderBy('rencana_pembelian.tanggal_pembelian')
             ->get()
             ->toArray();
 

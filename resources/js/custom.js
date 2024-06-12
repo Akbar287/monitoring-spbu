@@ -2,12 +2,15 @@
 
 const { default: Swal } = require("sweetalert2");
 import Cleave from "cleave.js"
-import { Chart, registerables } from "chart.js/auto";
+import { Chart } from "chart.js/auto";
+import Typed from "typed.js";
 import QrScanner from 'qr-scanner';
 
 $(function () {
     let routeName = ($('meta[name=route]')[0].content);
     let cdnDatatableIdn = 'https://cdn.datatables.net/plug-ins/1.10.24/i18n/Indonesian.json';
+
+    console.log(routeName);
 
     if($('.thousand-style').toArray().length > 0) {
         $('.thousand-style').toArray().forEach(e => {
@@ -415,8 +418,92 @@ $(function () {
             ]
         });
     }
+    function addDigitMonth(month) {
+        return (month.length == 1) ? '0' + month : month;
+    }
     if(routeName == 'home') {
+        $('select#doing').on('change', function(e) {
+            if (e.target.value == '0') {
+                $('.value_ai').children().remove();
+                $('.value_ai').addClass('d-none')
+            } else {
+                $.ajax({
+                    url: document.location.origin + '/api/home',
+                    method: 'get',
+                    data: {
+                        '_token': $('meta[name="csrf-token"]').attr('content'),
+                        type: e.target.value
+                    },
+                    dataType: 'json',
+                    beforeSend: function(waiting) {
+                        $('.value_ai').removeClass('d-none');
+                        $('.value_ai').children().remove();
+                        $('.value_ai').append('<div class="ai text-justify"></div>');
 
+                        new Typed('.ai', {strings: ['Mohon Tunggu ⏱️, Saya sedang mendapatkan data dari server 🌐'], typeSpeed: 10})
+                    },
+                    success: function(data) {
+                        if (e.target.value == 'how_many_stok_in_dombak') {
+                            $('.value_ai').removeClass('d-none');
+                            $('.value_ai').children().remove();
+                            $('.value_ai').append('<div class="ai text-justify"></div>');
+
+                            let temp = '';
+
+                            data.data.forEach(x => temp += 'Produk <b>' + x.nama_produk + '</b> dengan banyaknya stok sebesar <b>' + new Intl.NumberFormat("id-ID", { style: "decimal", maximumFractionDigits: 6 }).format(x.stok) + '</b> liter. ')
+
+                            new Typed('.ai', {strings: ['Hari ini, stok di Dombak terdiri dari beberapa produk utama yang dimiliki. '+ temp +' untuk informasi lebih lanjut silahkan klik link <a href="'+location.origin+'/stok/monitoring">disini</a>. semoga informasi ini membantu. 😄'], typeSpeed: 10})
+                        }
+                        if(e.target.value == 'how_many_stok_in_pertamina') {
+                            $('.value_ai').removeClass('d-none');
+                            $('.value_ai').children().remove();
+                            $('.value_ai').append('<div class="ai text-justify"></div>');
+
+                            let temp = '';
+
+                            data.data.forEach(x => temp += 'Produk <b>' + x.nama_produk + '</b> dengan banyaknya stok sebesar <b>' + new Intl.NumberFormat("id-ID", { style: "decimal", maximumFractionDigits: 6 }).format(x.stok) + '</b> liter. ')
+
+                            new Typed('.ai', {strings: ['Hari ini, tercatat terdapat beberapa produk stok yang di Pertamina . '+ temp +' untuk informasi lebih lanjut silahkan klik link <a href="'+ location.origin + '/procurement/ms2' +'">disini</a>. semoga informasi ini membantu. 😄'], typeSpeed: 10})
+                        }
+                        if(e.target.value == 'how_many_sales_today') {
+                            $('.value_ai').removeClass('d-none');
+                            $('.value_ai').children().remove();
+                            $('.value_ai').append('<div class="ai text-justify"></div>');
+
+                            const date = new Date();
+                            let now = date.getFullYear() + '-' + addDigitMonth(date.getMonth()) + '-' + date.getDate()
+
+                            let temp = '';let detail = '';
+                            data.data.summary.forEach(x => temp += ' Untuk Jam kerja <b>' + x.nama_jam_kerja + "</b> menjual sebesar <b>Rp. " + x.total_penjualan + '</b>.')
+
+                            data.data.details.forEach(x => detail += 'Untuk Produk <b>' + x.produk + '</b> di jam kerja <b>' + x.nama_jam_kerja + '</b> memiliki penjualan sebesar <b>Rp. ' + x.penjualan + '</b>.')
+
+                            new Typed('.ai', {strings: ['secara ringkas Hari ini, total penjualan 💰 minyak cukup signifikan. di ' + temp + '<br><br>Secara Detail, Penjualan per jam kerja dan per produk yang dijual yaitu ' + detail + '.Untuk mengetahui informasi lebih lanjut, Silakan klik link <a href="'+ location.origin + '/stok/totalisator/riwayat?_token=' + $('meta[name="csrf-token"]').attr('content') + '&waktu_mulai='+now+'&waktu_selesai='+ now +'&produk_id=all">disini</a>. semoga informasi ini membantu anda 😄.'], typeSpeed: 10})
+                        }
+                        if(e.target.value == 'how_many_profit_or_loss_today') {
+                            $('.value_ai').removeClass('d-none');
+                            $('.value_ai').children().remove();
+                            $('.value_ai').append('<div class="ai text-justify"></div>');
+
+                            if(data.data.summary > 0) {
+                                new Typed('.ai', {strings: ['Akumulasi profit atau kerugian 💸 untuk hari ini dihitung berdasarkan Stok Taking dan Penerimaan BBM 📈. Dari Profit or Loss produk-produk minyak tersebut, sistem mencatatkan keuntungan sebesar <b>'+ data.data.summary +'</b> liter.'], typeSpeed: 10})
+                            } else if (data.data.summary < 0) {
+                                new Typed('.ai', {strings: ['Akumulasi profit atau kerugian 💸 untuk hari ini dihitung berdasarkan Stok Taking dan Penerimaan BBM 📈. Dari Profit or Loss produk-produk minyak tersebut, sistem mencatatkan kerugian sebesar <b>'+ data.data.summary +'</b> liter.'], typeSpeed: 10})
+                            } else {
+                                new Typed('.ai', {strings: ['Akumulasi profit atau kerugian 💸 untuk hari ini dihitung berdasarkan Stok Taking dan Penerimaan BBM 📈. Saat ini belum ada kerugian atapun keuntungan dari akumulasi losses.'], typeSpeed: 10})
+                            }
+                        }
+                    },
+                    error: function(err) {
+                        $('.value_ai').removeClass('d-none');
+                        $('.value_ai').children().remove();
+                        $('.value_ai').append('<div class="ai text-justify"></div>');
+
+                        new Typed('.ai', {strings: ['Terjadi Kesalahan ❗️, Coba Periksa kembali koneksi internet 🌐 anda.'], typeSpeed: 10})
+                    }
+                })
+            }
+        })
         $.ajax({
             url: document.location.origin + '/api/chart',
             method: 'get',
@@ -740,7 +827,7 @@ $(function () {
             ]
         });
     }
-    if (routeName == 'ms2.pengiriman.file_lo_show.lampiran.index') {
+    if (routeName == 'pengiriman.file_lo_show.lampiran.index') {
         $('.table-file-lampiran-lo').DataTable({
             language: {
                 url: cdnDatatableIdn,
@@ -810,9 +897,9 @@ $(function () {
             serverSide: true,
             ajax: document.location.href,
             columns: [
+                {data: 'tanggal', name: 'tanggal'},
                 {data: 'type_dokumen', name: 'type_dokumen'},
                 {data: 'nama_produk', name: 'nama_produk'},
-                {data: 'tanggal', name: 'tanggal'},
                 {data: 'jam_kerja', name: 'jam_kerja'},
                 {data: 'action', name: 'action', orderable: false, searchable: false},
             ]
@@ -1356,6 +1443,7 @@ $(function () {
             serverSide: true,
             ajax: document.location.href,
             columns: [
+                {data: 'tanggal', name: 'tanggal'},
                 {data: 'no_faktur', name: 'no_faktur'},
                 {data: 'no_lo', name: 'no_lo'},
                 {data: 'nama_produk', name: 'nama_produk'},
@@ -1736,10 +1824,34 @@ $(function () {
             ajax: document.location.href,
             columns: [
                 {data: 'tanggal', name: 'tanggal'},
-                {data: 'no_do', name: 'no_do'},
-                {data: 'no_pol', name: 'no_pol'},
+                {data: 'produk', name: 'produk'},
                 {data: 'action', name: 'action', orderable: false, searchable: false},
             ]
+        });
+    }
+    if(routeName == 'ms2.pengiriman.create') {
+        $('.checkbox-drp').on('click', function() {
+            if ($(this)[0].checked) {
+                $(this).parent().siblings('.select-' + $(this).attr('id')).removeClass('d-none')
+                $(this).parent().siblings('.select-' + $(this).attr('id')).attr('name', 'detail_rencana_pembelian_id_shift[]')
+            } else {
+                $(this).parent().siblings('.select-' + $(this).attr('id')).addClass('d-none')
+                $(this).parent().siblings('.select-' + $(this).attr('id')).removeAttr('name')
+            }
+        });
+    }
+    if(routeName == 'ms2.pengiriman.konfirm_pengiriman') {
+        $('.btn-minus-produk').on('click', function() {
+            $(this).parent().parent().addClass('bg-danger');
+            $(this).addClass('d-none');
+            $(this).siblings().removeClass('d-none');
+            $(this).parent().siblings('input').remove();
+        });
+        $('.btn-plus-produk').on('click', function() {
+            $(this).parent().parent().removeClass('bg-danger');
+            $(this).addClass('d-none');
+            $(this).siblings().removeClass('d-none');
+            $(this).parent().parent().append('<input type="hidden" name="detail_rencana_pembelian_id[]" value="'+ $(this).data('id') +'">')
         });
     }
     if(routeName == 'pajak_pembelian_lib.index') {

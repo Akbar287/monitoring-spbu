@@ -41,6 +41,11 @@ class DetailRencanaPembelian extends Model
         return $this->belongsTo(RencanaPembelian::class, 'rencana_pembelian_id', 'rencana_pembelian_id');
     }
 
+    public function detail_rencana_pembelian_ms2()
+    {
+        return $this->hasMany(DetailRencanaPembelianMs2::class, 'detail_rencana_pembelian_id', 'detail_rencana_pembelian_id');
+    }
+
     public function produk()
     {
         return $this->belongsTo(Produk::class, 'produk_id', 'produk_id');

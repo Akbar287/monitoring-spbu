@@ -25,7 +25,7 @@ class FileLampiranLoController extends Controller
                     return Carbon::createFromFormat('Y-m-d', $row->tanggal_upload)->format('d F Y');
                 })
                 ->addColumn('action', function ($row) {
-                    $actionBtn = '<a href="' . route('ms2.pengiriman.file_lo_show.lampiran.show', [$row->file_lo()->first()->pengiriman_id, $row->file_lo()->first()->file_lo_id, $row->file_lampiran_lo_id]) . '" class="mr-2 edit btn btn-success btn-sm">Detail</a><a type="button" target="_blank" href="' . route('ms2.pengiriman.file_lo_show.lampiran.unduh', [$row->file_lo()->first()->pengiriman_id, $row->file_lo()->first()->file_lo_id, $row->file_lampiran_lo_id]) . '" class="btn btn-sm btn-info"><i class="fas fa-download"></i> Unduh</a>';
+                    $actionBtn = '<a href="' . route('pengiriman.file_lo_show.lampiran.show', [$row->file_lo()->first()->pengiriman_id, $row->file_lo()->first()->file_lo_id, $row->file_lampiran_lo_id]) . '" class="mr-2 edit btn btn-success btn-sm">Detail</a><a type="button" target="_blank" href="' . route('pengiriman.file_lo_show.lampiran.unduh', [$row->file_lo()->first()->pengiriman_id, $row->file_lo()->first()->file_lo_id, $row->file_lampiran_lo_id]) . '" class="btn btn-sm btn-info"><i class="fas fa-download"></i> Unduh</a>';
                     return $actionBtn;
                 })
                 ->rawColumns(['action'])
@@ -63,7 +63,7 @@ class FileLampiranLoController extends Controller
             $fileLampiranLo = $file_lo->file_lampiran_lo()->create($this->fileLampiranLo($foto, $filenameWithExt));
         }
 
-        return redirect('/procurement/ms2/pengiriman/' . $pengiriman->pengiriman_id . '/file_lo_show/' . $file_lo->file_lo_id . '/lampiran/' . $fileLampiranLo->file_lampiran_lo)->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> File Lampiran Lo sudah ditambahkan.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
+        return redirect('/procurement/delivery/' . $pengiriman->pengiriman_id . '/file_lo_show/' . $file_lo->file_lo_id . '/lampiran/' . $fileLampiranLo->file_lampiran_lo)->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> File Lampiran Lo sudah ditambahkan.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
     }
 
     /**
@@ -104,7 +104,7 @@ class FileLampiranLoController extends Controller
         }
         $fileLampiranLo->update($this->fileLampiranLo($foto, $filenameWithExt));
 
-        return redirect('/procurement/ms2/pengiriman/' . $pengiriman->pengiriman_id . '/file_lo_show/' . $file_lo->file_lo_id . '/lampiran/' . $fileLampiranLo->file_lampiran_lo)->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> File Lampiran Lo sudah diubah.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
+        return redirect('/procurement/delivery/' . $pengiriman->pengiriman_id . '/file_lo_show/' . $file_lo->file_lo_id . '/lampiran/' . $fileLampiranLo->file_lampiran_lo)->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> File Lampiran Lo sudah diubah.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
     }
 
     /**
@@ -117,7 +117,7 @@ class FileLampiranLoController extends Controller
         }
         $fileLampiranLo->delete();
 
-        return redirect('/procurement/ms2/pengiriman/' . $pengiriman->pengiriman_id . '/file_lo_show/' . $file_lo->file_lo_id . '/lampiran')->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> File Lampiran Lo sudah dihapus.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
+        return redirect('/procurement/delivery/' . $pengiriman->pengiriman_id . '/file_lo_show/' . $file_lo->file_lo_id . '/lampiran')->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> File Lampiran Lo sudah dihapus.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
     }
 
     public function fileLampiranLo($file, $dok)

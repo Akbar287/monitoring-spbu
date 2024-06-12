@@ -100,8 +100,8 @@ class DetailPembelianController extends Controller
     {
         return [
             "rit" => str_replace(',', '', request('rit')),
-            "harga" => str_replace(',', '', request('harga')),
-            "total_harga" => $totalHarga
+            "harga" => floatval(str_replace(',', '', request('harga'))),
+            "total_harga" => floatval($totalHarga)
         ];
     }
 

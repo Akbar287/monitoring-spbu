@@ -6,10 +6,9 @@
     <div class="section-header-breadcrumb">
         <div class="breadcrumb-item"><a href="{{ route('home') }}">Dashboard</a></div>
         <div class="breadcrumb-item"><a href="{{ route('menu.procurement') }}">Procurement</a></div>
-        <div class="breadcrumb-item"><a href="{{ route('ms2.produk.index') }}">MS2</a></div>
-        <div class="breadcrumb-item"><a href="{{ route('ms2.pengiriman') }}">PengirimanMS2</a></div>
-        <div class="breadcrumb-item"><a href="{{ route('ms2.pengiriman.show', $pengiriman->pengiriman_id) }}">Detail Pengiriman</a></div>
-        <div class="breadcrumb-item">Tambah</div>
+        <div class="breadcrumb-item"><a href="{{ route('pengiriman.index') }}">Pengiriman</a></div>
+        <div class="breadcrumb-item"><a href="{{ route('pengiriman.show', $pengiriman->pengiriman_id) }}">Detail Pengiriman</a></div>
+        <div class="breadcrumb-item">Tambah File LO</div>
     </div>
 </div>
 <div class="section-body">
@@ -25,7 +24,7 @@
                 </div>
                 <div class="card-body">
                     @if(session('msg')){!! session('msg') !!} @endif
-                    <form action="{{ route('ms2.pengiriman.file_lo_store', $pengiriman->pengiriman_id) }}" method="post" enctype="multipart/form-data">@csrf
+                    <form action="{{ route('pengiriman.file_lo_store', $pengiriman->pengiriman_id) }}" method="post" enctype="multipart/form-data">@csrf
                         <div class="row">
                             <div class="col-md-12">
                                 <div class="row mb-3 justify-content-center">
@@ -35,7 +34,7 @@
                                     <div class="col-md-6">
                                         <select class="custom-select @error('detail_rencana_pembelian_id') is-invalid @enderror" name="detail_rencana_pembelian_id" id="detail_rencana_pembelian_id">
                                             @foreach($detail_rencana_pembelian as $s)
-                                            <option {{ old('detail_rencana_pembelian_id') == $s->detail_rencana_pembelian_id ? 'selected' : '' }} value="{{ $s->detail_rencana_pembelian_id }}">{{ $s->produk()->first()->nama_produk . ' ' . number_format($s->jumlah, 6, ".", ",") . ' ' . $s->satuan_jumlah . ' ' . '('.$s->rencana_pembelian()->first()->kode_pembelian . ')'  }}</option>
+                                            <option {{ old('detail_rencana_pembelian_id') == $s->detail_rencana_pembelian_id ? 'selected' : '' }} value="{{ $s->detail_rencana_pembelian_id }}">{{ $s->produk()->first()->nama_produk . ' ' . number_format($s->jumlah, 2, ".", ",") . ' ' . $s->satuan_jumlah . ' ' . '('.$s->rencana_pembelian()->first()->kode_pembelian . ')'  }}</option>
                                             @endforeach
                                         </select>
 
@@ -106,7 +105,7 @@
 
                                 <div class="row mb-0">
                                     <div class="col-md-6 offset-md-4 d-flex align-items-end">
-                                        <a type="button" href="{{ route('ms2.pengiriman.show', $pengiriman->pengiriman_id) }}" class="btn btn-primary mr-2"><i class="fas fa-arrow-left"></i> Kembali</a>
+                                        <a type="button" href="{{ route('pengiriman.show', $pengiriman->pengiriman_id) }}" class="btn btn-primary mr-2"><i class="fas fa-arrow-left"></i> Kembali</a>
                                         <button type="submit" class="btn mx-2 btn-success"><i class="fas fa-pen"></i> Simpan</button>
                                     </div>
                                 </div>

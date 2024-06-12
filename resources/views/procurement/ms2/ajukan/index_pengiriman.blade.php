@@ -35,8 +35,7 @@
                                     <thead>
                                         <tr>
                                             <th>Tanggal</th>
-                                            <th>No. DO</th>
-                                            <th>No. Polisi</th>
+                                            <th>Produk</th>
                                             <th>Aksi</th>
                                         </tr>
                                     </thead>

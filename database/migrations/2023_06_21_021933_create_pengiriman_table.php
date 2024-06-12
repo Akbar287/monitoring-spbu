@@ -19,8 +19,8 @@ return new class extends Migration
             $table->string('no_do', 32)->nullable();
             $table->string('no_pol', 16);
             $table->boolean('is_confirmation_admin');
+            $table->boolean('is_confirmation_top');
             $table->boolean('is_done');
-            $table->boolean('ms2');
             $table->text('catatan')->nullable();
 
             $table->foreign('rencana_pembelian_id')->references('rencana_pembelian_id')->on('rencana_pembelian')->cascadeOnDelete();

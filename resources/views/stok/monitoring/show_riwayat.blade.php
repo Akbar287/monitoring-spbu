@@ -23,6 +23,19 @@
                     <h4>{{ __('List Riwayat Monitoring Stok') }}</h4>
                 </div>
                 <div class="card-body">
+                    <form action="{{ route('monitoring.show_riwayat', $stok->stok_inventory_id) }}" method="get"> @csrf
+                        <div class="row mb-4">
+                            <div class="col-12 col-sm-12 col-md-5">
+                                <input type="date" name="waktu_mulai" id="waktuMulai" class="form-control" value="{{ $waktuMulai }}" />
+                            </div>
+                            <div class="col-12 col-sm-12 col-md-5">
+                                <input type="date" name="waktu_selesai" id="waktuSelesai" class="form-control" value="{{ $waktuSelesai }}" />
+                            </div>
+                            <div class="col-12 col-sm-12 col-md-2">
+                                <button type="submit" class="btn btn-success btn-block">Filter</button>
+                            </div>
+                        </div>
+                    </form>
                     <div class="table-responsive">
                         <table class="table table-hover table-riwayat-monitoring">
                             <thead>

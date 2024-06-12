@@ -58,7 +58,7 @@
                                 <div class="col-md-6">
                                     <input id="tanggal" type="date" readonly
                                         class="form-control @error('tanggal') is-invalid @enderror" name="tanggal"
-                                        value="{{ old("tanggal") != null ? old("tanggal") : date('Y-m-d') }}" >
+                                        value="{{ $stok->tanggal }}" >
                                 </div>
                             </div>
 
@@ -79,7 +79,7 @@
                                 <div class="col-md-6">
                                     <input id="tinggi_dombak" type="number" step=".1" readonly
                                         class="form-control thousand-style" name="tinggi_dombak"
-                                        value="{{ $stok->dombak()->first()->konversi()->where('volume', $stok->stok_akhir)->first()->tinggi }}" >
+                                        value="{{ $stok->dombak()->first()->konversi()->where('volume', $stok->stok_akhir)->first()->tinggi ?? 0 }}" >
                                 </div>
                             </div>
 
@@ -90,8 +90,7 @@
                                 <div class="col-md-6">
                                     <input id="volume_sebelumnya" type="text" readonly
                                         class="form-control thousand-style" name="volume_sebelumnya"
-                                        value="{{ $stok->stok_akhir - ($stok->stok_awal + is_null($stok->losses()->first()) ? 0 : ($stok->losses()->first()->simbol == 'kurang' ?  $stok->losses()->first()->jumlah : -1 * $stok->losses()->first()->jumlah)) }}" readonly
-                                        autofocus>
+                                        value="{{ $stok->stok_awal }}" readonly>
                                 </div>
                             </div>
 

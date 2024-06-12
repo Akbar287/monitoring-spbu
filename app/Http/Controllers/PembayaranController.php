@@ -104,9 +104,9 @@ class PembayaranController extends Controller
             'status_purchase_id' => $status->status_purchase_id,
         ]);
 
-        foreach ($rencana->detail_rencana_pembelian()->get() as $d) {
-            $d->update(['ms2' => true]);
-        }
+        // foreach ($rencana->detail_rencana_pembelian()->get() as $d) {
+        //     $d->update(['ms2' => true]);
+        // }
         return redirect('/procurement/pembayaran')->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> Berhasil Mengubah Data Pembayaran. Data akan dikirim ke tahap MS2.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
     }
     public function konfirmasi_ditolak(RencanaPembelian $rencana)

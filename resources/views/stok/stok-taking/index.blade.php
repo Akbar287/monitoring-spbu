@@ -31,13 +31,21 @@
                 <div class="card-body">
                     <form action="{{ route('stok-taking.index') }}" method="get"> @csrf
                         <div class="row mb-4">
-                            <div class="col-12 col-sm-12 col-md-5">
+                            <div class="col-12 col-sm-12 col-md-3">
                                 <input type="date" name="waktu_mulai" id="waktuMulai" class="form-control" value="{{ $waktuMulai }}" />
                             </div>
-                            <div class="col-12 col-sm-12 col-md-5">
+                            <div class="col-12 col-sm-12 col-md-3">
                                 <input type="date" name="waktu_selesai" id="waktuSelesai" class="form-control" value="{{ $waktuSelesai }}" />
                             </div>
-                            <div class="col-12 col-sm-12 col-md-2">
+                            <div class="col-12 col-sm-12 col-md-3">
+                                <select name="produkSelected" id="produkSelected" class="custom-select">
+                                    <option @if($produkSelected == 'all') selected @endif value="all">Semua Produk</option>
+                                    @foreach($produk as $p)
+                                    <option {{ $produkSelected == $p->produk_id ? 'selected' : '' }} value="{{ $p->produk_id }}">{{ $p->nama_produk }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="col-12 col-sm-12 col-md-3">
                                 <button type="submit" class="btn btn-success btn-block">Filter</button>
                             </div>
                         </div>
@@ -48,9 +56,9 @@
                                 <table class="table table-hover table-stok-taking">
                                     <thead>
                                         <tr>
+                                            <th>Tanggal</th>
                                             <th>Tipe Dokumen</th>
                                             <th>Nama Produk</th>
-                                            <th>Tanggal</th>
                                             <th>Jam Kerja</th>
                                             <th>Aksi</th>
                                         </tr>

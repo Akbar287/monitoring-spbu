@@ -6,6 +6,7 @@ use App\Models\DokumenStok;
 use App\Models\Dombak;
 use App\Models\JamKerja;
 use App\Models\JenisLosses;
+use App\Models\Produk;
 use App\Models\StokInventory;
 use App\Models\TypeDokumenStok;
 use Carbon\Carbon;
@@ -21,6 +22,8 @@ class StokTakingController extends Controller
      */
     public function index(Request $request)
     {
+        $produk = Produk::select('produk_id', 'nama_produk')->get();
+        $produkSelected = $request->produkSelected ?? 'all';
         $waktuMulai = $request->has('waktu_mulai') ? Carbon::createFromFormat('Y-m-d', $request->waktu_mulai) : Carbon::now()->firstOfMonth();
         $waktuSelesai = $request->has('waktu_selesai') ? Carbon::createFromFormat('Y-m-d', $request->waktu_selesai) : Carbon::now()->endOfMonth();
         if ($waktuMulai->gt($waktuSelesai)) {
@@ -31,33 +34,28 @@ class StokTakingController extends Controller
         $waktuMulai = $waktuMulai->format('Y-m-d');
         $waktuSelesai = $waktuSelesai->format('Y-m-d');
         if ($request->ajax()) {
-            $data = DokumenStok::where('type_dokumen_stok_id', TypeDokumenStok::where('type_movement', 'Stok Taking')->first()->type_dokumen_stok_id)->where('is_confirmation', false)->whereBetween('tanggal', [$waktuMulai, $waktuSelesai])->orderBy('created_at', 'desc')->get();
+            $data = $produkSelected == 'all' ? DokumenStok::where('type_dokumen_stok_id', TypeDokumenStok::where('type_movement', 'Stok Taking')->first()->type_dokumen_stok_id)->where('is_confirmation', false)->whereBetween('tanggal', [$waktuMulai, $waktuSelesai])->orderBy('created_at', 'desc')->get() : DokumenStok::join('stok_inventory', 'stok_inventory.stok_inventory_id', 'dokumen_stok.stok_inventory_id')->where('type_dokumen_stok_id', TypeDokumenStok::where('type_movement', 'Stok Taking')->first()->type_dokumen_stok_id)->where('stok_inventory.produk_id', $request->produkSelected)->where('is_confirmation', false)->whereBetween('tanggal', [$waktuMulai, $waktuSelesai])->orderBy('tanggal', 'desc')->get();
             return DataTables::of($data)
                 ->addIndexColumn()
                 ->addColumn('tanggal', function ($row) {
-                    $actionBtn = $row->created_at->diffForHumans();
-                    return $actionBtn;
+                    return Carbon::createFromFormat('Y-m-d', $row->tanggal)->format('d F Y');
                 })
                 ->addColumn('jam_kerja', function ($row) {
-                    $actionBtn = $row->jam_kerja()->first()->nama_jam_kerja;
-                    return $actionBtn;
+                    return $row->jam_kerja()->first()->nama_jam_kerja;
                 })
                 ->addColumn('nama_produk', function ($row) {
-                    $actionBtn = $row->stok_inventory()->first()->produk()->first()->nama_produk;
-                    return $actionBtn;
+                    return $row->stok_inventory()->first()->produk()->first()->nama_produk;
                 })
                 ->addColumn('type_dokumen', function ($row) {
-                    $actionBtn = $row->type_dokumen_stok()->first()->type_movement;
-                    return $actionBtn;
+                    return $row->type_dokumen_stok()->first()->type_movement;
                 })
                 ->addColumn('action', function ($row) {
-                    $actionBtn = '<a href="' . route('stok-taking.show', $row->dokumen_stok_id) . '" class="edit btn btn-success btn-sm">Detail</a>';
-                    return $actionBtn;
+                    return '<a href="' . route('stok-taking.show', $row->dokumen_stok_id) . '" class="edit btn btn-success btn-sm">Detail</a>';
                 })
                 ->rawColumns(['action'])
                 ->make(true);
         }
-        return view('stok/stok-taking/index', compact('waktuMulai', 'waktuSelesai'));
+        return view('stok/stok-taking/index', compact('waktuMulai', 'waktuSelesai', 'produk', 'produkSelected'));
     }
 
     public function riwayat(Request $request)
@@ -76,24 +74,19 @@ class StokTakingController extends Controller
             return DataTables::of($data)
                 ->addIndexColumn()
                 ->addColumn('tanggal', function ($row) {
-                    $actionBtn = $row->created_at->diffForHumans();
-                    return $actionBtn;
+                    return Carbon::createFromFormat('Y-m-d', $row->tanggal)->format('d F Y');
                 })
                 ->addColumn('jam_kerja', function ($row) {
-                    $actionBtn = $row->jam_kerja()->first()->nama_jam_kerja;
-                    return $actionBtn;
+                    return $row->jam_kerja()->first()->nama_jam_kerja;
                 })
                 ->addColumn('nama_produk', function ($row) {
-                    $actionBtn = $row->stok_inventory()->first()->produk()->first()->nama_produk;
-                    return $actionBtn;
+                    return $row->stok_inventory()->first()->produk()->first()->nama_produk;
                 })
                 ->addColumn('type_dokumen', function ($row) {
-                    $actionBtn = $row->type_dokumen_stok()->first()->type_movement;
-                    return $actionBtn;
+                    return $row->type_dokumen_stok()->first()->type_movement;
                 })
                 ->addColumn('action', function ($row) {
-                    $actionBtn = '<a href="' . route('stok-taking.riwayat.show', $row->dokumen_stok_id) . '" class="edit btn btn-success btn-sm">Detail</a>';
-                    return $actionBtn;
+                    return '<a href="' . route('stok-taking.riwayat.show', $row->dokumen_stok_id) . '" class="edit btn btn-success btn-sm">Detail</a>';
                 })
                 ->rawColumns(['action'])
                 ->make(true);

@@ -373,42 +373,86 @@ class StandMeterController extends Controller
             'is_confirmation' => true
         ]);
 
-        $selisih = $standMeter->stand_meter_akhir - $standMeter->stand_meter_awal;
+        if (DB::table('stand_meter_dokumen_stok')->where('stand_meter_id', $standMeter->stand_meter_id)->count() == 0) {
 
-        $standMeter->dombak()->first()->stok_inventory_dombak()->first()->update([
-            'stok' => $standMeter->dombak()->first()->stok_inventory_dombak()->first()->stok - $selisih
-        ]);
+            // instansiasi untuk receive
+            $type_dokumen_stock_penjualan = TypeDokumenStok::select('type_dokumen_stok_id')->where('type_movement', 'Good Issue Sales')->first();
+            $typeReveive = TypeDokumenStok::select('type_dokumen_stok_id')->where('type_movement', 'Stok Taking Good Receive Penerimaan')->first();
+            $typeGoodReveive = TypeDokumenStok::select('type_dokumen_stok_id')->where('type_movement', 'Good Receive Penerimaan')->first();
+            $receive = $standMeter->dombak()->first()->stok_inventory_dombak()->first()->stok_inventory()->first()->dokumen_stok()->where('tanggal', Carbon::createFromFormat('Y-m-d', $standMeter->tanggal)->toDateTime())->where('type_dokumen_stok_id', $typeReveive->type_dokumen_stok_id)->where('jam_kerja_id', $standMeter->jam_kerja_id)->get();
+            $goodReceive = $standMeter->dombak()->first()->stok_inventory_dombak()->first()->stok_inventory()->first()->dokumen_stok()->where('tanggal', Carbon::createFromFormat('Y-m-d', $standMeter->tanggal)->toDateTime())->where('type_dokumen_stok_id', $typeGoodReveive->type_dokumen_stok_id)->where('jam_kerja_id', $standMeter->jam_kerja_id)->get();
+            $stokTakingFirstInSameShift = $standMeter->dombak()->first()->stok_inventory_dombak()->first()->stok_inventory()->first()->dokumen_stok()->where('tanggal', Carbon::createFromFormat('Y-m-d', $standMeter->tanggal)->toDateTime())->where('type_dokumen_stok_id', $type_dokumen_stock_penjualan->type_dokumen_stok_id)->where('jam_kerja_id', $standMeter->jam_kerja_id)->get();
+            // End Instansiasi
 
-        $standMeter->dombak()->first()->stok_inventory_dombak()->first()->stok_inventory()->first()->update([
-            'stok' => $standMeter->dombak()->first()->stok_inventory_dombak()->first()->stok_inventory()->first()->stok - $selisih
-        ]);
+            $stokInventory = $standMeter->dombak()->first()->stok_inventory_dombak()->first()->stok_inventory()->first()->stok;
+            $stok = $standMeter->dombak()->first()->stok_inventory_dombak()->first()->stok;
+            $selisih = $standMeter->stand_meter_akhir - $standMeter->stand_meter_awal;
 
-        $type_dokumen_stock_penjualan = TypeDokumenStok::select('type_dokumen_stok_id')->where('type_movement', 'Good Issue Sales')->first();
-        $dokumenStokPenjualan = $type_dokumen_stock_penjualan->dokumen_stok()->create([
-            'stok_inventory_id' => $standMeter->dombak()->first()->stok_inventory_dombak()->first()->stok_inventory()->first()->stok_inventory_id,
-            'jam_kerja_id' => $standMeter->jam_kerja_id,
-            'member_id' => Auth::user()->member_id,
-            'dombak_id' => $standMeter->dombak_id,
-            'tanggal' => date($standMeter->tanggal),
-            'stok_awal' => $standMeter->dombak()->first()->stok_inventory_dombak()->first()->stok_inventory()->first()->stok,
-            'stok_akhir' => $standMeter->dombak()->first()->stok_inventory_dombak()->first()->stok_inventory()->first()->stok - $selisih,
-            'is_confirmation' => true
-        ]);
+            if (count($goodReceive) > 0 && count($stokTakingFirstInSameShift) == 0) {
+                $stokAwal = 0;
+                if (count($receive) > 0) {
+                    foreach ($receive as $r) {
+                        $stokAwal = ($stokAwal == 0) ? $r->stok_awal : (($stokAwal > $r->stok_awal) ? $r->stok_awal : $stokAwal);
+                    }
+                }
 
-        DB::table('stand_meter_dokumen_stok')->insert([
-            'stand_meter_id' => $standMeter->stand_meter_id,
-            'dokumen_stok_id' => $dokumenStokPenjualan->dokumen_stok_id
-        ]);
+                $selisihGReceive = 0;
+                foreach ($goodReceive as $r) {
+                    if (!is_null($r->losses()->first())) {
+                        if ($r->losses()->first()->simbol == 'lebih') {
+                            $selisihGReceive += ($r->stok_akhir - $r->stok_awal) - $r->losses()->first()->jumlah;
+                        } else {
+                            $selisihGReceive += ($r->stok_akhir - $r->stok_awal) + $r->losses()->first()->jumlah;
+                        }
+                    } else {
+                        $selisihGReceive += ($r->stok_akhir - $r->stok_awal);
+                    }
+                }
+                $selisih = ($stok - ($stokAwal + $selisihGReceive - $selisih));
+            }
 
-        $dombak = Dombak::where('dombak_id', $standMeter->dombak_id)->first();
-        if (!is_null($dombak)) {
-            $konversi = $dombak->konversi()->where('volume', ($standMeter->dombak()->first()->stok_inventory_dombak()->first()->stok_inventory()->first()->stok - $selisih))->first();
+            // cek value
+            // dd($stok, $stokAwal, $selisihGReceive, $selisih, $stok - $selisih);
+            // end check value
 
-            if (!is_null($konversi)) {
-                DB::table('konversi_dokumen_stok')->insert([
-                    'konversi_id' => $konversi->konversi_id,
+            $standMeter->dombak()->first()->stok_inventory_dombak()->first()->update([
+                'stok' => $stok - $selisih
+            ]);
+
+            $standMeter->dombak()->first()->stok_inventory_dombak()->first()->stok_inventory()->first()->update([
+                'stok' => $stokInventory - $selisih
+            ]);
+
+            if (
+                $type_dokumen_stock_penjualan->dokumen_stok()->where('stok_inventory_id', $standMeter->dombak()->first()->stok_inventory_dombak()->first()->stok_inventory()->first()->stok_inventory_id)->where('jam_kerja_id', $standMeter->jam_kerja_id)->where('member_id', Auth::user()->member_id)->where('dombak_id', $standMeter->dombak_id)->where('tanggal', date($standMeter->tanggal))->where('stok_awal', $stokInventory)->where('stok_akhir', $stokInventory - $selisih)->where('is_confirmation', true)->count() == 0
+            ) {
+                $dokumenStokPenjualan = $type_dokumen_stock_penjualan->dokumen_stok()->create([
+                    'stok_inventory_id' => $standMeter->dombak()->first()->stok_inventory_dombak()->first()->stok_inventory()->first()->stok_inventory_id,
+                    'jam_kerja_id' => $standMeter->jam_kerja_id,
+                    'member_id' => Auth::user()->member_id,
+                    'dombak_id' => $standMeter->dombak_id,
+                    'tanggal' => date($standMeter->tanggal),
+                    'stok_awal' => $stokInventory,
+                    'stok_akhir' => $stokInventory - $selisih,
+                    'is_confirmation' => true
+                ]);
+
+                DB::table('stand_meter_dokumen_stok')->insert([
+                    'stand_meter_id' => $standMeter->stand_meter_id,
                     'dokumen_stok_id' => $dokumenStokPenjualan->dokumen_stok_id
                 ]);
+
+                $dombak = Dombak::where('dombak_id', $standMeter->dombak_id)->first();
+                if (!is_null($dombak)) {
+                    $konversi = $dombak->konversi()->where('volume', ($stokInventory - $selisih))->first();
+
+                    if (!is_null($konversi)) {
+                        DB::table('konversi_dokumen_stok')->insert([
+                            'konversi_id' => $konversi->konversi_id,
+                            'dokumen_stok_id' => $dokumenStokPenjualan->dokumen_stok_id
+                        ]);
+                    }
+                }
             }
         }
 

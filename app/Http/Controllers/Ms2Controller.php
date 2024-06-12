@@ -3,14 +3,16 @@
 namespace App\Http\Controllers;
 
 use App\Models\DetailRencanaPembelian;
-use App\Models\FileLo;
+use App\Models\DetailRencanaPembelianMs2;
+use App\Models\JamKerja;
 use App\Models\Member;
+use App\Models\Ms2;
 use App\Models\Pengiriman;
 use App\Models\Produk;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
 use Yajra\DataTables\DataTables;
 
 class Ms2Controller extends Controller
@@ -22,10 +24,16 @@ class Ms2Controller extends Controller
             return DataTables::of($data)
                 ->addIndexColumn()
                 ->addColumn('stok', function ($row) {
-                    return number_format($row->detail_rencana_pembelian()->selectRaw('SUM("jumlah") as stok')->join('rencana_pembelian', 'rencana_pembelian.rencana_pembelian_id', 'detail_rencana_pembelian.rencana_pembelian_id')->join('status_purchase', 'status_purchase.status_purchase_id', 'rencana_pembelian.status_purchase_id')->where('status_purchase.nama_status', 'MS2')->where('detail_rencana_pembelian.ms2', true)->first()->stok, 6, ".", ",") ?? 0;
+                    return number_format($row->detail_rencana_pembelian()->selectRaw('SUM("jumlah") as stok')->join('rencana_pembelian', 'rencana_pembelian.rencana_pembelian_id', 'detail_rencana_pembelian.rencana_pembelian_id')->join('status_purchase', 'status_purchase.status_purchase_id', 'rencana_pembelian.status_purchase_id')->where('status_purchase.nama_status', 'MS2')->where('detail_rencana_pembelian.ms2', false)->where('detail_rencana_pembelian.delivery', false)->first()->stok, 2, ".", ",") ?? 0;
                 })
                 ->addColumn('total_pembelian', function ($row) {
-                    return $row->detail_rencana_pembelian()->join('rencana_pembelian', 'rencana_pembelian.rencana_pembelian_id', 'detail_rencana_pembelian.rencana_pembelian_id')->join('status_purchase', 'status_purchase.status_purchase_id', 'rencana_pembelian.status_purchase_id')->where('status_purchase.nama_status', 'MS2')->where('detail_rencana_pembelian.ms2', true)->count();
+                    return $row->detail_rencana_pembelian()
+                        ->join('rencana_pembelian', 'rencana_pembelian.rencana_pembelian_id', 'detail_rencana_pembelian.rencana_pembelian_id')
+                        ->join('status_purchase', 'status_purchase.status_purchase_id', 'rencana_pembelian.status_purchase_id')
+                        ->where('status_purchase.nama_status', 'MS2')
+                        ->where('detail_rencana_pembelian.ms2', false)
+                        ->where('detail_rencana_pembelian.delivery', false)
+                        ->count();
                 })
                 ->addColumn('action', function ($row) {
                     $actionBtn = '<a href="' . route('ms2.produk.show', $row->produk_id) . '" class="edit btn btn-success btn-sm">Detail</a>';
@@ -34,12 +42,23 @@ class Ms2Controller extends Controller
                 ->rawColumns(['action'])
                 ->make(true);
         }
-        return view('procurement/ms2/index_produk');
+        return view('procurement/ms2/rencana/index_produk');
     }
     public function show_produk(Request $request, Produk $produk)
     {
         if ($request->ajax()) {
-            $data = $produk->detail_rencana_pembelian()->select('rencana_pembelian.kode_pembelian')->addSelect('rencana_pembelian.tanggal_pembelian')->addSelect('detail_rencana_pembelian.jumlah')->addSelect('detail_rencana_pembelian.detail_rencana_pembelian_id')->addSelect('detail_rencana_pembelian.produk_id')->join('rencana_pembelian', 'rencana_pembelian.rencana_pembelian_id', 'detail_rencana_pembelian.rencana_pembelian_id')->join('status_purchase', 'status_purchase.status_purchase_id', 'rencana_pembelian.status_purchase_id')->where('status_purchase.nama_status', 'MS2')->where('detail_rencana_pembelian.ms2', true)->get();
+            $data = $produk->detail_rencana_pembelian()
+                ->select('rencana_pembelian.kode_pembelian')
+                ->addSelect('rencana_pembelian.tanggal_pembelian')
+                ->addSelect('detail_rencana_pembelian.jumlah')
+                ->addSelect('detail_rencana_pembelian.detail_rencana_pembelian_id')
+                ->addSelect('detail_rencana_pembelian.produk_id')
+                ->join('rencana_pembelian', 'rencana_pembelian.rencana_pembelian_id', 'detail_rencana_pembelian.rencana_pembelian_id')
+                ->join('status_purchase', 'status_purchase.status_purchase_id', 'rencana_pembelian.status_purchase_id')
+                ->where('status_purchase.nama_status', 'MS2')
+                ->where('detail_rencana_pembelian.ms2', false)
+                ->where('detail_rencana_pembelian.delivery', false)
+                ->get();
             return DataTables::of($data)
                 ->addIndexColumn()
                 ->addColumn('tanggal_pembelian', function ($row) {
@@ -55,211 +74,189 @@ class Ms2Controller extends Controller
                 ->rawColumns(['action'])
                 ->make(true);
         }
-        return view('procurement/ms2/show_produk');
+        return view('procurement/ms2/rencana/show_produk');
     }
     public function show_detail(Request $request, Produk $produk, DetailRencanaPembelian $detail)
     {
-        return view('procurement/ms2/show_detail', compact('produk', 'detail'));
+        return view('procurement/ms2/rencana/show_detail', compact('produk', 'detail'));
     }
 
     public function index_pengiriman(Request $request)
     {
         if ($request->ajax()) {
-            $data = Pengiriman::where('ms2', true)->get();
+            $data = Ms2::where('is_done', false)->get();
             return DataTables::of($data)
                 ->addIndexColumn()
                 ->addColumn('tanggal', function ($row) {
                     return Carbon::createFromFormat('Y-m-d', $row->tanggal)->format('d F Y') ?? 0;
                 })
-                ->addColumn('no_do', function ($row) {
-                    return $row->no_do;
-                })
-                ->addColumn('no_pol', function ($row) {
-                    return $row->no_pol;
+                ->addColumn('produk', function ($row) {
+                    return $row->detail_rencana_pembelian_ms2()->count() . ' produk';
                 })
                 ->addColumn('action', function ($row) {
-                    $actionBtn = '<a href="' . route('ms2.pengiriman.show', $row->pengiriman_id) . '" class="edit btn btn-success btn-sm">Detail</a>';
+                    $actionBtn = '<a href="' . route('ms2.pengiriman.show', $row->ms2_id) . '" class="edit btn btn-success btn-sm">Detail</a>';
                     return $actionBtn;
                 })
                 ->rawColumns(['action'])
                 ->make(true);
         }
-        return view('procurement/ms2/index_pengiriman');
+        return view('procurement/ms2/ajukan/index_pengiriman');
     }
     public function create_pengiriman(Request $request)
     {
-        $member = Member::get();
-        return view('procurement/ms2/create_pengiriman', compact('member'));
+        $produk = Produk::where('is_aktif', true)->get();
+        $shift = JamKerja::orderBy('urutan', 'asc')->get();
+        return view('procurement/ms2/ajukan/create_pengiriman', compact('produk', 'shift'));
     }
     public function store_pengiriman(Request $request)
     {
-        $pengiriman = Pengiriman::where('member_id', request('member_id'))->where('no_do', request('no_do'))->where('no_pol', request('no_pol'))->where('tanggal', request('tanggal'))->where('is_confirmation_admin', false)->where('is_done', false)->where('ms2', true)->where('catatan', request('catatan'))->first();
-        if (is_null($pengiriman)) {
-            $pengiriman = Pengiriman::create($this->pengirimanData());
-        }
-
-        return redirect('/procurement/ms2/pengiriman/' . $pengiriman->pengiriman_id)->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> Data Pengiriman sudah ditambah.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
-    }
-    public function show_pengiriman(Request $request, Pengiriman $pengiriman)
-    {
-        if ($request->ajax()) {
-            $data = $pengiriman->file_lo()
-                ->select('file_lo.no_lo')
-                ->addSelect('rencana_pembelian.tanggal_pembelian')
-                ->addSelect('rencana_pembelian.kode_pembelian')
-                ->addSelect('produk.nama_produk')
-                ->addSelect('file_lo.jumlah')
-                ->addSelect('file_lo.file_lo_id')
-                ->addSelect('pengiriman.pengiriman_id')
-                ->join('pengiriman', 'pengiriman.pengiriman_id', 'file_lo.pengiriman_id')
-                ->join('detail_rencana_file', 'detail_rencana_file.file_lo_id', 'file_lo.file_lo_id')
-                ->join('detail_rencana_pembelian', 'detail_rencana_pembelian.detail_rencana_pembelian_id', 'detail_rencana_file.detail_rencana_pembelian_id')
-                ->join('rencana_pembelian', 'detail_rencana_pembelian.rencana_pembelian_id', 'rencana_pembelian.rencana_pembelian_id')
-                ->join('produk', 'produk.produk_id', 'file_lo.produk_id')
-                ->get();
-            return DataTables::of($data)
-                ->addIndexColumn()
-                ->addColumn('tanggal', function ($row) {
-                    return Carbon::createFromFormat('Y-m-d', $row->tanggal_pembelian)->format('d F Y') ?? 0;
-                })
-                ->addColumn('kode', function ($row) {
-                    return $row->kode_pembelian;
-                })
-                ->addColumn('stok', function ($row) {
-                    return number_format($row->jumlah, 6, ".", ",") ?? 0;
-                })
-                ->addColumn('action', function ($row) {
-                    $actionBtn = '<a href="' . route('ms2.pengiriman.file_lo_show', [$row->pengiriman_id, $row->file_lo_id]) . '" class="edit btn btn-success btn-sm">Detail</a>';
-                    return $actionBtn;
-                })
-                ->rawColumns(['action'])
-                ->make(true);
-        }
-        return view('procurement/ms2/show_pengiriman', compact('pengiriman'));
-    }
-    public function edit_pengiriman(Request $request, Pengiriman $pengiriman)
-    {
-        $member = Member::get();
-        return view('procurement/ms2/edit_pengiriman', compact('pengiriman', 'member'));
-    }
-    public function update_pengiriman(Request $request, Pengiriman $pengiriman)
-    {
-        $pengiriman->update($this->pengirimanData());
-
-        return redirect('/procurement/ms2/pengiriman/' . $pengiriman->pengiriman_id)->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> Data Pengiriman sudah diubah.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
-    }
-
-    public function update_pengiriman_to_delivery(Request $request, Pengiriman $pengiriman)
-    {
-        $pengiriman->update([
-            'is_confirmation_admin' => true,
-            'ms2' => false
+        $request->validate([
+            'tanggal' => ['required']
         ]);
 
-        $detail = $pengiriman->file_lo()->select('detail_rencana_file.detail_rencana_pembelian_id')->join('detail_rencana_file', 'detail_rencana_file.file_lo_id', 'file_lo.file_lo_id')->get();
+        if (count($request->detail_rencana_pembelian_id) > 0) {
+            $kode = $this->generateKodeSms($request->detail_rencana_pembelian_id, $request->detail_rencana_pembelian_id_shift);
+            $loop = true;
+            do {
+                $ms2 = Ms2::where('tanggal', $request->tanggal)->where('member_id', Auth::user()->member_id)->where('is_done', false)->where('kode_sms', $kode)->count();
 
-        foreach ($detail as $d) {
-            DetailRencanaPembelian::where('detail_rencana_pembelian_id', $d->detail_rencana_pembelian_id)->first()->update([
-                'ms2' => false,
-                'delivery' => true,
-            ]);
+                if ($ms2 == 0) {
+                    $ms2 = new Ms2();
+                    $ms2->tanggal = $request->tanggal;
+                    $ms2->member_id = Auth::user()->member_id;
+                    $ms2->is_done = false;
+                    $ms2->kode_sms = $kode;
+                    $ms2->save();
+                }
+                if ($ms2 == 1) {
+                    $loop = false;
+                }
+
+                if ($ms2 > 1) {
+                    $ms2->delete();
+                }
+            } while ($loop);
+
+            $ms2 = Ms2::where('tanggal', $request->tanggal)->where('member_id', Auth::user()->member_id)->where('is_done', false)->where('kode_sms', $kode)->first();
+
+            foreach ($request->detail_rencana_pembelian_id as $drp) {
+                DetailRencanaPembelian::where('detail_rencana_pembelian_id', $drp)->update([
+                    'ms2' => true
+                ]);
+
+                if (is_null(DetailRencanaPembelianMs2::where('ms2_id', $ms2->ms2_id)->where('detail_rencana_pembelian_id', $drp)->where('is_delivery', false)->first())) {
+                    DetailRencanaPembelianMs2::create([
+                        'ms2_id' => $ms2->ms2_id,
+                        'detail_rencana_pembelian_id' => $drp,
+                        'is_delivery' => false
+                    ]);
+                }
+            }
+
+            return redirect('/procurement/ms2/pengiriman/' . $ms2->ms2_id)->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> Data Pengiriman sudah ditambah.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
+        } else {
+            return redirect('/procurement/ms2/pengiriman/tambah')->with('msg', '<div class="alert alert-danger alert-dismissible fade show" role="alert"><strong>Gagal!</strong> Anda Perlu Memilih Produk.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
         }
-
-        return redirect('/procurement/ms2/pengiriman')->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> Data MS2 sudah dikirim ke Fase Pengiriman.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
     }
 
-    public function destroy_pengiriman(Request $request, Pengiriman $pengiriman)
+    public function show_pengiriman(Request $request, Ms2 $ms2)
     {
-        $pengiriman->delete();
+        return view('procurement/ms2/ajukan/show_pengiriman', compact('ms2'));
+    }
+
+    public function konfirm_pengiriman(Request $request, Ms2 $ms2)
+    {
+        return view('procurement/ms2/ajukan/konfirm_pengiriman', compact('ms2'));
+    }
+
+    public function destroy_pengiriman(Request $request, Ms2 $ms2)
+    {
+        foreach ($ms2->detail_rencana_pembelian_ms2()->get() as $dr) {
+            $dr->detail_rencana_pembelian()->first()->update([
+                'ms2' => false
+            ]);
+        }
+        $ms2->delete();
 
         return redirect('/procurement/ms2/pengiriman')->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> Data Pengiriman sudah dihapus.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
     }
-    public function pengirimanData()
+
+    public function update_pengiriman_to_delivery(Request $request, Ms2 $ms2)
     {
-        return [
-            'member_id' => request('member_id'),
-            'no_do' => request('no_do'),
-            'no_pol' => request('no_pol'),
-            'tanggal' => request('tanggal'),
-            'is_confirmation_admin' => false,
-            'is_done' => false,
-            'ms2' => true,
-            'catatan' => request('catatan')
-        ];
-    }
+        if (!is_null($request->detail_rencana_pembelian_id)) {
+            foreach ($ms2->detail_rencana_pembelian_ms2()->get() as $drms) {
+                if (in_array($drms->detail_rencana_pembelian_id, $request->detail_rencana_pembelian_id)) {
+                    DetailRencanaPembelian::where('detail_rencana_pembelian_id', $drms->detail_rencana_pembelian_id)->first()->update([
+                        'ms2' => false,
+                        'delivery' => true
+                    ]);
+                    $drms->update([
+                        'is_delivery' => true
+                    ]);
+                } else {
+                    DetailRencanaPembelian::where('detail_rencana_pembelian_id', $drms->detail_rencana_pembelian_id)->first()->update([
+                        'ms2' => false,
+                        'delivery' => false
+                    ]);
+                }
+            }
 
-    public function file_lo_create(Request $request, Pengiriman $pengiriman)
-    {
-        $detail_rencana_pembelian = DetailRencanaPembelian::where('ms2', true)->get();
-        return view('procurement/ms2/file_lo_create', compact('pengiriman', 'detail_rencana_pembelian'));
-    }
-
-    public function file_lo_store(Request $request, Pengiriman $pengiriman)
-    {
-        $request->validate([
-            'detail_rencana_pembelian_id' => ['required'],
-            'no_faktur' => ['required'],
-            'no_lo' => ['required'],
-            'gambar' => 'required|max:5120|mimes:jpg,png,jpeg,bmp|image'
-        ]);
-
-        $foto = 'default.png';
-        $filenameWithExt = null;
-        if ($request->hasFile('gambar')) {
-            $filenameWithExt = $request->file('gambar')->getClientOriginalName();
-            $filename = pathinfo($filenameWithExt, PATHINFO_FILENAME);
-            $extension = $request->file('gambar')->getClientOriginalExtension();
-            $foto = $filename . '_' . time() . '.' . $extension;
-            $request->file('gambar')->storeAs('public/file_lo', $foto);
-        }
-
-        $detail_rencana_pembelian = DetailRencanaPembelian::where('detail_rencana_pembelian_id', $request->detail_rencana_pembelian_id)->first();
-
-        $detail_rencana_pembelian->update([
-            'ms2' => false
-        ]);
-
-        $file_lo = $pengiriman->file_lo()->where('produk_id', $detail_rencana_pembelian->produk_id)->where('jumlah', $detail_rencana_pembelian->jumlah)->where('satuan_jumlah', $detail_rencana_pembelian->satuan_jumlah)->where('no_faktur', request('no_faktur'))->where('no_lo', request('no_lo'))->where('nama_dokumen', $filenameWithExt)->where('nama_file', $foto)->where('tanggal_upload', date('Y-m-d'))->first();
-        if (is_null($file_lo)) {
-            $file_lo = $pengiriman->file_lo()->create([
-                'produk_id' => $detail_rencana_pembelian->produk_id,
-                'jumlah' => $detail_rencana_pembelian->jumlah,
-                'satuan_jumlah' => $detail_rencana_pembelian->satuan_jumlah,
-                'no_faktur' => request('no_faktur'),
-                'no_lo' => request('no_lo'),
-                'nama_dokumen' => $filenameWithExt,
-                'nama_file' => $foto,
-                'tanggal_upload' => date('Y-m-d'),
+            $ms2->update([
+                'is_done' => true
             ]);
 
-            DB::table('detail_rencana_file')->insert([
-                'detail_rencana_pembelian_id' => request('detail_rencana_pembelian_id'),
-                'file_lo_id' => $file_lo->file_lo_id
-            ]);
+            $loop = true;
+            do {
+                $pengiriman = Pengiriman::where('member_id', $ms2->member_id)->where('tanggal', $request->tanggal)->where('no_do', $request->no_do)->where('no_pol', $request->no_pol)->where('is_confirmation_admin', false)->where('is_confirmation_top', false)->where('is_done', false)->where('catatan', $request->catatan)->count();
+                if ($pengiriman == 0) {
+                    $pengiriman = Pengiriman::create([
+                        'member_id' => $ms2->member_id,
+                        'tanggal' => $request->tanggal,
+                        'no_do' => $request->no_do,
+                        'no_pol' => $request->no_pol,
+                        'is_confirmation_admin' => false,
+                        'is_confirmation_top' => false,
+                        'is_done' => false,
+                        'catatan' => $request->catatan,
+                    ]);
+                } else if ($pengiriman == 1) {
+                    $loop = false;
+                } else {
+                    Pengiriman::where('member_id', $ms2->member_id)->where('tanggal', $request->tanggal)->where('no_do', $request->no_do)->where('no_pol', $request->no_pol)->where('is_confirmation_admin', false)->where('is_confirmation_top', false)->where('is_done', false)->where('catatan', $request->catatan)->delete();
+                }
+            } while ($loop);
+
+            $pengiriman = Pengiriman::where('member_id', $ms2->member_id)->where('tanggal', $request->tanggal)->where('no_do', $request->no_do)->where('no_pol', $request->no_pol)->where('is_confirmation_admin', false)->where('is_confirmation_top', false)->where('is_done', false)->where('catatan', $request->catatan)->first();
+
+            if (DB::table('pengiriman_ms2')->where('pengiriman_id', $pengiriman->pengiriman_id)->where('ms2_id', $ms2->ms2_id)->count() == 0) {
+                DB::table('pengiriman_ms2')->insert([
+                    'pengiriman_id' => $pengiriman->pengiriman_id,
+                    'ms2_id' => $ms2->ms2_id
+                ]);
+            }
+
+            return redirect('/procurement/ms2/pengiriman/' . $ms2->ms2_id)->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> Data MS2 sudah dikirim ke Fase Pengiriman.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
+        } else {
+            return redirect('/procurement/ms2/pengiriman/' . $ms2->ms2_id . '/konfirm')->with('msg', '<div class="alert alert-danger alert-dismissible fade show" role="alert"><strong>Sukses!</strong> Anda perlu memilih minimal satu produk untuk dikirim.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
+        }
+    }
+
+    public function generateKodeSms($detail_rencana_pembelian_id, $jam_kerja_id)
+    {
+        $sms = '';
+        for ($i = 0; $i < count($detail_rencana_pembelian_id); $i++) {
+            $drpp = DetailRencanaPembelian::where('detail_rencana_pembelian_id', $detail_rencana_pembelian_id[$i])->first();
+            $sms .= 'Stok ' . explode(' ', $drpp->rencana_pembelian()->first()->spbu()->first()->nama_spbu)[1] . ' ';
+            $jk = JamKerja::where('jam_kerja_id', $jam_kerja_id[$i])->first();
+
+
+            $singkatan = $drpp->produk()->first()->singkatan;
+            $stokTerakhirDombak = str_replace(',', '', number_format($drpp->produk()->first()->stok_inventory()->first()->stok, 0, ".", ","));
+            $stokPertamina = $drpp->jumlah / 1000;
+
+            $sms .=  $singkatan . $stokTerakhirDombak . '-' . $stokPertamina . '-0-' . $jk->urutan . ':' . $stokPertamina . ' ';
         }
 
-
-        return redirect('/procurement/ms2/pengiriman/' . $pengiriman->pengiriman_id . '/file_lo_show/' . $file_lo->file_lo_id)->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> Data File LO sudah Di simpan.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
-    }
-    public function file_lo_show(Pengiriman $pengiriman, FileLo $file_lo)
-    {
-        return view('procurement/ms2/file_lo_show', compact('pengiriman', 'file_lo'));
-    }
-
-    public function file_lo_delete(Pengiriman $pengiriman, FileLo $file_lo)
-    {
-        $file_lo->detail_rencana_pembelian()->first()->update([
-            'ms2' => true
-        ]);
-
-        DB::table('detail_rencana_file')->where('file_lo_id', $file_lo->file_lo_id)->delete();
-
-        if ($file_lo->nama_file != 'default.png') {
-            Storage::delete("public/file_lo/" . $file_lo->nama_file);
-        }
-
-        $file_lo->delete();
-
-        return redirect('/procurement/ms2/pengiriman/' . $pengiriman->pengiriman_id)->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> Data File LO sudah dihapus.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
+        return $sms;
     }
 }

@@ -35,6 +35,7 @@
                         <table class="table table-hover table-penerimaan">
                             <thead>
                                 <tr>
+                                    <th>Tanggal</th>
                                     <th>No Faktur</th>
                                     <th>No LO</th>
                                     <th>Nama Produk</th>

@@ -48,6 +48,32 @@
                             </div>
 
                             <div class="row mb-3 justify-content-center">
+                                <label for="jadwal_absen_masuk" class="col-md-4 col-form-label text-md-end">{{ __('Jam Absen Masuk')
+                                    }}</label>
+
+                                <div class="col-md-6">
+                                    <div class="input-group mb-2">
+                                        <input readonly id="jadwal_absen_masuk" type="text"
+                                        class="form-control @error('jadwal_absen_masuk') is-invalid @enderror" name="jadwal_absen_masuk"
+                                        value="{{ Carbon\Carbon::createFromFormat('Y-m-d H:i:s', $penjadwalan->start_time)->format('d F Y H:i:s') }}" >
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row mb-3 justify-content-center">
+                                <label for="jadwal_absen_keluar" class="col-md-4 col-form-label text-md-end">{{ __('Jam Absen Keluar')
+                                    }}</label>
+
+                                <div class="col-md-6">
+                                    <div class="input-group mb-2">
+                                        <input readonly id="jadwal_absen_keluar" type="text"
+                                        class="form-control @error('jadwal_absen_keluar') is-invalid @enderror" name="jadwal_absen_keluar"
+                                        value="{{ Carbon\Carbon::createFromFormat('Y-m-d H:i:s', $penjadwalan->finish_time)->format('d F Y H:i:s') }}" >
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row mb-3 justify-content-center">
                                 <label for="jam_kerja" class="col-md-4 col-form-label text-md-end">{{ __('Jam Kerja')
                                     }}</label>
 

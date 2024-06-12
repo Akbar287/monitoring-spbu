@@ -6,10 +6,9 @@
     <div class="section-header-breadcrumb">
         <div class="breadcrumb-item"><a href="{{ route('home') }}">Dashboard</a></div>
         <div class="breadcrumb-item"><a href="{{ route('menu.procurement') }}">Procurement</a></div>
-        <div class="breadcrumb-item"><a href="{{ route('ms2.produk.index') }}">MS2</a></div>
-        <div class="breadcrumb-item"><a href="{{ route('ms2.pengiriman') }}">Pengiriman MS2</a></div>
-        <div class="breadcrumb-item"><a href="{{ route('ms2.pengiriman.show', $pengiriman->pengiriman_id) }}">Detail Pengiriman</a></div>
-        <div class="breadcrumb-item"><a href="{{ route('ms2.pengiriman.file_lo_show', [$pengiriman->pengiriman_id, $file_lo->file_lo_id]) }}">Detail File LO</a></div>
+        <div class="breadcrumb-item"><a href="{{ route('pengiriman.index') }}">Pengiriman</a></div>
+        <div class="breadcrumb-item"><a href="{{ route('pengiriman.show', $pengiriman->pengiriman_id) }}">Detail Pengiriman</a></div>
+        <div class="breadcrumb-item"><a href="{{ route('pengiriman.file_lo.show', [$pengiriman->pengiriman_id, $file_lo->file_lo_id]) }}">Detail File LO</a></div>
         <div class="breadcrumb-item">File Lampiran LO</div>
     </div>
 </div>
@@ -24,7 +23,7 @@
                 <div class="card-header">
                     <h4>{{ __('List File Lampiran LO') }}</h4>
                     <div class="card-header-action">
-                        <a href="{{ route('ms2.pengiriman.file_lo_show.lampiran.create', [$pengiriman->pengiriman_id, $file_lo->file_lo_id]) }}" class="btn btn-primary">
+                        <a href="{{ route('pengiriman.file_lo_show.lampiran.create', [$pengiriman->pengiriman_id, $file_lo->file_lo_id]) }}" class="btn btn-primary">
                             Tambah
                         </a>
                     </div>
@@ -45,7 +44,7 @@
                             </tbody>
                         </table>
                     </div>
-                    <a href="{{ route('ms2.pengiriman.file_lo_show', [$pengiriman->pengiriman_id, $file_lo->file_lo_id]) }}" class="btn btn-primary"><i class="fas fa fa-arrow-left"></i> Kembali</a>
+                    <a href="{{ route('pengiriman.file_lo.show', [$pengiriman->pengiriman_id, $file_lo->file_lo_id]) }}" class="btn btn-primary"><i class="fas fa fa-arrow-left"></i> Kembali</a>
                 </div>
             </div>
         </div>

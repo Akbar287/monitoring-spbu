@@ -22,7 +22,7 @@ class PenerimaanController extends Controller
     public function index(Request $request)
     {
         if ($request->ajax()) {
-            $data = FileLo::select('file_lo.*')->leftJoin('penerimaan', 'penerimaan.file_lo_id', 'file_lo.file_lo_id')->whereNull('penerimaan.file_lo_id')->get();
+            $data = FileLo::select('file_lo.*', 'pengiriman.tanggal')->join('pengiriman', 'pengiriman.pengiriman_id', 'file_lo.pengiriman_id')->where('pengiriman.is_confirmation_top', true)->where('pengiriman.is_confirmation_admin', true)->where('pengiriman.is_done', true)->leftJoin('penerimaan', 'penerimaan.file_lo_id', 'file_lo.file_lo_id')->whereNull('penerimaan.file_lo_id')->get();
             return DataTables::of($data)
                 ->addIndexColumn()
                 ->addColumn('nama_produk', function ($row) {
@@ -33,8 +33,8 @@ class PenerimaanController extends Controller
                     $actionBtn = number_format($row->jumlah, 6, ".", ",") . ' (' . $row->satuan_jumlah . ')';
                     return $actionBtn;
                 })
-                ->addColumn('tanggal_upload', function ($row) {
-                    return Carbon::createFromFormat('Y-m-d', $row->tanggal_upload)->format('d F Y');
+                ->addColumn('tanggal', function ($row) {
+                    return Carbon::createFromFormat('Y-m-d', $row->tanggal)->format('d F Y');
                 })
                 ->addColumn('action', function ($row) {
                     $actionBtn = '<a href="' . route('penerimaan.show', $row->file_lo_id) . '" class="edit btn btn-success btn-sm">Detail</a>';

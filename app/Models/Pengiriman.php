@@ -28,8 +28,8 @@ class Pengiriman extends Model
         'no_do',
         'no_pol',
         'is_confirmation_admin',
+        'is_confirmation_top',
         'is_done',
-        'ms2',
         'catatan',
     ];
 
@@ -46,5 +46,10 @@ class Pengiriman extends Model
     public function file_lo()
     {
         return $this->hasMany(FileLo::class, 'pengiriman_id', 'pengiriman_id');
+    }
+
+    public function ms2()
+    {
+        return $this->belongsToMany(Ms2::class, 'pengiriman_ms2', 'pengiriman_id', 'ms2_id');
     }
 }

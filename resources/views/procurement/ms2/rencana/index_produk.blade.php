@@ -18,11 +18,11 @@
         <div class="col-md-12">
             <div class="card">
                 <div class="card-header">
-                    <h4>{{ __('List MS2') }}</h4>
+                    <h4>{{ __('Stok Saya di Pertamina') }}</h4>
                     @if(Auth::user()->member()->first()->jabatan()->first()->level()->first()->nama_level == 'Penanggung Jawab')
                     <div class="card-header-action">
                         <a href="{{ route('ms2.pengiriman') }}" class="btn btn-primary">
-                            Atur Pengiriman
+                            Ajukan Pengiriman
                         </a>
                     </div>
                     @endif

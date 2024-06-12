@@ -15,6 +15,7 @@ return new class extends Migration
             $table->uuid('produk_id')->primary();
             $table->uuid('spbu_id');
             $table->string('nama_produk', 64);
+            $table->string('singkatan', 4)->nullable();
             $table->boolean('is_aktif');
 
             $table->foreign('spbu_id')->references('spbu_id')->on('spbu')->cascadeOnDelete();

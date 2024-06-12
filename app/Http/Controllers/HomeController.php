@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Dombak;
 use App\Models\JamKerja;
+use App\Models\Losses;
 use App\Models\Member;
 use App\Models\Notifikasi;
 use App\Models\Nozzle;
@@ -30,12 +31,63 @@ class HomeController extends Controller
         date_default_timezone_set('Asia/Jakarta');
     }
 
+    public function ai(Request $request)
+    {
+        $request->validate([
+            'type' => ['required']
+        ]);
+
+        $data = null;
+        if ($request->type == 'how_many_stok_in_dombak') {
+            $data = Produk::select('produk.nama_produk', 'stok_inventory.stok')->where('is_aktif', true)->join('stok_inventory', 'stok_inventory.produk_id', 'produk.produk_id')->get();
+        }
+        if ($request->type == 'how_many_stok_in_pertamina') {
+            $produk = Produk::where('produk.is_aktif', true)->get();
+            $data = [];
+
+            foreach ($produk as $row) {
+                $data[] = ['nama_produk' => $row->nama_produk, 'stok' => $row->detail_rencana_pembelian()->selectRaw('SUM("jumlah") as stok')->join('rencana_pembelian', 'rencana_pembelian.rencana_pembelian_id', 'detail_rencana_pembelian.rencana_pembelian_id')->join('status_purchase', 'status_purchase.status_purchase_id', 'rencana_pembelian.status_purchase_id')->where('status_purchase.nama_status', 'MS2')->where('detail_rencana_pembelian.ms2', false)->where('detail_rencana_pembelian.delivery', false)->first()->stok ?? 0];
+            }
+        }
+        if ($request->type == 'how_many_sales_today') {
+            $shift = JamKerja::get();
+            $produk = Produk::where('is_aktif', true)->get();
+            $data = [];
+            $temp = [];
+
+            foreach ($shift as $s) {
+                $t = 0;
+                foreach ($produk as $p) {
+                    $stand_meter = $s->stand_meter()->selectRaw('SUM("stand_meter_akhir") - SUM("stand_meter_awal") as stand_meter')->join('nozzle', 'stand_meter.nozzle_id', 'nozzle.nozzle_id')->join('produk', 'produk.produk_id', 'nozzle.produk_id')->where('nozzle.produk_id', $p->produk_id)->where('stand_meter.tanggal', Carbon::today()->format('Y-m-d'))->first();
+
+                    $data[] = ['produk' => $p->nama_produk, 'nama_jam_kerja' => $s->nama_jam_kerja, 'penjualan' => number_format($p->harga()->where('is_default', true)->first()->harga_jual * $stand_meter->stand_meter, 2, ',', '.')];
+
+                    $t += $p->harga()->where('is_default', true)->first()->harga_jual * $stand_meter->stand_meter;
+                }
+                $temp[] = ['nama_jam_kerja' => $s->nama_jam_kerja, 'total_penjualan' => number_format($t, 2, ",", '.')];
+            }
+            $data = ['details' => $data, 'summary' => $temp];
+        }
+        if ($request->type == 'how_many_profit_or_loss_today') {
+            $profit = Losses::selectRaw('SUM("jumlah") as jumlah')->where('simbol', 'lebih')->where('tanggal', Carbon::today()->format('Y-m-d'))->first();
+            $loss = Losses::selectRaw('SUM("jumlah") as jumlah')->where('simbol', 'kurang')->where('tanggal', Carbon::today()->format('Y-m-d'))->first();
+
+            $data = ['summary' => number_format($profit->jumlah - $loss->jumlah, 2, ".", ",")];
+        }
+
+        return response()->json([
+            'message' => is_null($data) ? 'No data for type' : 'data successfully',
+            'status' => is_null($data) ? 'failed' : 'success',
+            'data' => $data
+        ], 200);
+    }
+
     /**
      * Show the application dashboard.
      *
      * @return \Illuminate\Contracts\Support\Renderable
      */
-    public function index()
+    public function index(Request $request)
     {
         $data = [
             'member' => Member::count(),
@@ -43,6 +95,15 @@ class HomeController extends Controller
             'pengiriman' => Pengiriman::where('is_done', false)->count(),
             'dombak' => Dombak::where('is_aktif', true)->count()
         ];
+        $waktuMulai = $request->has('waktu_mulai') ? Carbon::createFromFormat('Y-m-d', $request->waktu_mulai) : Carbon::now()->firstOfMonth();
+        $waktuSelesai = $request->has('waktu_selesai') ? Carbon::createFromFormat('Y-m-d', $request->waktu_selesai) : Carbon::now()->endOfMonth();
+        if ($waktuMulai->gt($waktuSelesai)) {
+            $temp = $waktuMulai;
+            $waktuMulai = $waktuSelesai;
+            $waktuSelesai = $temp;
+        }
+        $waktuMulai = $waktuMulai->format('Y-m-d');
+        $waktuSelesai = $waktuSelesai->format('Y-m-d');
 
         if (Auth::user()->member()->first()->jabatan()->first()->level()->first()->nama_level == 'Penanggung Jawab') {
             $allMenu = [
@@ -192,7 +253,7 @@ class HomeController extends Controller
 
         $pembayaran = StatusPurchase::where('nama_status', 'Pembayaran')->first()->rencana_pembelian()->get();
         $delivery = Pengiriman::where('is_confirmation_admin', true)->where('is_done', false)->get();
-        return view('home', compact('data', 'allMenu', 'pembayaran', 'delivery'));
+        return view('home', compact('data', 'allMenu', 'pembayaran', 'delivery', 'waktuMulai', 'waktuSelesai'));
     }
 
     public function chart()

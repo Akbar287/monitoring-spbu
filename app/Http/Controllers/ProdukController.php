@@ -104,6 +104,7 @@ class ProdukController extends Controller
         return [
             'nama_produk' => request('nama_produk'),
             'is_aktif' => request('is_aktif'),
+            'singkatan' => request('singkatan'),
         ];
     }
 

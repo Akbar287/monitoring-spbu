@@ -12,7 +12,8 @@ Auth::routes([
 
 // Route::get('/upload', [App\Http\Controllers\WelcomeController::class, 'uploadTest'])->name('uploadTest');
 // Route::get('/upload', [App\Http\Controllers\DumpController::class, 'uploadDataStokTaking'])->name('uploadDataStokTaking');
-// Route::get('/upload', [App\Http\Controllers\DumpController::class, 'uploadDataStokTaking'])->name('uploadDataStokTaking');
+// Route::get('/upload', [App\Http\Controllers\DumpController::class, 'uploadStokTaking'])->name('uploadStokTaking');
+// Route::get('/temp', [App\Http\Controllers\DumpController::class, 'temp'])->name('temp');
 
 Route::middleware(['auth', 'cache.header'])->group(function ($route) {
     $route->get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
@@ -211,38 +212,41 @@ Route::middleware(['auth', 'cache.header'])->group(function ($route) {
     $route->put('/procurement/pembayaran/{rencana}/{pembayaran}/{file}/', [App\Http\Controllers\PembayaranController::class, 'file_update'])->name('pembayaran.file.update');
     $route->delete('/procurement/pembayaran/{rencana}/{pembayaran}/{file}', [App\Http\Controllers\PembayaranController::class, 'file_destroy'])->name('pembayaran.file.destroy');
 
-    $route->get('/procurement/ms2/pengiriman/{pengiriman}/file_lo_show/{file_lo}/lampiran', [App\Http\Controllers\FileLampiranLoController::class, 'index'])->name('ms2.pengiriman.file_lo_show.lampiran.index');
-    $route->get('/procurement/ms2/pengiriman/{pengiriman}/file_lo_show/{file_lo}/lampiran/create', [App\Http\Controllers\FileLampiranLoController::class, 'create'])->name('ms2.pengiriman.file_lo_show.lampiran.create');
-    $route->post('/procurement/ms2/pengiriman/{pengiriman}/file_lo_show/{file_lo}/lampiran', [App\Http\Controllers\FileLampiranLoController::class, 'store'])->name('ms2.pengiriman.file_lo_show.lampiran.store');
-    $route->get('/procurement/ms2/pengiriman/{pengiriman}/file_lo_show/{file_lo}/lampiran/{fileLampiranLo}/unduh', [App\Http\Controllers\FileLampiranLoController::class, 'unduh'])->name('ms2.pengiriman.file_lo_show.lampiran.unduh');
-    $route->get('/procurement/ms2/pengiriman/{pengiriman}/file_lo_show/{file_lo}/lampiran/{fileLampiranLo}', [App\Http\Controllers\FileLampiranLoController::class, 'show'])->name('ms2.pengiriman.file_lo_show.lampiran.show');
-    $route->get('/procurement/ms2/pengiriman/{pengiriman}/file_lo_show/{file_lo}/lampiran/{fileLampiranLo}/edit', [App\Http\Controllers\FileLampiranLoController::class, 'edit'])->name('ms2.pengiriman.file_lo_show.lampiran.edit');
-    $route->put('/procurement/ms2/pengiriman/{pengiriman}/file_lo_show/{file_lo}/lampiran/{fileLampiranLo}', [App\Http\Controllers\FileLampiranLoController::class, 'update'])->name('ms2.pengiriman.file_lo_show.lampiran.update');
-    $route->delete('/procurement/ms2/pengiriman/{pengiriman}/file_lo_show/{file_lo}/lampiran/{fileLampiranLo}', [App\Http\Controllers\FileLampiranLoController::class, 'destroy'])->name('ms2.pengiriman.file_lo_show.lampiran.destroy');
-
-    $route->get('/procurement/ms2/pengiriman/{pengiriman}/file_lo_create', [App\Http\Controllers\Ms2Controller::class, 'file_lo_create'])->name('ms2.pengiriman.file_lo_create');
-    $route->post('/procurement/ms2/pengiriman/{pengiriman}/file_lo_store', [App\Http\Controllers\Ms2Controller::class, 'file_lo_store'])->name('ms2.pengiriman.file_lo_store');
-    $route->get('/procurement/ms2/pengiriman/{pengiriman}/file_lo_show/{file_lo}', [App\Http\Controllers\Ms2Controller::class, 'file_lo_show'])->name('ms2.pengiriman.file_lo_show');
-    $route->delete('/procurement/ms2/pengiriman/{pengiriman}/file_lo_delete/{file_lo}', [App\Http\Controllers\Ms2Controller::class, 'file_lo_delete'])->name('ms2.pengiriman.file_lo_delete');
-
     $route->get('/procurement/ms2/pengiriman', [App\Http\Controllers\Ms2Controller::class, 'index_pengiriman'])->name('ms2.pengiriman');
     $route->get('/procurement/ms2/pengiriman/tambah', [App\Http\Controllers\Ms2Controller::class, 'create_pengiriman'])->name('ms2.pengiriman.create');
     $route->post('/procurement/ms2/pengiriman/', [App\Http\Controllers\Ms2Controller::class, 'store_pengiriman'])->name('ms2.pengiriman.store');
-    $route->get('/procurement/ms2/pengiriman/{pengiriman}', [App\Http\Controllers\Ms2Controller::class, 'show_pengiriman'])->name('ms2.pengiriman.show');
-    $route->get('/procurement/ms2/pengiriman/{pengiriman}/edit', [App\Http\Controllers\Ms2Controller::class, 'edit_pengiriman'])->name('ms2.pengiriman.edit');
-    $route->put('/procurement/ms2/pengiriman/{pengiriman}', [App\Http\Controllers\Ms2Controller::class, 'update_pengiriman'])->name('ms2.pengiriman.update');
-    $route->delete('/procurement/ms2/pengiriman/{pengiriman}', [App\Http\Controllers\Ms2Controller::class, 'destroy_pengiriman'])->name('ms2.pengiriman.delete');
-    $route->put('/procurement/ms2/pengiriman/{pengiriman}/update-pengiriman', [App\Http\Controllers\Ms2Controller::class, 'update_pengiriman_to_delivery'])->name('ms2.pengiriman.update_pengiriman_to_delivery');
-
+    $route->get('/procurement/ms2/pengiriman/{ms2}', [App\Http\Controllers\Ms2Controller::class, 'show_pengiriman'])->name('ms2.pengiriman.show');
+    $route->delete('/procurement/ms2/pengiriman/{ms2}', [App\Http\Controllers\Ms2Controller::class, 'destroy_pengiriman'])->name('ms2.pengiriman.delete');
+    $route->get('/procurement/ms2/pengiriman/{ms2}/konfirm', [App\Http\Controllers\Ms2Controller::class, 'konfirm_pengiriman'])->name('ms2.pengiriman.konfirm_pengiriman');
+    $route->put('/procurement/ms2/pengiriman/{ms2}/update-pengiriman', [App\Http\Controllers\Ms2Controller::class, 'update_pengiriman_to_delivery'])->name('ms2.pengiriman.update_pengiriman_to_delivery');
     $route->get('/procurement/ms2', [App\Http\Controllers\Ms2Controller::class, 'index_produk'])->name('ms2.produk.index');
     $route->get('/procurement/ms2/{produk}', [App\Http\Controllers\Ms2Controller::class, 'show_produk'])->name('ms2.produk.show');
     $route->get('/procurement/ms2/{produk}/{detail}', [App\Http\Controllers\Ms2Controller::class, 'show_detail'])->name('ms2.detail.show');
 
-    $route->get('/procurement/delivery/{pengiriman}/{file_lo}', [App\Http\Controllers\PengirimanController::class, 'show_file_lo'])->name('pengiriman.file_lo.show');
+    $route->get('/procurement/delivery/{pengiriman}/file_lo_show/{file_lo}/lampiran', [App\Http\Controllers\FileLampiranLoController::class, 'index'])->name('pengiriman.file_lo_show.lampiran.index');
+    $route->get('/procurement/delivery/{pengiriman}/file_lo_show/{file_lo}/lampiran/create', [App\Http\Controllers\FileLampiranLoController::class, 'create'])->name('pengiriman.file_lo_show.lampiran.create');
+    $route->post('/procurement/delivery/{pengiriman}/file_lo_show/{file_lo}/lampiran', [App\Http\Controllers\FileLampiranLoController::class, 'store'])->name('pengiriman.file_lo_show.lampiran.store');
+    $route->get('/procurement/delivery/{pengiriman}/file_lo_show/{file_lo}/lampiran/{fileLampiranLo}/unduh', [App\Http\Controllers\FileLampiranLoController::class, 'unduh'])->name('pengiriman.file_lo_show.lampiran.unduh');
+    $route->get('/procurement/delivery/{pengiriman}/file_lo_show/{file_lo}/lampiran/{fileLampiranLo}', [App\Http\Controllers\FileLampiranLoController::class, 'show'])->name('pengiriman.file_lo_show.lampiran.show');
+    $route->get('/procurement/delivery/{pengiriman}/file_lo_show/{file_lo}/lampiran/{fileLampiranLo}/edit', [App\Http\Controllers\FileLampiranLoController::class, 'edit'])->name('pengiriman.file_lo_show.lampiran.edit');
+    $route->put('/procurement/delivery/{pengiriman}/file_lo_show/{file_lo}/lampiran/{fileLampiranLo}', [App\Http\Controllers\FileLampiranLoController::class, 'update'])->name('pengiriman.file_lo_show.lampiran.update');
+    $route->delete('/procurement/delivery/{pengiriman}/file_lo_show/{file_lo}/lampiran/{fileLampiranLo}', [App\Http\Controllers\FileLampiranLoController::class, 'destroy'])->name('pengiriman.file_lo_show.lampiran.destroy');
+
+    $route->get('/procurement/delivery/{pengiriman}/file_lo_create', [App\Http\Controllers\PengirimanController::class, 'file_lo_create'])->name('pengiriman.file_lo_create');
+    $route->post('/procurement/delivery/{pengiriman}/file_lo_store', [App\Http\Controllers\PengirimanController::class, 'file_lo_store'])->name('pengiriman.file_lo_store');
+    $route->get('/procurement/delivery/{pengiriman}/file_lo_show/{file_lo}', [App\Http\Controllers\PengirimanController::class, 'show_file_lo'])->name('pengiriman.file_lo.show');
+    $route->delete('/procurement/delivery/{pengiriman}/file_lo_show/{file_lo}', [App\Http\Controllers\PengirimanController::class, 'delete_file_lo'])->name('pengiriman.file_lo.delete');
+
+    $route->get('/procurement/delivery/{pengiriman}/catatan', [App\Http\Controllers\PengirimanController::class, 'ubah_catatan'])->name('pengiriman.ubah_catatan');
+    $route->put('/procurement/delivery/{pengiriman}/catatan', [App\Http\Controllers\PengirimanController::class, 'update_catatan'])->name('pengiriman.update_catatan');
 
     $route->get('/procurement/delivery', [App\Http\Controllers\PengirimanController::class, 'index'])->name('pengiriman.index');
     $route->get('/procurement/delivery/{pengiriman}', [App\Http\Controllers\PengirimanController::class, 'show'])->name('pengiriman.show');
     $route->put('/procurement/delivery/{pengiriman}/done', [App\Http\Controllers\PengirimanController::class, 'done'])->name('pengiriman.done');
+    $route->put('/procurement/delivery/{pengiriman}/admin/top', [App\Http\Controllers\PengirimanController::class, 'admin_top'])->name('pengiriman.admin_top');
+    $route->put('/procurement/delivery/{pengiriman}/admin/down', [App\Http\Controllers\PengirimanController::class, 'admin_down'])->name('pengiriman.admin_down');
+    $route->put('/procurement/delivery/{pengiriman}/top/top', [App\Http\Controllers\PengirimanController::class, 'top_top'])->name('pengiriman.top_top');
+    $route->put('/procurement/delivery/{pengiriman}/top/down', [App\Http\Controllers\PengirimanController::class, 'top_down'])->name('pengiriman.top_down');
     $route->delete('/procurement/delivery/{pengiriman}', [App\Http\Controllers\PengirimanController::class, 'destroy'])->name('pengiriman.destroy');
 
     // Manajemen Persediaan
@@ -309,7 +313,6 @@ Route::middleware(['auth', 'cache.header'])->group(function ($route) {
     $route->get('/stok/stok-transfer/{dombakTransfer}/stok/{dokumenStok}/file/{fileDokumenStok}/edit', [App\Http\Controllers\FileStokTransferController::class, 'edit'])->name('stok-transfer.file.edit');
     $route->put('/stok/stok-transfer/{dombakTransfer}/stok/{dokumenStok}/file/{fileDokumenStok}', [App\Http\Controllers\FileStokTransferController::class, 'update'])->name('stok-transfer.file.update');
     $route->delete('/stok/stok-transfer/{dombakTransfer}/stok/{dokumenStok}/file/{fileDokumenStok}', [App\Http\Controllers\FileStokTransferController::class, 'destroy'])->name('stok-transfer.file.delete');
-
 
     $route->get('/stok/stok-taking/riwayat', [App\Http\Controllers\StokTakingController::class, 'riwayat'])->name('stok-taking.riwayat');
     $route->get('/stok/stok-taking/riwayat/{stok}', [App\Http\Controllers\StokTakingController::class, 'riwayat_show'])->name('stok-taking.riwayat.show');

@@ -71,6 +71,16 @@
                     <div class="row">
                         <div class="col-md-12">
                             <div class="row mb-3 justify-content-center">
+                                <label for="detail_rencana_pembelian_id" class="col-md-4 col-form-label text-md-end">{{ __('Id Detail Rencana Pembelian')
+                                    }}</label>
+
+                                <div class="col-md-6">
+                                    <input id="detail_rencana_pembelian_id" type="text" readonly
+                                        class="form-control" name="detail_rencana_pembelian_id"
+                                        value="{{ $penerimaan->file_lo()->first()->detail_rencana_pembelian()->first()->detail_rencana_pembelian_id }}" />
+                                </div>
+                            </div>
+                            <div class="row mb-3 justify-content-center">
                                 <label for="produk_id" class="col-md-4 col-form-label text-md-end">{{ __('Produk')
                                     }}</label>
 

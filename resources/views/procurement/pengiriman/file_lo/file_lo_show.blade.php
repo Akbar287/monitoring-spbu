@@ -6,16 +6,15 @@
     <div class="section-header-breadcrumb">
         <div class="breadcrumb-item"><a href="{{ route('home') }}">Dashboard</a></div>
         <div class="breadcrumb-item"><a href="{{ route('menu.procurement') }}">Procurement</a></div>
-        <div class="breadcrumb-item"><a href="{{ route('ms2.produk.index') }}">MS2</a></div>
-        <div class="breadcrumb-item"><a href="{{ route('ms2.pengiriman') }}">PengirimanMS2</a></div>
-        <div class="breadcrumb-item"><a href="{{ route('ms2.pengiriman.show', $pengiriman->pengiriman_id) }}">Detail Pengiriman</a></div>
-        <div class="breadcrumb-item">Detail</div>
+        <div class="breadcrumb-item"><a href="{{ route('pengiriman.index') }}">Pengiriman</a></div>
+        <div class="breadcrumb-item"><a href="{{ route('pengiriman.show', $pengiriman->pengiriman_id) }}">Detail Pengiriman</a></div>
+        <div class="breadcrumb-item">Detail File LO</div>
     </div>
 </div>
 <div class="section-body">
     <h2 class="section-title">Detail File LO</h2>
     <p class="section-lead">
-         data File LO anda.
+        data File LO anda.
     </p>
     <div class="row justify-content-center">
         <div class="col-md-12">
