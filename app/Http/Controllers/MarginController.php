@@ -2,10 +2,17 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\StokDombakExport;
+use App\Exports\TotalisatorExport;
+use App\Exports\TotalPenjualanExport;
+use App\Models\DokumenStok;
+use App\Models\JamKerja;
 use App\Models\Produk;
 use App\Models\Spbu;
+use App\Models\StandMeter;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Maatwebsite\Excel\Facades\Excel;
 
 class MarginController extends Controller
 {
@@ -23,28 +30,342 @@ class MarginController extends Controller
         $monthSelected = $request->month ?? date('Y-m');
         $typeReportSelected = $request->type_report_id ?? '1';
 
-        if (!is_null($request->type_report_id)) {
-            $this->generatePdf();
-        }
         $waktuMulai = Carbon::createFromFormat('Y-m', $monthSelected)->firstOfMonth();
         $waktuSelesai = Carbon::createFromFormat('Y-m', $monthSelected)->endOfMonth();
+        if (!is_null($request->type_report_id)) {
+            if ($request->type_report_id == '1') {
+                return $this->totalisator($waktuMulai, $waktuSelesai);
+            }
+
+            if ($request->type_report_id == '2') {
+                return $this->total_penjualan($waktuMulai, $waktuSelesai);
+            }
+            if ($request->type_report_id == '3') {
+                return $this->setoran_penerimaan($waktuMulai, $waktuSelesai);
+            }
+
+            if ($request->type_report_id == '4') {
+                return $this->bongkaran($waktuMulai, $waktuSelesai);
+            }
+            if ($request->type_report_id == '5') {
+                return $this->stok_dombak($waktuMulai, $waktuSelesai);
+            }
+        }
         return view('financial/margin/index', compact('spbu', 'spbuSelected', 'monthSelected', 'produk', 'produkSelected', 'typeReport', 'typeReportSelected'));
     }
 
-    public function totalisator()
+    public function totalisator($mulai, $selesai)
+    {
+        $data = StandMeter::select('stand_meter.tanggal', 'jam_kerja.nama_jam_kerja', 'nozzle.nama_nozzle', 'produk.nama_produk', 'stand_meter.stand_meter_awal', 'stand_meter.stand_meter_akhir', 'harga.harga_jual')->join('nozzle', 'nozzle.nozzle_id', 'stand_meter.nozzle_id')->join('jam_kerja', 'jam_kerja.jam_kerja_id', 'stand_meter.jam_kerja_id')->join('produk', 'produk.produk_id', 'nozzle.produk_id')->join('harga', 'harga.produk_id', 'produk.produk_id')->where('harga.is_default', true)->where('stand_meter.is_confirmation', true)->whereBetween('stand_meter.tanggal', [$mulai, $selesai])->orderBy('stand_meter.tanggal', 'asc')->orderBy('stand_meter.urutan', 'asc')->orderBy('nozzle.nama_nozzle', 'asc')->get()->toArray();
+
+        $temp = [];
+        $tgl = null;
+        $shift = null;
+        $total = 0;
+        foreach ($data as $d) {
+            $tgl = is_null($tgl) ? $d['tanggal'] : $tgl;
+            $shift = is_null($shift) ? $d["nama_jam_kerja"] : $shift;
+
+            if ($tgl == $d['tanggal']) {
+
+                if ($shift == $d["nama_jam_kerja"]) {
+                    $total += (floatval($d["stand_meter_akhir"]) - floatval($d["stand_meter_awal"])) * floatval($d["harga_jual"]);
+
+                    $temp[] = [
+                        'tanggal' => $d['tanggal'],
+                        "Shift" => $d["nama_jam_kerja"],
+                        "nama_nozzle" => $d["nama_nozzle"],
+                        "nama_produk" => $d["nama_produk"],
+                        "stand_meter_awal" => floatval($d["stand_meter_awal"]),
+                        "stand_meter_akhir" => floatval($d["stand_meter_akhir"]),
+                        "harga_jual" => 'Rp. ' . number_format(floatval($d["harga_jual"]), 2, ",", "."),
+                        "total_penjualan" => 'Rp. ' . number_format((floatval($d["stand_meter_akhir"]) - floatval($d["stand_meter_awal"])) * floatval($d["harga_jual"]), 2, ",", "."),
+                    ];
+                } else {
+                    $temp[] = [
+                        'tanggal' => '',
+                        "Shift" => '',
+                        "nama_nozzle" => '',
+                        "nama_produk" => '',
+                        "stand_meter_awal" => '',
+                        "stand_meter_akhir" => '',
+                        "harga_jual" => 'Total Penjualan',
+                        "total_penjualan" => 'Rp. ' . number_format($total, 2, ",", "."),
+                    ];
+                    $total = 0;
+                    $shift = $d["nama_jam_kerja"];
+                }
+            } else {
+                $temp[] = [
+                    'tanggal' => '',
+                    "Shift" => '',
+                    "nama_nozzle" => '',
+                    "nama_produk" => '',
+                    "stand_meter_awal" => '',
+                    "stand_meter_akhir" => '',
+                    "harga_jual" => 'Total Penjualan',
+                    "total_penjualan" => 'Rp. ' . number_format($total, 2, ",", "."),
+                ];
+                $total = 0;
+                $tgl = $d['tanggal'];
+                $shift = $d["nama_jam_kerja"];
+            }
+        }
+        unset($tgl);
+        unset($shift);
+        unset($total);
+        unset($data);
+
+        $header = [
+            "Tanggal", "Shift", "Nama Nozzle", "Produk", "Stand Meter Awal", "Stand Meter Akhir", "Harga Jual", "Total Penjualan"
+        ];
+
+        array_unshift($temp, $header);
+
+        $final_to_download = Excel::download(new TotalisatorExport($temp), 'Totalisator.xls', \Maatwebsite\Excel\Excel::XLS);
+
+        return $final_to_download;
+    }
+    public function total_penjualan($mulai, $selesai)
+    {
+        $produk = Produk::orderBy('nama_produk', 'asc')->where('is_aktif', true)->get();
+
+        $temp = [];
+        foreach ($produk as $p) {
+            $r = $p->nozzle()->join('stand_meter', 'stand_meter.nozzle_id', 'nozzle.nozzle_id')->selectRaw('SUM("stand_meter_akhir") as stand_meter_akhir')->selectRaw('SUM("stand_meter_awal") as stand_meter_awal')->selectRaw('stand_meter.tanggal')->orderBy('stand_meter.tanggal')->where('stand_meter.is_confirmation', true)->whereBetween('stand_meter.tanggal', [$mulai, $selesai])->groupBy('stand_meter.tanggal')->get()->toArray();
+
+            $tempre = [];
+            $totalPenjualan = 0;
+            $jumlahPenjualan = 0;
+
+            $tempre[] = [
+                'tanggal' => $p->nama_produk,
+                'penjualan' => '',
+                'harga_jual' => '',
+                'total_penjualan' => ''
+            ];
+
+            $tempre[] = [
+                'tanggal' => 'Tanggal',
+                'penjualan' => 'Total Penjualan',
+                'harga_jual' => 'Harga Satuan',
+                'total_penjualan' => 'Jumlah'
+            ];
+
+            foreach ($r as $e) {
+                $tempre[] = [
+                    'tanggal' => $e['tanggal'],
+                    'penjualan' => $e['stand_meter_akhir'] - $e['stand_meter_awal'],
+                    'harga_jual' => number_format($p->harga()->where('harga.is_default', true)->first()->harga_jual, 2, ",", "."),
+                    'total_penjualan' => '\'' . number_format((floatval($e['stand_meter_akhir']) - floatval($e['stand_meter_awal'])) * $p->harga()->where('harga.is_default', true)->first()->harga_jual, 2, ",", ".")
+                ];
+                $totalPenjualan += $e['stand_meter_akhir'] - $e['stand_meter_awal'];
+                $jumlahPenjualan += ((floatval($e['stand_meter_akhir']) - floatval($e['stand_meter_awal'])) * $p->harga()->where('harga.is_default', true)->first()->harga_jual);
+            }
+            $tempre[] = [
+                'tanggal' => '',
+                'penjualan' => '\'' . number_format($totalPenjualan, 2, ",", "."),
+                'harga_jual' => '',
+                'total_penjualan' => '\'' . number_format($jumlahPenjualan, 2, ",", ".")
+            ];
+            $temp[] = $tempre;
+        }
+
+        unset($produk);
+        unset($tempre);
+        unset($r);
+        unset($totalPenjualan);
+        unset($jumlahPenjualan);
+
+        $final_to_download = Excel::download(new TotalPenjualanExport($temp), 'Total_penjualan.xls', \Maatwebsite\Excel\Excel::XLS);
+        // Storage::delete('temp/' . $name);
+        return $final_to_download;
+    }
+    public function setoran_penerimaan($mulai, $selesai)
     {
     }
-    public function total_penjualan()
+    function getHargaRealByDate($produkId, $date)
     {
     }
-    public function setoran_penerimaan()
+    public function bongkaran($mulai, $selesai)
     {
     }
-    public function bongkaran()
+    public function stok_dombak(Carbon $mulai, Carbon $selesai)
     {
-    }
-    public function stok_dombak()
-    {
+        $produk = Produk::orderBy('nama_produk', 'asc')->where('is_aktif', true)->get();
+
+        $temp = [];
+
+
+        // dump
+        foreach ($produk as $p) {
+            $temp[] = DokumenStok::select('dokumen_stok.dokumen_stok_id', 'dokumen_stok.tanggal', 'dokumen_stok.stok_awal', 'dokumen_stok.stok_akhir', 'losses.simbol', 'losses.jumlah', 'jam_kerja.nama_jam_kerja', 'jam_kerja.jam_datang_in', 'jam_kerja.jam_pulang_out', 'jam_kerja.urutan', 'type_dokumen_stok.type_movement', 'stand_meter.stand_meter_awal', 'stand_meter.stand_meter_akhir')
+                ->join('stok_inventory', 'dokumen_stok.stok_inventory_id', 'stok_inventory.stok_inventory_id')
+                ->leftJoin('losses', 'losses.dokumen_stok_id', 'dokumen_stok.dokumen_stok_id')
+                ->join('jam_kerja', 'jam_kerja.jam_kerja_id', 'dokumen_stok.jam_kerja_id')
+                ->join('type_dokumen_stok', 'type_dokumen_stok.type_dokumen_stok_id', 'dokumen_stok.type_dokumen_stok_id')
+                ->leftJoin('stand_meter_dokumen_stok', 'stand_meter_dokumen_stok.dokumen_stok_id', 'dokumen_stok.dokumen_stok_id')
+                ->leftJoin('stand_meter', 'stand_meter_dokumen_stok.stand_meter_id', 'stand_meter.stand_meter_id')
+                ->whereBetween('dokumen_stok.tanggal', [$mulai, $selesai])
+                ->where('dokumen_stok.is_confirmation', true)
+                ->where('stok_inventory.produk_id', $p->produk_id)
+                ->orderBy('dokumen_stok.tanggal', 'asc')
+                ->orderBy('jam_kerja.urutan', 'asc')
+                ->get()->toArray();
+        }
+        dd($temp);
+        // end Dump
+
+        foreach ($produk as $p) {
+            $r = DokumenStok::select('dokumen_stok.dokumen_stok_id', 'dokumen_stok.tanggal', 'dokumen_stok.stok_awal', 'dokumen_stok.stok_akhir', 'losses.simbol', 'losses.jumlah', 'jam_kerja.nama_jam_kerja', 'jam_kerja.jam_datang_in', 'jam_kerja.jam_pulang_out', 'jam_kerja.urutan', 'type_dokumen_stok.type_movement', 'stand_meter.stand_meter_awal', 'stand_meter.stand_meter_akhir')
+                ->join('stok_inventory', 'dokumen_stok.stok_inventory_id', 'stok_inventory.stok_inventory_id')
+                ->leftJoin('losses', 'losses.dokumen_stok_id', 'dokumen_stok.dokumen_stok_id')
+                ->join('jam_kerja', 'jam_kerja.jam_kerja_id', 'dokumen_stok.jam_kerja_id')
+                ->join('type_dokumen_stok', 'type_dokumen_stok.type_dokumen_stok_id', 'dokumen_stok.type_dokumen_stok_id')
+                ->leftJoin('stand_meter_dokumen_stok', 'stand_meter_dokumen_stok.dokumen_stok_id', 'dokumen_stok.dokumen_stok_id')
+                ->leftJoin('stand_meter', 'stand_meter_dokumen_stok.stand_meter_id', 'stand_meter.stand_meter_id')
+                ->whereBetween('dokumen_stok.tanggal', [$mulai, $selesai])
+                ->where('dokumen_stok.is_confirmation', true)
+                ->where('stok_inventory.produk_id', $p->produk_id)
+                ->orderBy('dokumen_stok.tanggal', 'asc')
+                ->orderBy('jam_kerja.urutan', 'asc')
+                ->get()->toArray();
+
+
+            $tgl = null;
+            $shift = null;
+            $data = [
+                'Tanggal' => null,
+                'Shift' => null,
+                'Jam' => null,
+                'Stok Awal' => null,
+                'Penerimaan BBM Aktual' => null,
+                'Penjualan' => null,
+                'Stok Akhir Teoritis' => null,
+                'Stok Akhir Dipping' => null,
+                'Total Losses' => null
+            ];
+            $temp[] = [
+                $p->nama_produk,
+                '',
+                '',
+                '',
+                '',
+                '',
+                '',
+                '',
+                '',
+            ];
+            $temp[] = [
+                'Tanggal',
+                'Shift',
+                'Jam',
+                'Stok Awal',
+                'Penerimaan BBM Aktual',
+                'Penjualan',
+                'Stok Akhir Teoritis',
+                'Stok Akhir Dipping',
+                'Total Losses',
+            ];
+            foreach ($r as $e) {
+                $tgl = is_null($tgl) ? $e['tanggal'] : $tgl;
+                $shift = is_null($shift) ? $e['nama_jam_kerja'] : $shift;
+                $lastStok = null;
+
+                if ($tgl == $e['tanggal']) {
+                    if ($shift == $e['nama_jam_kerja']) {
+                        if ($e['type_movement'] == 'Stok Taking Good Receive Penerimaan') {
+                            $data = [
+                                'Tanggal' => is_null($data['Tanggal']) ? $tgl : $data['Tanggal'],
+                                'Shift' => is_null($data['Shift']) ? $shift : $data['Shift'],
+                                'Jam' => is_null($data['Jam']) ? $e['jam_datang_in'] . '-' . $e['jam_pulang_out'] : $data['Jam'],
+                                'Stok Awal' => $data['Stok Awal'] > $e['stok_awal'] ? $data['Stok Awal'] : $e['stok_awal'],
+                                'Penerimaan BBM Aktual' => $data['Penerimaan BBM Aktual'],
+                                'Penjualan' => $data['Penjualan'],
+                                'Stok Akhir Teoritis' => $data['Stok Akhir Teoritis'],
+                                'Stok Akhir Dipping' => $data['Stok Akhir Dipping'],
+                                'Total Losses' => $data['Total Losses']
+                            ];
+                        }
+                        if ($e['type_movement'] == 'Good Receive Penerimaan') {
+                            $data = [
+                                'Tanggal' => is_null($data['Tanggal']) ? $tgl : $data['Tanggal'],
+                                'Shift' => is_null($data['Shift']) ? $shift : $data['Shift'],
+                                'Jam' => is_null($data['Jam']) ? $e['jam_datang_in'] . '-' . $e['jam_pulang_out'] : $data['Jam'],
+                                'Stok Awal' => $data['Stok Awal'],
+                                'Penerimaan BBM Aktual' => is_null($data['Penerimaan BBM Aktual']) ? (($e['simbol'] == 'lebih')  ? (($e['stok_akhir'] - $e['stok_awal']) - $e['jumlah']) : (($e['stok_akhir'] - $e['stok_awal']) + $e['jumlah'])) : (($e['simbol'] == 'lebih')  ? (($e['stok_akhir'] - $e['stok_awal']) - $e['jumlah'])  + $data['Penerimaan BBM Aktual'] : (($e['stok_akhir'] - $e['stok_awal']) + $e['jumlah']) + $data['Penerimaan BBM Aktual']),
+                                'Penjualan' => $data['Penjualan'],
+                                'Stok Akhir Teoritis' => $data['Stok Akhir Teoritis'],
+                                'Stok Akhir Dipping' => $data['Stok Akhir Dipping'],
+                                'Total Losses' => $data['Total Losses']
+                            ];
+                        }
+                        if ($e['type_movement'] == 'Good Issue Sales') {
+                            $data = [
+                                'Tanggal' => is_null($data['Tanggal']) ? $tgl : $data['Tanggal'],
+                                'Shift' => is_null($data['Shift']) ? $shift : $data['Shift'],
+                                'Jam' => is_null($data['Jam']) ? $e['jam_datang_in'] . '-' . $e['jam_pulang_out'] : $data['Jam'],
+                                'Stok Awal' => $data['Stok Awal'],
+                                'Penerimaan BBM Aktual' => $data['Penerimaan BBM Aktual'],
+                                'Penjualan' => is_null($data['Penjualan']) ? ($e['stand_meter_akhir'] - $e['stand_meter_awal']) : ($e['stand_meter_akhir'] - $e['stand_meter_awal']) + $data['Penjualan'] ?? 0,
+                                'Stok Akhir Teoritis' => $data['Stok Akhir Teoritis'],
+                                'Stok Akhir Dipping' => $data['Stok Akhir Dipping'],
+                                'Total Losses' => $data['Total Losses']
+                            ];
+                        }
+                        if ($e['type_movement'] == 'Stok Taking') {
+                            $data = [
+                                'Tanggal' => is_null($data['Tanggal']) ? $tgl : $data['Tanggal'],
+                                'Shift' => is_null($data['Shift']) ? $shift : $data['Shift'],
+                                'Jam' => is_null($data['Jam']) ? $e['jam_datang_in'] . '-' . $e['jam_pulang_out'] : $data['Jam'],
+                                'Stok Awal' => $lastStok,
+                                'Penerimaan BBM Aktual' => $data['Penerimaan BBM Aktual'],
+                                'Penjualan' => $data['Penjualan'],
+                                'Stok Akhir Teoritis' => $e['stok_awal'],
+                                'Stok Akhir Dipping' => $e['stok_akhir'],
+                                'Total Losses' => $data['Total Losses']
+                            ];
+                            $lastStok = $e['stok_akhir'];
+                        }
+                    } else {
+                        $temp[] = $data;
+                        $shift = $e['nama_jam_kerja'];
+                        $data = [
+                            'Tanggal' => null,
+                            'Shift' => null,
+                            'Jam' => null,
+                            'Stok Awal' => $lastStok,
+                            'Penerimaan BBM Aktual' => null,
+                            'Penjualan' => null,
+                            'Stok Akhir Teoritis' => null,
+                            'Stok Akhir Dipping' => null,
+                            'Total Losses' => null
+                        ];
+                    }
+                } else {
+                    $temp[] = $data;
+                    $tgl = $e['tanggal'];
+                    $shift = $e['nama_jam_kerja'];
+                    $data = [
+                        'Tanggal' => null,
+                        'Shift' => null,
+                        'Jam' => null,
+                        'Stok Awal' => $lastStok,
+                        'Penerimaan BBM Aktual' => null,
+                        'Penjualan' => null,
+                        'Stok Akhir Teoritis' => null,
+                        'Stok Akhir Dipping' => null,
+                        'Total Losses' => null
+                    ];
+                }
+            }
+        }
+        return response()->json($temp, 200);
+        exit;
+
+        $final_to_download = Excel::download(new StokDombakExport($temp), 'stok_dombak.xls', \Maatwebsite\Excel\Excel::XLS);
+        // Storage::delete('temp/' . $name);
+        return $final_to_download;
     }
     public function generatePdf()
     {

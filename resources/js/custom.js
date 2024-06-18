@@ -426,6 +426,12 @@ $(function () {
             if (e.target.value == '0') {
                 $('.value_ai').children().remove();
                 $('.value_ai').addClass('d-none')
+            } else if(e.target.value == 'download_margin') {
+                $('.value_ai').removeClass('d-none');
+                $('.value_ai').children().remove();
+                $('.value_ai').append('<div class="ai text-justify"></div>');
+
+                new Typed('.ai', {strings: ['Tentu saja, anda dapat klik link <a href="'+location.origin+'/financial/margin">disini</a> dan pilih jenis laporan yang diinginkan, bulan, dan produk. semoga informasi ini membantu. 😄'], typeSpeed: 10})
             } else {
                 $.ajax({
                     url: document.location.origin + '/api/home',
@@ -490,7 +496,7 @@ $(function () {
                             } else if (data.data.summary < 0) {
                                 new Typed('.ai', {strings: ['Akumulasi profit atau kerugian 💸 untuk hari ini dihitung berdasarkan Stok Taking dan Penerimaan BBM 📈. Dari Profit or Loss produk-produk minyak tersebut, sistem mencatatkan kerugian sebesar <b>'+ data.data.summary +'</b> liter.'], typeSpeed: 10})
                             } else {
-                                new Typed('.ai', {strings: ['Akumulasi profit atau kerugian 💸 untuk hari ini dihitung berdasarkan Stok Taking dan Penerimaan BBM 📈. Saat ini belum ada kerugian atapun keuntungan dari akumulasi losses.'], typeSpeed: 10})
+                                new Typed('.ai', {strings: ['Akumulasi profit atau kerugian 💸 untuk hari ini dihitung berdasarkan Stok Taking dan Penerimaan BBM 📈. Saat ini belum ada kerugian ataupun keuntungan dari akumulasi losses.'], typeSpeed: 10})
                             }
                         }
                     },

@@ -754,6 +754,14 @@ $(function () {
       if (e.target.value == '0') {
         $('.value_ai').children().remove();
         $('.value_ai').addClass('d-none');
+      } else if (e.target.value == 'download_margin') {
+        $('.value_ai').removeClass('d-none');
+        $('.value_ai').children().remove();
+        $('.value_ai').append('<div class="ai text-justify"></div>');
+        new typed_js__WEBPACK_IMPORTED_MODULE_2__["default"]('.ai', {
+          strings: ['Tentu saja, anda dapat klik link <a href="' + location.origin + '/financial/margin">disini</a> dan pilih jenis laporan yang diinginkan, bulan, dan produk. semoga informasi ini membantu. 😄'],
+          typeSpeed: 10
+        });
       } else {
         $.ajax({
           url: document.location.origin + '/api/home',
@@ -840,7 +848,7 @@ $(function () {
                 });
               } else {
                 new typed_js__WEBPACK_IMPORTED_MODULE_2__["default"]('.ai', {
-                  strings: ['Akumulasi profit atau kerugian 💸 untuk hari ini dihitung berdasarkan Stok Taking dan Penerimaan BBM 📈. Saat ini belum ada kerugian atapun keuntungan dari akumulasi losses.'],
+                  strings: ['Akumulasi profit atau kerugian 💸 untuk hari ini dihitung berdasarkan Stok Taking dan Penerimaan BBM 📈. Saat ini belum ada kerugian ataupun keuntungan dari akumulasi losses.'],
                   typeSpeed: 10
                 });
               }

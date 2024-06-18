@@ -79,6 +79,7 @@
                                 <option value="how_many_stok_in_pertamina">Berapa Stok Saya di Pertamina Hari Ini</option>
                                 <option value="how_many_sales_today">Berapa Banyak Penjualan Minyak Hari Ini</option>
                                 <option value="how_many_profit_or_loss_today">Berapa Akumulasi Profit / Loss Hari Ini</option>
+                                <option value="download_margin">Saya Ingin Mengunduh Laporan Margin Bulanan</option>
                             </select>
                         </div>
                     </div>
