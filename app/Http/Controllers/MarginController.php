@@ -193,28 +193,7 @@ class MarginController extends Controller
     public function stok_dombak(Carbon $mulai, Carbon $selesai)
     {
         $produk = Produk::orderBy('nama_produk', 'asc')->where('is_aktif', true)->get();
-
         $temp = [];
-
-
-        // dump
-        foreach ($produk as $p) {
-            $temp[] = DokumenStok::select('dokumen_stok.dokumen_stok_id', 'dokumen_stok.tanggal', 'dokumen_stok.stok_awal', 'dokumen_stok.stok_akhir', 'losses.simbol', 'losses.jumlah', 'jam_kerja.nama_jam_kerja', 'jam_kerja.jam_datang_in', 'jam_kerja.jam_pulang_out', 'jam_kerja.urutan', 'type_dokumen_stok.type_movement', 'stand_meter.stand_meter_awal', 'stand_meter.stand_meter_akhir')
-                ->join('stok_inventory', 'dokumen_stok.stok_inventory_id', 'stok_inventory.stok_inventory_id')
-                ->leftJoin('losses', 'losses.dokumen_stok_id', 'dokumen_stok.dokumen_stok_id')
-                ->join('jam_kerja', 'jam_kerja.jam_kerja_id', 'dokumen_stok.jam_kerja_id')
-                ->join('type_dokumen_stok', 'type_dokumen_stok.type_dokumen_stok_id', 'dokumen_stok.type_dokumen_stok_id')
-                ->leftJoin('stand_meter_dokumen_stok', 'stand_meter_dokumen_stok.dokumen_stok_id', 'dokumen_stok.dokumen_stok_id')
-                ->leftJoin('stand_meter', 'stand_meter_dokumen_stok.stand_meter_id', 'stand_meter.stand_meter_id')
-                ->whereBetween('dokumen_stok.tanggal', [$mulai, $selesai])
-                ->where('dokumen_stok.is_confirmation', true)
-                ->where('stok_inventory.produk_id', $p->produk_id)
-                ->orderBy('dokumen_stok.tanggal', 'asc')
-                ->orderBy('jam_kerja.urutan', 'asc')
-                ->get()->toArray();
-        }
-        dd($temp);
-        // end Dump
 
         foreach ($produk as $p) {
             $r = DokumenStok::select('dokumen_stok.dokumen_stok_id', 'dokumen_stok.tanggal', 'dokumen_stok.stok_awal', 'dokumen_stok.stok_akhir', 'losses.simbol', 'losses.jumlah', 'jam_kerja.nama_jam_kerja', 'jam_kerja.jam_datang_in', 'jam_kerja.jam_pulang_out', 'jam_kerja.urutan', 'type_dokumen_stok.type_movement', 'stand_meter.stand_meter_awal', 'stand_meter.stand_meter_akhir')
@@ -231,6 +210,59 @@ class MarginController extends Controller
                 ->orderBy('jam_kerja.urutan', 'asc')
                 ->get()->toArray();
 
+            $tgl = null;
+            $shift = null;
+            $newArr = [];
+            foreach ($r as $q) {
+                $tgl = is_null($tgl) ? $q['tanggal'] : $tgl;
+                $shift = is_null($shift) ? $q['nama_jam_kerja'] : $shift;
+
+
+                if ($tgl != $q['tanggal']) {
+                    $tgl = $q['tanggal'];
+                    $shift = $q['nama_jam_kerja'];
+                    $newArr[] = [
+                        "dokumen_stok_id" => null,
+                        "tanggal" => $tgl,
+                        "stok_awal" => null,
+                        "stok_akhir" => null,
+                        "simbol" => null,
+                        "jumlah" => null,
+                        "nama_jam_kerja" => $shift,
+                        "jam_datang_in" => null,
+                        "jam_pulang_out" => null,
+                        "urutan" => null,
+                        "type_movement" => null,
+                        "stand_meter_awal" => null,
+                        "stand_meter_akhir" => null
+                    ];
+                    $newArr[] = $q;
+                } else {
+                    if ($shift != $q['nama_jam_kerja']) {
+                        $shift = $q['nama_jam_kerja'];
+                        $newArr[] = [
+                            "dokumen_stok_id" => null,
+                            "tanggal" => $tgl,
+                            "stok_awal" => null,
+                            "stok_akhir" => null,
+                            "simbol" => null,
+                            "jumlah" => null,
+                            "nama_jam_kerja" => $shift,
+                            "jam_datang_in" => null,
+                            "jam_pulang_out" => null,
+                            "urutan" => null,
+                            "type_movement" => null,
+                            "stand_meter_awal" => null,
+                            "stand_meter_akhir" => null
+                        ];
+                        $newArr[] = $q;
+                    } else {
+                        $newArr[] = $q;
+                    }
+                }
+            }
+
+            unset($r);
 
             $tgl = null;
             $shift = null;
@@ -267,10 +299,13 @@ class MarginController extends Controller
                 'Stok Akhir Dipping',
                 'Total Losses',
             ];
-            foreach ($r as $e) {
+            $totalPenerimaan = 0;
+            $totalPenjualan = 0;
+            $totalLosses = 0;
+            $lastStok = null;
+            foreach ($newArr as $e) {
                 $tgl = is_null($tgl) ? $e['tanggal'] : $tgl;
                 $shift = is_null($shift) ? $e['nama_jam_kerja'] : $shift;
-                $lastStok = null;
 
                 if ($tgl == $e['tanggal']) {
                     if ($shift == $e['nama_jam_kerja']) {
@@ -279,7 +314,7 @@ class MarginController extends Controller
                                 'Tanggal' => is_null($data['Tanggal']) ? $tgl : $data['Tanggal'],
                                 'Shift' => is_null($data['Shift']) ? $shift : $data['Shift'],
                                 'Jam' => is_null($data['Jam']) ? $e['jam_datang_in'] . '-' . $e['jam_pulang_out'] : $data['Jam'],
-                                'Stok Awal' => $data['Stok Awal'] > $e['stok_awal'] ? $data['Stok Awal'] : $e['stok_awal'],
+                                'Stok Awal' =>  $e['stok_awal'],
                                 'Penerimaan BBM Aktual' => $data['Penerimaan BBM Aktual'],
                                 'Penjualan' => $data['Penjualan'],
                                 'Stok Akhir Teoritis' => $data['Stok Akhir Teoritis'],
@@ -299,6 +334,7 @@ class MarginController extends Controller
                                 'Stok Akhir Dipping' => $data['Stok Akhir Dipping'],
                                 'Total Losses' => $data['Total Losses']
                             ];
+                            $totalPenerimaan += is_null($data['Penerimaan BBM Aktual']) ? (($e['simbol'] == 'lebih')  ? (($e['stok_akhir'] - $e['stok_awal']) - $e['jumlah']) : (($e['stok_akhir'] - $e['stok_awal']) + $e['jumlah'])) : (($e['simbol'] == 'lebih')  ? (($e['stok_akhir'] - $e['stok_awal']) - $e['jumlah'])  + $data['Penerimaan BBM Aktual'] : (($e['stok_akhir'] - $e['stok_awal']) + $e['jumlah']) + $data['Penerimaan BBM Aktual']);
                         }
                         if ($e['type_movement'] == 'Good Issue Sales') {
                             $data = [
@@ -312,22 +348,42 @@ class MarginController extends Controller
                                 'Stok Akhir Dipping' => $data['Stok Akhir Dipping'],
                                 'Total Losses' => $data['Total Losses']
                             ];
+                            $totalPenjualan += is_null($data['Penjualan']) ? ($e['stand_meter_akhir'] - $e['stand_meter_awal']) : ($e['stand_meter_akhir'] - $e['stand_meter_awal']) + $data['Penjualan'] ?? 0;
                         }
                         if ($e['type_movement'] == 'Stok Taking') {
                             $data = [
                                 'Tanggal' => is_null($data['Tanggal']) ? $tgl : $data['Tanggal'],
                                 'Shift' => is_null($data['Shift']) ? $shift : $data['Shift'],
                                 'Jam' => is_null($data['Jam']) ? $e['jam_datang_in'] . '-' . $e['jam_pulang_out'] : $data['Jam'],
-                                'Stok Awal' => $lastStok,
+                                'Stok Awal' => is_null($lastStok) ? $e['stok_awal'] : $lastStok,
                                 'Penerimaan BBM Aktual' => $data['Penerimaan BBM Aktual'],
                                 'Penjualan' => $data['Penjualan'],
                                 'Stok Akhir Teoritis' => $e['stok_awal'],
                                 'Stok Akhir Dipping' => $e['stok_akhir'],
-                                'Total Losses' => $data['Total Losses']
+                                'Total Losses' => ($e['simbol'] == 'kurang') ? '(' . number_format($e['jumlah'], 2, ",", ".") . ')' : ' ' . number_format($e['jumlah'], 2, ",", ".")
                             ];
+                            if (!is_null($e['simbol'])) {
+                                if ($e['simbol'] == 'kurang') {
+                                    $totalLosses -= $e['jumlah'];
+                                }
+                                if ($e['simbol'] == 'lebih') {
+                                    $totalLosses += $e['jumlah'];
+                                }
+                            }
                             $lastStok = $e['stok_akhir'];
                         }
                     } else {
+                        $data = [
+                            'Tanggal' => empty($data['Tanggal']) || is_null($data['Tanggal']) ? '0' : $data['Tanggal'],
+                            'Shift' => empty($data['Shift']) || is_null($data['Shift']) ? '0' : $data['Shift'],
+                            'Jam' => empty($data['Jam']) || is_null($data['Jam']) ? '0' : $data['Jam'],
+                            'Stok Awal' => empty($data['Stok Awal']) || is_null($data['Stok Awal']) ? '0' : number_format($data['Stok Awal'], 2, ",", "."),
+                            'Penerimaan BBM Aktual' => empty($data['Penerimaan BBM Aktual']) || is_null($data['Penerimaan BBM Aktual']) ? '0' : number_format($data['Penerimaan BBM Aktual'], 2, ",", "."),
+                            'Penjualan' => empty($data['Penjualan']) || is_null($data['Penjualan']) ? '0' : number_format($data['Penjualan'], 2, ",", "."),
+                            'Stok Akhir Teoritis' => empty($data['Stok Akhir Teoritis']) || is_null($data['Stok Akhir Teoritis']) ? '0' : number_format($data['Stok Akhir Teoritis'], 2, ",", "."),
+                            'Stok Akhir Dipping' => empty($data['Stok Akhir Dipping']) || is_null($data['Stok Akhir Dipping']) ? '0' : number_format($data['Stok Akhir Dipping'], 2, ",", "."),
+                            'Total Losses' => empty($data['Total Losses']) || is_null($data['Total Losses']) ? '0' : $data['Total Losses'],
+                        ];
                         $temp[] = $data;
                         $shift = $e['nama_jam_kerja'];
                         $data = [
@@ -343,6 +399,17 @@ class MarginController extends Controller
                         ];
                     }
                 } else {
+                    $data = [
+                        'Tanggal' => empty($data['Tanggal']) || is_null($data['Tanggal']) ? '0' : $data['Tanggal'],
+                        'Shift' => empty($data['Shift']) || is_null($data['Shift']) ? '0' : $data['Shift'],
+                        'Jam' => empty($data['Jam']) || is_null($data['Jam']) ? '0' : $data['Jam'],
+                        'Stok Awal' => empty($data['Stok Awal']) || is_null($data['Stok Awal']) ? '0' : number_format($data['Stok Awal'], 2, ",", "."),
+                        'Penerimaan BBM Aktual' => empty($data['Penerimaan BBM Aktual']) || is_null($data['Penerimaan BBM Aktual']) ? '0' : number_format($data['Penerimaan BBM Aktual'], 2, ",", "."),
+                        'Penjualan' => empty($data['Penjualan']) || is_null($data['Penjualan']) ? '0' : number_format($data['Penjualan'], 2, ",", "."),
+                        'Stok Akhir Teoritis' => empty($data['Stok Akhir Teoritis']) || is_null($data['Stok Akhir Teoritis']) ? '0' : number_format($data['Stok Akhir Teoritis'], 2, ",", "."),
+                        'Stok Akhir Dipping' => empty($data['Stok Akhir Dipping']) || is_null($data['Stok Akhir Dipping']) ? '0' : number_format($data['Stok Akhir Dipping'], 2, ",", "."),
+                        'Total Losses' => empty($data['Total Losses']) || is_null($data['Total Losses']) ? '0' : $data['Total Losses'],
+                    ];
                     $temp[] = $data;
                     $tgl = $e['tanggal'];
                     $shift = $e['nama_jam_kerja'];
@@ -359,12 +426,30 @@ class MarginController extends Controller
                     ];
                 }
             }
+
+            $temp[] = [
+                'Tanggal' => 'Total',
+                'Shift' => null,
+                'Jam' => null,
+                'Stok Awal' => null,
+                'Penerimaan BBM Aktual' => number_format($totalPenerimaan, 2, ",", "."),
+                'Penjualan' => number_format($totalPenjualan, 2, ",", "."),
+                'Stok Akhir Teoritis' => null,
+                'Stok Akhir Dipping' => null,
+                'Total Losses' => number_format($totalLosses, 2, ",", ".")
+            ];
         }
-        return response()->json($temp, 200);
-        exit;
+        unset($produk);
+        unset($totalPenerimaan);
+        unset($totalPenjualan);
+        unset($totalLosses);
+        unset($tgl);
+        unset($shift);
+        unset($data);
+        unset($lastStok);
+        unset($newArr);
 
         $final_to_download = Excel::download(new StokDombakExport($temp), 'stok_dombak.xls', \Maatwebsite\Excel\Excel::XLS);
-        // Storage::delete('temp/' . $name);
         return $final_to_download;
     }
     public function generatePdf()
