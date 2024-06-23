@@ -465,7 +465,7 @@ $(function () {
 
                             let temp = '';
 
-                            data.data.forEach(x => temp += 'Produk <b>' + x.nama_produk + '</b> dengan banyaknya stok sebesar <b>' + new Intl.NumberFormat("id-ID", { style: "decimal", maximumFractionDigits: 6 }).format(x.stok) + '</b> liter. ')
+                            data.data.forEach(x => temp += 'Produk <b>' + x.nama_produk + '</b> dengan banyaknya stok sebesar <b>' + new Intl.NumberFormat("id-ID", { style: "decimal", maximumFractionDigits: 6 }).format(x.stok / 8000) + '</b> Kl. ')
 
                             new Typed('.ai', {strings: ['Hari ini, tercatat terdapat beberapa produk stok yang di Pertamina . '+ temp +' untuk informasi lebih lanjut silahkan klik link <a href="'+ location.origin + '/procurement/ms2' +'">disini</a>. semoga informasi ini membantu. 😄'], typeSpeed: 10})
                         }
@@ -1796,7 +1796,7 @@ $(function () {
             ajax: document.location.href,
             columns: [
                 {data: 'nama_produk', name: 'nama_produk'},
-                {data: 'stok', name: 'stok'},
+                {data: 'stok_kl', name: 'stok_kl'},
                 {data: 'total_pembelian', name: 'total_pembelian'},
                 {data: 'action', name: 'action', orderable: false, searchable: false},
             ]

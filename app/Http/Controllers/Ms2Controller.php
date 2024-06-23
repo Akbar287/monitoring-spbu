@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Models\DetailRencanaPembelian;
 use App\Models\DetailRencanaPembelianMs2;
 use App\Models\JamKerja;
-use App\Models\Member;
 use App\Models\Ms2;
 use App\Models\Pengiriman;
 use App\Models\Produk;
@@ -23,8 +22,8 @@ class Ms2Controller extends Controller
             $data = Produk::where('is_aktif', true)->orderBy('nama_produk', 'asc')->get();
             return DataTables::of($data)
                 ->addIndexColumn()
-                ->addColumn('stok', function ($row) {
-                    return number_format($row->detail_rencana_pembelian()->selectRaw('SUM("jumlah") as stok')->join('rencana_pembelian', 'rencana_pembelian.rencana_pembelian_id', 'detail_rencana_pembelian.rencana_pembelian_id')->join('status_purchase', 'status_purchase.status_purchase_id', 'rencana_pembelian.status_purchase_id')->where('status_purchase.nama_status', 'MS2')->where('detail_rencana_pembelian.ms2', false)->where('detail_rencana_pembelian.delivery', false)->first()->stok, 2, ".", ",") ?? 0;
+                ->addColumn('stok_kl', function ($row) {
+                    return number_format($row->detail_rencana_pembelian()->selectRaw('SUM("jumlah") as stok')->join('rencana_pembelian', 'rencana_pembelian.rencana_pembelian_id', 'detail_rencana_pembelian.rencana_pembelian_id')->join('status_purchase', 'status_purchase.status_purchase_id', 'rencana_pembelian.status_purchase_id')->where('status_purchase.nama_status', 'MS2')->where('detail_rencana_pembelian.ms2', false)->where('detail_rencana_pembelian.delivery', false)->first()->stok / 8000 ?? 0, 2, ".", ",");
                 })
                 ->addColumn('total_pembelian', function ($row) {
                     return $row->detail_rencana_pembelian()

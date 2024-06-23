@@ -36,7 +36,7 @@
                                     <thead>
                                         <tr>
                                             <th>Produk</th>
-                                            <th>Stok (Liter)</th>
+                                            <th>Stok (Kl)</th>
                                             <th>Total pembelian</th>
                                             <th>Aksi</th>
                                         </tr>

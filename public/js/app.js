@@ -805,7 +805,7 @@ $(function () {
                 return _temp += 'Produk <b>' + x.nama_produk + '</b> dengan banyaknya stok sebesar <b>' + new Intl.NumberFormat("id-ID", {
                   style: "decimal",
                   maximumFractionDigits: 6
-                }).format(x.stok) + '</b> liter. ';
+                }).format(x.stok / 8000) + '</b> Kl. ';
               });
               new typed_js__WEBPACK_IMPORTED_MODULE_2__["default"]('.ai', {
                 strings: ['Hari ini, tercatat terdapat beberapa produk stok yang di Pertamina . ' + _temp + ' untuk informasi lebih lanjut silahkan klik link <a href="' + location.origin + '/procurement/ms2' + '">disini</a>. semoga informasi ini membantu. 😄'],
@@ -2596,8 +2596,8 @@ $(function () {
         data: 'nama_produk',
         name: 'nama_produk'
       }, {
-        data: 'stok',
-        name: 'stok'
+        data: 'stok_kl',
+        name: 'stok_kl'
       }, {
         data: 'total_pembelian',
         name: 'total_pembelian'
