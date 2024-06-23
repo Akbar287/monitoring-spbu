@@ -100,6 +100,7 @@ var _require = __webpack_require__(/*! sweetalert2 */ "./node_modules/sweetalert
 $(function () {
   var routeName = $('meta[name=route]')[0].content;
   var cdnDatatableIdn = 'https://cdn.datatables.net/plug-ins/1.10.24/i18n/Indonesian.json';
+  console.log(routeName);
   if ($('.thousand-style').toArray().length > 0) {
     $('.thousand-style').toArray().forEach(function (e) {
       new cleave_js__WEBPACK_IMPORTED_MODULE_0__["default"](e, {
