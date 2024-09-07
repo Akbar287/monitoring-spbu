@@ -34,7 +34,7 @@ class StokTakingController extends Controller
         $waktuMulai = $waktuMulai->format('Y-m-d');
         $waktuSelesai = $waktuSelesai->format('Y-m-d');
         if ($request->ajax()) {
-            $data = $produkSelected == 'all' ? DokumenStok::where('type_dokumen_stok_id', TypeDokumenStok::where('type_movement', 'Stok Taking')->first()->type_dokumen_stok_id)->where('is_confirmation', false)->whereBetween('tanggal', [$waktuMulai, $waktuSelesai])->orderBy('created_at', 'desc')->get() : DokumenStok::join('stok_inventory', 'stok_inventory.stok_inventory_id', 'dokumen_stok.stok_inventory_id')->where('type_dokumen_stok_id', TypeDokumenStok::where('type_movement', 'Stok Taking')->first()->type_dokumen_stok_id)->where('stok_inventory.produk_id', $request->produkSelected)->where('is_confirmation', false)->whereBetween('tanggal', [$waktuMulai, $waktuSelesai])->orderBy('tanggal', 'desc')->get();
+            $data = $produkSelected == 'all' ? DokumenStok::where('type_dokumen_stok_id', TypeDokumenStok::where('type_movement', 'Stok Taking')->first()->type_dokumen_stok_id)->where('is_confirmation', 0)->whereBetween('tanggal', [$waktuMulai, $waktuSelesai])->orderBy('created_at', 'desc')->get() : DokumenStok::join('stok_inventory', 'stok_inventory.stok_inventory_id', 'dokumen_stok.stok_inventory_id')->where('type_dokumen_stok_id', TypeDokumenStok::where('type_movement', 'Stok Taking')->first()->type_dokumen_stok_id)->where('stok_inventory.produk_id', $request->produkSelected)->where('is_confirmation', 0)->whereBetween('tanggal', [$waktuMulai, $waktuSelesai])->orderBy('tanggal', 'desc')->get();
             return DataTables::of($data)
                 ->addIndexColumn()
                 ->addColumn('tanggal', function ($row) {
@@ -70,7 +70,7 @@ class StokTakingController extends Controller
         $waktuMulai = $waktuMulai->format('Y-m-d');
         $waktuSelesai = $waktuSelesai->format('Y-m-d');
         if ($request->ajax()) {
-            $data = DokumenStok::where('type_dokumen_stok_id', TypeDokumenStok::where('type_movement', 'Stok Taking')->first()->type_dokumen_stok_id)->where('is_confirmation', true)->whereBetween('tanggal', [$waktuMulai, $waktuSelesai])->orderBy('created_at', 'desc')->get();
+            $data = DokumenStok::where('type_dokumen_stok_id', TypeDokumenStok::where('type_movement', 'Stok Taking')->first()->type_dokumen_stok_id)->where('is_confirmation', 1)->whereBetween('tanggal', [$waktuMulai, $waktuSelesai])->orderBy('created_at', 'desc')->get();
             return DataTables::of($data)
                 ->addIndexColumn()
                 ->addColumn('tanggal', function ($row) {
@@ -100,7 +100,7 @@ class StokTakingController extends Controller
     public function create()
     {
         $jamKerja = JamKerja::select('nama_jam_kerja')->addSelect('jam_kerja_id')->addSelect('batas_akhir_in')->addSelect('batas_awal_in')->get();
-        $dombak = Dombak::where('is_aktif', true)->get();
+        $dombak = Dombak::where('is_aktif', 1)->get();
         $typeDokumen = TypeDokumenStok::where('type_movement', 'Stok Taking')->get();
         return view('stok/stok-taking/create', compact('jamKerja', 'dombak', 'typeDokumen'));
     }
@@ -127,7 +127,7 @@ class StokTakingController extends Controller
             $awal = Dombak::where('dombak_id', $request->dombak_id)->first()->stok_inventory_dombak()->first()->stok;
             $akhir = $tinggiDombak->volume;
 
-            $dokumenStok = $type_dokumen_stock->dokumen_stok()->where('stok_inventory_id', $stok_inventory->stok_inventory_id)->where('jam_kerja_id', $request->jam_kerja_id)->where('member_id', Auth::user()->member_id)->where('dombak_id', $request->dombak_id)->where('tanggal', $request->tanggal)->where('stok_awal', $awal)->where('stok_akhir', $akhir)->where('is_confirmation', false)->first();
+            $dokumenStok = $type_dokumen_stock->dokumen_stok()->where('stok_inventory_id', $stok_inventory->stok_inventory_id)->where('jam_kerja_id', $request->jam_kerja_id)->where('member_id', Auth::user()->member_id)->where('dombak_id', $request->dombak_id)->where('tanggal', $request->tanggal)->where('stok_awal', $awal)->where('stok_akhir', $akhir)->where('is_confirmation', 0)->first();
             if (is_null($dokumenStok)) {
                 $dokumenStok = $type_dokumen_stock->dokumen_stok()->create([
                     'stok_inventory_id' => $stok_inventory->stok_inventory_id,
@@ -137,7 +137,7 @@ class StokTakingController extends Controller
                     'tanggal' => $request->tanggal,
                     'stok_awal' => $awal,
                     'stok_akhir' => $akhir,
-                    'is_confirmation' => false
+                    'is_confirmation' => 0
                 ]);
             }
 
@@ -198,7 +198,7 @@ class StokTakingController extends Controller
         ]);
 
         $stok->update([
-            'is_confirmation' => true
+            'is_confirmation' => 1
         ]);
 
         return redirect('/stok/stok-taking/' . $stok->dokumen_stok_id)->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> Data Stok Taking sudah dikonfirmasi.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
@@ -224,7 +224,7 @@ class StokTakingController extends Controller
     {
         $typeDokumen = TypeDokumenStok::select('type_movement')->addSelect('type_dokumen_stok_id')->get();
         $dokumenStokExist = DokumenStok::orderBy('created_at', 'desc')->first();
-        $dombak = Dombak::where('is_aktif', true)->get();
+        $dombak = Dombak::where('is_aktif', 1)->get();
         $jamKerja = JamKerja::select('nama_jam_kerja')->addSelect('jam_kerja_id')->addSelect('batas_akhir_in')->addSelect('batas_awal_in')->get();
         $stokInventory = StokInventory::get();
         return view('stok/stok-taking/edit', compact('typeDokumen', 'dokumenStokExist', 'jamKerja', 'stokInventory', 'stok', 'dombak'));

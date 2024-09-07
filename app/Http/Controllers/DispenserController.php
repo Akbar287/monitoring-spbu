@@ -20,7 +20,7 @@ class DispenserController extends Controller
             return DataTables::of($data)
                 ->addIndexColumn()
                 ->addColumn('is_aktif', function ($row) {
-                    $actionBtn = $row->is_aktif == true ? 'Aktif' : 'Tidak Aktif';
+                    $actionBtn = (int)$row->is_aktif == 1 ? 'Aktif' : 'Tidak Aktif';
                     return $actionBtn;
                 })
                 ->addColumn('action', function ($row) {
@@ -48,7 +48,7 @@ class DispenserController extends Controller
     public function store(DispenserRequest $dispenserRequest)
     {
         $payung = Payung::find($dispenserRequest->payung_id);
-        $dispenser = $payung->dispenser()->where('nama_dispenser', request('nama_dispenser'))->where('keterangan', request('keterangan'))->where('is_aktif', request('is_aktif'))->first();
+        $dispenser = $payung->dispenser()->where('nama_dispenser', request('nama_dispenser'))->where('keterangan', request('keterangan'))->where('is_aktif', request('is_aktif') ? 1 : 0)->first();
         if (is_null($dispenser)) {
             $dispenser = $payung->dispenser()->create($this->dispenserData());
         }
@@ -98,7 +98,7 @@ class DispenserController extends Controller
         return [
             'nama_dispenser' => request('nama_dispenser'),
             'keterangan' => request('keterangan'),
-            'is_aktif' => request('is_aktif'),
+            'is_aktif' => request('is_aktif') ? 1 : 0,
         ];
     }
 }

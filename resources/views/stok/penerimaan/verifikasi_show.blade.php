@@ -122,13 +122,13 @@
                                 <div class="col-md-6">
                                     <div class="input-group mb-2">
                                         <div class="input-group-prepend">
-                                          <div class="input-group-text">Rp</div>
+                                            <div class="input-group-text">Rp</div>
                                         </div>
                                         <input id="harga" type="text" readonly
                                             class="form-control" name="harga"
                                             value="{{ number_format($penerimaan->file_lo()->first()->detail_rencana_pembelian()->first()->harga, 6, ".", ",") }}" autocomplete="name"
                                             >
-                                      </div>
+                                    </div>
                                 </div>
                             </div>
 
@@ -139,14 +139,13 @@
                                 <div class="col-md-6">
                                     <div class="input-group mb-2">
                                         <div class="input-group-prepend">
-                                          <div class="input-group-text">Rp</div>
+                                            <div class="input-group-text">Rp</div>
                                         </div>
                                         <input id="total_harga" type="text" readonly
                                             class="form-control" name="total_harga"
                                             value="{{ number_format($penerimaan->file_lo()->first()->detail_rencana_pembelian()->first()->total_harga, 6, ".", ",") }}" autocomplete="name"
                                             >
-
-                                      </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -351,13 +350,30 @@
                             </div>
 
                             <div class="row mb-3 justify-content-center">
+                                <label for="volume_akt_dmk" class="col-md-4 col-form-label text-md-end">{{ __('Volume (liter) Aktual Dombak')
+                                    }}</label>
+
+                                <div class="col-md-6">
+                                    <input id="volume_akt_dmk" type="text" readonly
+                                        class="form-control thousand-style" name="volume_akt_dmk"
+                                        value="{{ $penerimaan->dokumen_stok()->first()->stok_akhir - $penerimaan->dokumen_stok()->first()->stok_awal ?? 0 }}" readonly
+                                        >
+                                    @error('volume')
+                                    <span class="invalid-feedback" role="alert">
+                                        <strong>{{ $message }}</strong>
+                                    </span>
+                                    @enderror
+                                </div>
+                            </div>
+
+                            <div class="row mb-3 justify-content-center">
                                 <label for="volume" class="col-md-4 col-form-label text-md-end">{{ __('Volume (liter) Aktual')
                                     }}</label>
 
                                 <div class="col-md-6">
                                     <input id="volume" type="text" readonly
                                         class="form-control thousand-style" name="volume"
-                                        value="{{ $penerimaan->dokumen_stok()->first()->stok_akhir - $penerimaan->dokumen_stok()->first()->stok_awal ?? 0 }}" readonly
+                                        value="{{ $aktual ?? 0 }}" readonly
                                         >
                                     @error('volume')
                                     <span class="invalid-feedback" role="alert">
@@ -390,12 +406,14 @@
 
                                 <div class="col-md-6">
                                     <div class="input-group mb-2">
+                                        @if(!is_null($penerimaan->dokumen_stok()->first()->losses()->first()))
                                         <div class="input-group-prepend">
                                             <div class="input-group-text">{{ $penerimaan->dokumen_stok()->first()->losses()->first()->simbol == 'kurang' ? '-' : '+' }}</div>
                                         </div>
+                                        @endif
                                         <input id="volume_selisih" type="text" readonly
                                             class="form-control thousand-style @error('volume_selisih') is-invalid @enderror" name="volume_selisih"
-                                            value="{{ $penerimaan->dokumen_stok()->first()->losses()->first()->jumlah }}" readonly
+                                            value="{{ is_null($penerimaan->dokumen_stok()->first()->losses()->first()) ? 0 : $penerimaan->dokumen_stok()->first()->losses()->first()->jumlah }}" readonly
                                             >
                                     </div>
 
@@ -406,6 +424,19 @@
                                     @enderror
                                 </div>
                             </div>
+
+                            @if($penerimaan->file_lo()->first()->penerimaan()->count() > 1)
+                            <div class="row mb-3 justify-content-center">
+                                <div class="alert alert-primary">Penerimaan ini memiliki {{ $penerimaan->file_lo()->first()->penerimaan()->count() }} dombak.</div>
+                            </div>
+                            <div class="row mb-3 justify-content-center">
+                                <ol>
+                                    @foreach($penerimaan->file_lo()->first()->penerimaan()->get() as $p)
+                                    <li>{{ $p->dokumen_stok()->first()->dombak()->first()->nama_dombak . ' (' . number_format($p->dokumen_stok()->first()->stok_akhir - $p->dokumen_stok()->first()->stok_awal ?? 0, 6, '.', ',') . ') liter'}} -  @if($p->penerimaan_id === $penerimaan->penerimaan_id) Anda Berada Disini @else <a href="{{ route('penerimaan.verifikasi.show', $p->penerimaan_id) }}">Klik Disini</a>@endif</li>
+                                    @endforeach
+                                </ol>
+                            </div>
+                            @endif
 
                             @if(!$penerimaan->dokumen_stok()->first()->is_confirmation)
                             @if(Auth::user()->member()->first()->jabatan()->first()->level()->first()->nama_level == 'Penanggung Jawab')

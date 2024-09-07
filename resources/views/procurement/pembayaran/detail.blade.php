@@ -115,7 +115,7 @@
                                     @if(Auth::user()->member()->first()->jabatan()->first()->level()->first()->nama_level == 'Penanggung Jawab')
                                     <a type="button" href="{{ route('pembayaran.edit', [$rencana->rencana_pembelian_id, $pembayaran->pembayaran_id]) }}" class="btn mx-2 btn-success"><i class="fas fa-pen"></i> Ubah</a>
                                     @endif
-                                    @if(Auth::user()->member()->first()->jabatan()->first()->level()->first()->divisi()->first()->nama_divisi == 'Top Manajemen')
+                                    {{-- @if(Auth::user()->member()->first()->jabatan()->first()->level()->first()->divisi()->first()->nama_divisi == 'Top Manajemen') --}}
                                     @if($pembayaran->is_confirmation_top)
                                     <form action="{{ route('pembayaran.update.confirmation_top_no', [$rencana->rencana_pembelian_id, $pembayaran->pembayaran_id]) }}" method="POST">@csrf @method('put')
                                         <button type="submit" onclick="return confirm('Tolak Konfirmasi Pembayaran ini!\n Lanjutkan?')" title="Konfirmasi Data" class="btn btn-danger mr-2"><i class="fas fa-times"></i> Batalkan Konfirmasi</button>
@@ -125,7 +125,7 @@
                                         <button type="submit" onclick="return confirm('Konfirmasi Pembayaran ini!\n Lanjutkan?')" title="Konfirmasi Data" class="btn btn-info mr-2"><i class="fas fa-check"></i> Konfirmasi Top Manajemen</button>
                                     </form>
                                     @endif
-                                    @endif
+                                    {{-- @endif --}}
 
                                     @if(Auth::user()->member()->first()->jabatan()->first()->level()->first()->nama_level == 'Penanggung Jawab')
                                     @if($pembayaran->is_confirmation_admin)

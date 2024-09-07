@@ -39,19 +39,19 @@ class HomeController extends Controller
 
         $data = null;
         if ($request->type == 'how_many_stok_in_dombak') {
-            $data = Produk::select('produk.nama_produk', 'stok_inventory.stok')->where('is_aktif', true)->join('stok_inventory', 'stok_inventory.produk_id', 'produk.produk_id')->get();
+            $data = Produk::select('produk.nama_produk', 'stok_inventory.stok')->where('is_aktif', 1)->join('stok_inventory', 'stok_inventory.produk_id', 'produk.produk_id')->get();
         }
         if ($request->type == 'how_many_stok_in_pertamina') {
-            $produk = Produk::where('produk.is_aktif', true)->get();
+            $produk = Produk::where('produk.is_aktif', 1)->get();
             $data = [];
 
             foreach ($produk as $row) {
-                $data[] = ['nama_produk' => $row->nama_produk, 'stok' => $row->detail_rencana_pembelian()->selectRaw('SUM("jumlah") as stok')->join('rencana_pembelian', 'rencana_pembelian.rencana_pembelian_id', 'detail_rencana_pembelian.rencana_pembelian_id')->join('status_purchase', 'status_purchase.status_purchase_id', 'rencana_pembelian.status_purchase_id')->where('status_purchase.nama_status', 'MS2')->where('detail_rencana_pembelian.ms2', false)->where('detail_rencana_pembelian.delivery', false)->first()->stok ?? 0];
+                $data[] = ['nama_produk' => $row->nama_produk, 'stok' => $row->detail_rencana_pembelian()->selectRaw('SUM("jumlah") as stok')->join('rencana_pembelian', 'rencana_pembelian.rencana_pembelian_id', 'detail_rencana_pembelian.rencana_pembelian_id')->join('status_purchase', 'status_purchase.status_purchase_id', 'rencana_pembelian.status_purchase_id')->where('status_purchase.nama_status', 'MS2')->where('detail_rencana_pembelian.ms2', 0)->where('detail_rencana_pembelian.delivery', 0)->first()->stok ?? 0];
             }
         }
         if ($request->type == 'how_many_sales_today') {
             $shift = JamKerja::get();
-            $produk = Produk::where('is_aktif', true)->get();
+            $produk = Produk::where('is_aktif', 1)->get();
             $data = [];
             $temp = [];
 
@@ -60,9 +60,9 @@ class HomeController extends Controller
                 foreach ($produk as $p) {
                     $stand_meter = $s->stand_meter()->selectRaw('SUM("stand_meter_akhir") - SUM("stand_meter_awal") as stand_meter')->join('nozzle', 'stand_meter.nozzle_id', 'nozzle.nozzle_id')->join('produk', 'produk.produk_id', 'nozzle.produk_id')->where('nozzle.produk_id', $p->produk_id)->where('stand_meter.tanggal', Carbon::today()->format('Y-m-d'))->first();
 
-                    $data[] = ['produk' => $p->nama_produk, 'nama_jam_kerja' => $s->nama_jam_kerja, 'penjualan' => number_format($p->harga()->where('is_default', true)->first()->harga_jual * $stand_meter->stand_meter, 2, ',', '.')];
+                    $data[] = ['produk' => $p->nama_produk, 'nama_jam_kerja' => $s->nama_jam_kerja, 'penjualan' => number_format($p->harga()->where('is_default', 1)->first()->harga_jual * $stand_meter->stand_meter, 2, ',', '.')];
 
-                    $t += $p->harga()->where('is_default', true)->first()->harga_jual * $stand_meter->stand_meter;
+                    $t += $p->harga()->where('is_default', 1)->first()->harga_jual * $stand_meter->stand_meter;
                 }
                 $temp[] = ['nama_jam_kerja' => $s->nama_jam_kerja, 'total_penjualan' => number_format($t, 2, ",", '.')];
             }
@@ -91,9 +91,9 @@ class HomeController extends Controller
     {
         $data = [
             'member' => Member::count(),
-            'produk' => Produk::where('is_aktif', true)->count(),
-            'pengiriman' => Pengiriman::where('is_done', false)->count(),
-            'dombak' => Dombak::where('is_aktif', true)->count()
+            'produk' => Produk::where('is_aktif', 1)->count(),
+            'pengiriman' => Pengiriman::where('is_done', 0)->count(),
+            'dombak' => Dombak::where('is_aktif', 1)->count()
         ];
         $waktuMulai = $request->has('waktu_mulai') ? Carbon::createFromFormat('Y-m-d', $request->waktu_mulai) : Carbon::now()->firstOfMonth();
         $waktuSelesai = $request->has('waktu_selesai') ? Carbon::createFromFormat('Y-m-d', $request->waktu_selesai) : Carbon::now()->endOfMonth();
@@ -252,14 +252,14 @@ class HomeController extends Controller
 
 
         $pembayaran = StatusPurchase::where('nama_status', 'Pembayaran')->first()->rencana_pembelian()->get();
-        $delivery = Pengiriman::where('is_confirmation_admin', true)->where('is_done', false)->get();
+        $delivery = Pengiriman::where('is_confirmation_admin', 1)->where('is_done', 0)->get();
         return view('home', compact('data', 'allMenu', 'pembayaran', 'delivery', 'waktuMulai', 'waktuSelesai'));
     }
 
     public function chart()
     {
         $jamKerja = JamKerja::orderBy('nama_jam_kerja', 'asc')->get();
-        $produk = Produk::where('is_aktif', true)->get();
+        $produk = Produk::where('is_aktif', 1)->get();
         $nozzles = Nozzle::orderBy('nama_nozzle', 'asc')->get();
 
         // Chart Kiri
@@ -347,7 +347,7 @@ class HomeController extends Controller
                 ->selectRaw('SUM(stand_meter.stand_meter_akhir - stand_meter.stand_meter_awal) as selisih')
                 ->whereDate('tanggal', today())
                 // ->whereDate('tanggal', '2024-01-20')
-                ->first()->selisih ?? 0) * $nozzle->produk()->first()->harga()->where('is_default', true)->first()->harga_jual);
+                ->first()->selisih ?? 0) * $nozzle->produk()->first()->harga()->where('is_default', 1)->first()->harga_jual);
         }
         $datasetPenjualan[] = ['label' => 'Penjualan (dalam Rupiah)', 'data' => $res, 'borderWidth' => 1];
 
@@ -371,7 +371,7 @@ class HomeController extends Controller
                     ->whereDate('tanggal', today())
                     // ->whereDate('tanggal', '2024-01-20')
                     ->where('jam_kerja_id', $jk->jam_kerja_id)
-                    ->first()->selisih ?? 0) * $nozzle->produk()->first()->harga()->where('is_default', true)->first()->harga_jual);
+                    ->first()->selisih ?? 0) * $nozzle->produk()->first()->harga()->where('is_default', 1)->first()->harga_jual);
             }
             $temp_out_shift[] = [
                 "label" => $jk->nama_jam_kerja,

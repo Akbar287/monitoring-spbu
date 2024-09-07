@@ -30,12 +30,12 @@ class RencanaPembelianController extends Controller
         $waktuSelesai = $waktuSelesai->format('Y-m-d');
 
         if ($request->ajax()) {
-            $data = RencanaPembelian::where('is_confirmation', false)->where('is_denied', false)->whereBetween('created_at', [$waktuMulai, $waktuSelesai])->get();
+            $data = RencanaPembelian::where('is_confirmation', 0)->where('is_denied', 0)->whereBetween('created_at', [$waktuMulai, $waktuSelesai])->get();
             return DataTables::of($data)
                 ->addIndexColumn()
                 ->addColumn('is_confirmation', function ($row) {
                     $temp = '';
-                    if ($row->is_confirmation == true) {
+                    if ($row->is_confirmation == 1) {
                         $temp = '<span class="badge badge-success">Terkonfirmasi</span>';
                     } else {
                         if ($row->is_denied == 'true') {
@@ -71,12 +71,12 @@ class RencanaPembelianController extends Controller
     public function index_ditolak(Request $request)
     {
         if ($request->ajax()) {
-            $data = StatusPurchase::where("nama_status", "Rencana")->first()->rencana_pembelian()->where('is_confirmation', true)->where('is_denied', true)->orderBy('created_at', 'desc')->get();
+            $data = StatusPurchase::where("nama_status", "Rencana")->first()->rencana_pembelian()->where('is_confirmation', 1)->where('is_denied', 1)->orderBy('created_at', 'desc')->get();
             return DataTables::of($data)
                 ->addIndexColumn()
                 ->addColumn('is_confirmation', function ($row) {
                     $temp = '';
-                    if ($row->is_denied == true) {
+                    if ($row->is_denied == 1) {
                         $temp = '<span class="badge badge-danger">Ditolak</span>';
                     } else {
                         $temp = '<span class="badge badge-primary">Disetujui</span>';
@@ -131,7 +131,7 @@ class RencanaPembelianController extends Controller
         $statusPurchase = StatusPurchase::where("nama_status", "Rencana")->first();
         $cek = true;
         do {
-            $rencana = RencanaPembelian::where("status_purchase_id", $statusPurchase->status_purchase_id)->where("spbu_id", $spbu->spbu_id)->where("grand_total", 0)->where('kode_pembelian', $request->kode_pembelian)->where("pembelian_id", null)->where("tanggal_pembelian", null)->where("keterangan", request('keterangan'))->where("keterangan_denied", null)->where("is_confirmation", false)->where("is_denied", false)->first();
+            $rencana = RencanaPembelian::where("status_purchase_id", $statusPurchase->status_purchase_id)->where("spbu_id", $spbu->spbu_id)->where("grand_total", 0)->where('kode_pembelian', $request->kode_pembelian)->where("pembelian_id", null)->where("tanggal_pembelian", null)->where("keterangan", request('keterangan'))->where("keterangan_denied", null)->where("is_confirmation", 0)->where("is_denied", 0)->first();
 
             if (is_null($rencana)) {
                 $rencana = RencanaPembelian::firstOrCreate([
@@ -144,8 +144,8 @@ class RencanaPembelianController extends Controller
                     "tanggal_pembelian" => null,
                     "keterangan" => request('keterangan'),
                     "keterangan_denied" => null,
-                    "is_confirmation" => false,
-                    "is_denied" => false,
+                    "is_confirmation" => 0,
+                    "is_denied" => 0,
                 ]);
             } else {
                 $cek = false;
@@ -210,8 +210,8 @@ class RencanaPembelianController extends Controller
                 "tanggal_pembelian" => null,
                 "keterangan" => request('keterangan'),
                 "keterangan_denied" => null,
-                "is_confirmation" => false,
-                "is_denied" => false,
+                "is_confirmation" => 0,
+                "is_denied" => 0,
             ];
         } else {
             return [
@@ -243,8 +243,8 @@ class RencanaPembelianController extends Controller
     public function konfirmasi_update(Request $request, RencanaPembelian $rencana)
     {
         $temp = [
-            "is_confirmation" => true,
-            "is_denied" => request('jenis') == "false" ? true : false,
+            "is_confirmation" => 1,
+            "is_denied" => request('jenis') == "false" ? 1 : 0,
             "keterangan_denied" => request('keterangan')
         ];
 
@@ -254,7 +254,7 @@ class RencanaPembelianController extends Controller
         }
         $rencana->update($temp);
 
-        $lib = PajakPembelianLib::where('is_aktif', true)->first();
+        $lib = PajakPembelianLib::where('is_aktif', 1)->first();
 
         $total = $rencana->grand_total + $rencana->grand_total * ($lib->ppn / 100) + $rencana->grand_total * ($lib->ppbkb / 100) + $rencana->grand_total * ($lib->pph / 100);
 

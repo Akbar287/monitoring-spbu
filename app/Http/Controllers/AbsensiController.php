@@ -194,7 +194,7 @@ class AbsensiController extends Controller
     {
         $status_penjadwalan = StatusKehadiran::where('nama_kehadiran', 'Hadir')->first();
         $penjadwalan->update([
-            'is_confirm' => true,
+            'is_confirm' => 1,
             'status_kehadiran_id' => $status_penjadwalan->status_kehadiran_id
         ]);
 
@@ -207,7 +207,7 @@ class AbsensiController extends Controller
     {
         $status_penjadwalan = StatusKehadiran::where('nama_kehadiran', 'Dijadwalkan')->first();
         $penjadwalan->update([
-            'is_confirm' => false,
+            'is_confirm' => 0,
             'status_kehadiran_id' => $status_penjadwalan->status_kehadiran_id
         ]);
 

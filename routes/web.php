@@ -1,5 +1,6 @@
 <?php
 
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -14,6 +15,10 @@ Auth::routes([
 // Route::get('/upload', [App\Http\Controllers\DumpController::class, 'uploadDataStokTaking'])->name('uploadDataStokTaking');
 // Route::get('/upload', [App\Http\Controllers\DumpController::class, 'uploadStokTaking'])->name('uploadStokTaking');
 // Route::get('/temp', [App\Http\Controllers\DumpController::class, 'temp'])->name('temp');
+
+Route::get('/foo', function () {
+    Artisan::call('storage:link');
+});
 
 Route::middleware(['auth', 'cache.header'])->group(function ($route) {
     $route->get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');

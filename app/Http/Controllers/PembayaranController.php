@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Http\Requests\PembayaranRequest;
 use App\Models\FilePembayaran;
 use App\Models\Member;
-use App\Models\PajakPembelian;
 use App\Models\Pembayaran;
 use App\Models\RencanaPembelian;
 use App\Models\StatusPurchase;
@@ -68,7 +67,7 @@ class PembayaranController extends Controller
             return DataTables::of($data)
                 ->addIndexColumn()
                 ->addColumn('is_confirmation', function ($row) {
-                    $actionBtn = ($row->is_confirmation_admin == true ? "<div class='badge badge-success'>Admin</div>" : "<div class='badge badge-danger'>Admin</div>") . ' ' . ($row->is_confirmation_top == true ? "<div class='badge badge-success'>Top</div>" : "<div class='badge badge-danger'>Top</div>");
+                    $actionBtn = ($row->is_confirmation_admin == 1 ? "<div class='badge badge-success'>Admin</div>" : "<div class='badge badge-danger'>Admin</div>") . ' ' . ($row->is_confirmation_top == 1 ? "<div class='badge badge-success'>Top</div>" : "<div class='badge badge-danger'>Top</div>");
                     return $actionBtn;
                 })
                 ->addColumn('total_setoran', function ($row) {
@@ -114,8 +113,8 @@ class PembayaranController extends Controller
         $status = StatusPurchase::where('nama_status', "Rencana")->first();
         $rencana->update([
             'status_purchase_id' => $status->status_purchase_id,
-            'is_confirmation' => true,
-            'is_denied' => false
+            'is_confirmation' => 1,
+            'is_denied' => 0
         ]);
         return redirect('/procurement/pembayaran')->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> Berhasil Mengubah Data Pembayaran dengan konfirmasi ditolak. Data dikirim ke Rencana Pembelian tertolak.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
     }
@@ -128,7 +127,7 @@ class PembayaranController extends Controller
     public function store(PembayaranRequest $pembayaranRequest, RencanaPembelian $rencana)
     {
 
-        $pembayaran = $rencana->pembayaran()->where("member_id", request('member_id'))->where("no_cek_bg", request('no_cek_bg'))->where("no_rekening", request('no_rekening'))->where("nama_rekening", request('nama_rekening'))->where("total_setoran", str_replace(',', '', request('total_setoran')))->where("is_confirmation_top", false)->where("is_confirmation_admin", false)->where("tanggal", request('tanggal'))->first();
+        $pembayaran = $rencana->pembayaran()->where("member_id", request('member_id'))->where("no_cek_bg", request('no_cek_bg'))->where("no_rekening", request('no_rekening'))->where("nama_rekening", request('nama_rekening'))->where("total_setoran", str_replace(',', '', request('total_setoran')))->where("is_confirmation_top", 0)->where("is_confirmation_admin", 0)->where("tanggal", request('tanggal'))->first();
         if (is_null($pembayaran)) {
             $pembayaran = $rencana->pembayaran()->create($this->pembayaranData());
         }
@@ -167,33 +166,33 @@ class PembayaranController extends Controller
     public function update_confirmation_admin_ok(Request $request, RencanaPembelian $rencana, Pembayaran $pembayaran)
     {
         if (Auth::user()->member()->first()->jabatan()->first()->nama_jabatan == 'Admin') {
-            $pembayaran->update(['is_confirmation_admin' => true]);
+            $pembayaran->update(['is_confirmation_admin' => 1]);
             return redirect('/procurement/pembayaran/' . $rencana->rencana_pembelian_id . '/' . $pembayaran->pembayaran_id)->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> Berhasil Konfirmasi Pembayaran - Admin.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
         }
     }
     public function update_confirmation_admin_no(Request $request, RencanaPembelian $rencana, Pembayaran $pembayaran)
     {
         if (Auth::user()->member()->first()->jabatan()->first()->nama_jabatan == 'Admin') {
-            $pembayaran->update(['is_confirmation_admin' => false]);
+            $pembayaran->update(['is_confirmation_admin' => 0]);
 
             return redirect('/procurement/pembayaran/' . $rencana->rencana_pembelian_id . '/' . $pembayaran->pembayaran_id)->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> Berhasil Membatalkan Konfirmasi Pembayaran - Admin.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
         }
     }
     public function update_confirmation_top_ok(Request $request, RencanaPembelian $rencana, Pembayaran $pembayaran)
     {
-        if (Auth::user()->member()->first()->jabatan()->first()->level()->first()->divisi()->first()->nama_divisi == 'Top Manajemen') {
-            $pembayaran->update(['is_confirmation_top' => true]);
+        // if (Auth::user()->member()->first()->jabatan()->first()->level()->first()->divisi()->first()->nama_divisi == 'Top Manajemen') {
+        $pembayaran->update(['is_confirmation_top' => 1]);
 
-            return redirect('/procurement/pembayaran/' . $rencana->rencana_pembelian_id . '/' . $pembayaran->pembayaran_id)->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> Berhasil Konfirmasi Pembayaran - Top Manajemen.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
-        }
+        return redirect('/procurement/pembayaran/' . $rencana->rencana_pembelian_id . '/' . $pembayaran->pembayaran_id)->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> Berhasil Konfirmasi Pembayaran - Top Manajemen.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
+        // }
     }
     public function update_confirmation_top_no(Request $request, RencanaPembelian $rencana, Pembayaran $pembayaran)
     {
-        if (Auth::user()->member()->first()->jabatan()->first()->level()->first()->divisi()->first()->nama_divisi == 'Top Manajemen') {
-            $pembayaran->update(['is_confirmation_top' => false]);
+        // if (Auth::user()->member()->first()->jabatan()->first()->level()->first()->divisi()->first()->nama_divisi == 'Top Manajemen') {
+        $pembayaran->update(['is_confirmation_top' => 0]);
 
-            return redirect('/procurement/pembayaran/' . $rencana->rencana_pembelian_id . '/' . $pembayaran->pembayaran_id)->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> Berhasil Membatalkan Konfirmasi Pembayaran - Top Manajemen.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
-        }
+        return redirect('/procurement/pembayaran/' . $rencana->rencana_pembelian_id . '/' . $pembayaran->pembayaran_id)->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> Berhasil Membatalkan Konfirmasi Pembayaran - Top Manajemen.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
+        // }
     }
 
     public function destroy(RencanaPembelian $rencana, Pembayaran $pembayaran)
@@ -217,8 +216,8 @@ class PembayaranController extends Controller
             "no_rekening" => request('no_rekening'),
             "nama_rekening" => request('nama_rekening'),
             "total_setoran" => str_replace(',', '', request('total_setoran')),
-            "is_confirmation_top" => false,
-            "is_confirmation_admin" => false,
+            "is_confirmation_top" => 0,
+            "is_confirmation_admin" => 0,
             "tanggal" => request('tanggal'),
         ];
     }

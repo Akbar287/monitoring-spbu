@@ -21,7 +21,7 @@ class DivisiController extends Controller
             return DataTables::of($data)
                 ->addIndexColumn()
                 ->addColumn('is_aktif', function ($row) {
-                    $actionBtn = $row->is_aktif == true ? 'Aktif' : "Tidak Aktif";
+                    $actionBtn = $row->is_aktif == 1 ? 'Aktif' : "Tidak Aktif";
                     return $actionBtn;
                 })
                 ->addColumn('action', function ($row) {
@@ -50,7 +50,7 @@ class DivisiController extends Controller
     {
         $spbu = Spbu::find($divisiRequest->spbu_id);
 
-        $divisi = $spbu->divisi()->where('nama_divisi', request('nama_divisi'))->where('keterangan', request('keterangan'))->where('is_aktif', request('is_aktif') == 'true' ? true : false)->first();
+        $divisi = $spbu->divisi()->where('nama_divisi', request('nama_divisi'))->where('keterangan', request('keterangan'))->where('is_aktif', request('is_aktif') == 'true' ? 1 : 0)->first();
         if (is_null($divisi)) {
             $divisi = $spbu->divisi()->create($this->divisiData());
         }
@@ -100,7 +100,7 @@ class DivisiController extends Controller
         return [
             'nama_divisi' => request('nama_divisi'),
             'keterangan' => request('keterangan'),
-            'is_aktif' => request('is_aktif') == 'true' ? true : false
+            'is_aktif' => request('is_aktif') == 'true' ? 1 : 0
         ];
     }
 }

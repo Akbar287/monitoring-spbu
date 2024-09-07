@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\StandMeterRequest;
 use App\Models\Dombak;
 use App\Models\JamKerja;
 use App\Models\Nozzle;
@@ -40,7 +39,7 @@ class StandMeterController extends Controller
 
         if ($request->ajax()) {
             $data = null;
-            $data = $produkSelected === 'all' ?  StandMeter::where('stand_meter_akhir', null)->orWhere('is_confirmation', false)->whereBetween('tanggal', [$waktuMulai, $waktuSelesai])->join('nozzle', 'nozzle.nozzle_id', 'stand_meter.nozzle_id')->get() : StandMeter::where('stand_meter_akhir', null)->orWhere('is_confirmation', false)->whereBetween('tanggal', [$waktuMulai, $waktuSelesai])->where('nozzle.produk_id', $produkSelected)->join('nozzle', 'nozzle.nozzle_id', 'stand_meter.nozzle_id')->get();
+            $data = $produkSelected === 'all' ?  StandMeter::where('stand_meter_akhir', null)->orWhere('is_confirmation', 0)->whereBetween('tanggal', [$waktuMulai, $waktuSelesai])->join('nozzle', 'nozzle.nozzle_id', 'stand_meter.nozzle_id')->get() : StandMeter::where('stand_meter_akhir', null)->orWhere('is_confirmation', 0)->whereBetween('tanggal', [$waktuMulai, $waktuSelesai])->where('nozzle.produk_id', $produkSelected)->join('nozzle', 'nozzle.nozzle_id', 'stand_meter.nozzle_id')->get();
 
             return DataTables::of($data)
                 ->addIndexColumn()
@@ -66,7 +65,7 @@ class StandMeterController extends Controller
                     return number_format($row->stand_meter_akhir - $row->stand_meter_awal, 6, ".", ",");
                 })
                 ->addColumn('status', function ($row) {
-                    return is_null($row->stand_meter_akhir) ? '<div class="badge badge-warning">Berjalan</div>' : ($row->is_confirmation ? '<div class="badge badge-success">Terkonfirmasi</div>' : '<div class="badge badge-danger">Belum Dikonfirmasi</div>');
+                    return is_null($row->stand_meter_akhir) ? '<div class="badge badge-warning">Berjalan</div>' : ($row->is_confirmation == 1 ? '<div class="badge badge-success">Terkonfirmasi</div>' : '<div class="badge badge-danger">Belum Dikonfirmasi</div>');
                 })
                 ->addColumn('action', function ($row) {
                     $actionBtn = '<a href="' . route('totalisator.show', $row->stand_meter_id) . '" class="edit btn btn-success btn-sm">Detail</a>';
@@ -93,7 +92,7 @@ class StandMeterController extends Controller
         $waktuSelesai = $waktuSelesai->format('Y-m-d');
 
         if ($request->ajax()) {
-            $data = $produkSelected === 'all' ? StandMeter::where('stand_meter_akhir', '!=', null)->where('is_confirmation', true)->whereBetween('tanggal', [$waktuMulai, $waktuSelesai])->orderBy('tanggal', 'desc')->get() : StandMeter::where('stand_meter_akhir', '!=', null)->where('is_confirmation', true)->where('nozzle.produk_id', $produkSelected)->join('nozzle', 'nozzle.nozzle_id', 'stand_meter.nozzle_id')->whereBetween('tanggal', [$waktuMulai, $waktuSelesai])->orderBy('tanggal', 'desc')->get();
+            $data = $produkSelected === 'all' ? StandMeter::where('stand_meter_akhir', '!=', null)->where('is_confirmation', 1)->whereBetween('tanggal', [$waktuMulai, $waktuSelesai])->orderBy('tanggal', 'desc')->get() : StandMeter::where('stand_meter_akhir', '!=', null)->where('is_confirmation', 1)->where('nozzle.produk_id', $produkSelected)->join('nozzle', 'nozzle.nozzle_id', 'stand_meter.nozzle_id')->whereBetween('tanggal', [$waktuMulai, $waktuSelesai])->orderBy('tanggal', 'desc')->get();
             return DataTables::of($data)
                 ->addIndexColumn()
                 ->addColumn('nozzle', function ($row) {
@@ -118,7 +117,7 @@ class StandMeterController extends Controller
                     return number_format($row->stand_meter_akhir - $row->stand_meter_awal, 6, ".", ",");
                 })
                 ->addColumn('status', function ($row) {
-                    return $row->is_confirmation ? '<div class="badge badge-success">Terkonfirmasi</div>' : '<div class="badge badge-danger">Belum Dikonfirmasi</div>';
+                    return $row->is_confirmation == 1 ? '<div class="badge badge-success">Terkonfirmasi</div>' : '<div class="badge badge-danger">Belum Dikonfirmasi</div>';
                 })
                 ->addColumn('action', function ($row) {
                     $actionBtn = '<a href="' . route('totalisator.riwayat_show', $row->stand_meter_id) . '" class="edit btn btn-success btn-sm">Detail</a>';
@@ -140,7 +139,7 @@ class StandMeterController extends Controller
      */
     public function create()
     {
-        $dombak = Dombak::where('is_aktif', true)->get();
+        $dombak = Dombak::where('is_aktif', 1)->get();
         $nozzle = Nozzle::select('nozzle.nozzle_id')->addSelect('nozzle.nama_nozzle')->addSelect('produk.nama_produk')
             ->join('dispenser', 'dispenser.dispenser_id', 'nozzle.dispenser_id')
             ->join('payung', 'payung.payung_id', 'dispenser.payung_id')
@@ -175,7 +174,7 @@ class StandMeterController extends Controller
                 $jamKerjaCount = JamKerja::count();
                 $dokStok = null;
                 if (!is_null($standMeter)) {
-                    $dokStok = TypeDokumenStok::where('type_movement', 'Good Receive Penerimaan')->first()->dokumen_stok()->where('tanggal', $standMeter->tanggal)->where('jam_kerja_id', $standMeter->jam_kerja_id)->where('dombak_id', $standMeter->dombak_id)->where('is_confirmation', true)->first();
+                    $dokStok = TypeDokumenStok::where('type_movement', 'Good Receive Penerimaan')->first()->dokumen_stok()->where('tanggal', $standMeter->tanggal)->where('jam_kerja_id', $standMeter->jam_kerja_id)->where('dombak_id', $standMeter->dombak_id)->where('is_confirmation', 1)->first();
                 }
 
                 $tgl = is_null($standMeter) ? null : Carbon::createFromFormat('Y-m-d', $standMeter->tanggal);
@@ -187,7 +186,7 @@ class StandMeterController extends Controller
                         'tanggal' => $tanggal ??  date('Y-m-d'),
                         'jam_kerja' => $shift,
                         'stand_meter_akhir' => is_null($standMeter) ? 0 : number_format($standMeter->stand_meter_akhir, 6, ".", ","),
-                        'receive' => !is_null($dokStok),
+                        'receive' => false, //!is_null($dokStok),
                         'jam_kerja_id' => $jam_kerja
                     ],
                     'message' => "data has been served",
@@ -267,7 +266,7 @@ class StandMeterController extends Controller
 
         $dokStok = null;
         if (!is_null($latestStandMeter)) {
-            $dokStok = TypeDokumenStok::where('type_movement', 'Good Receive Penerimaan')->first()->dokumen_stok()->where('tanggal', $latestStandMeter->tanggal)->where('jam_kerja_id', $latestStandMeter->jam_kerja_id)->where('dombak_id', $latestStandMeter->dombak_id)->where('is_confirmation', true)->first();
+            $dokStok = TypeDokumenStok::where('type_movement', 'Good Receive Penerimaan')->first()->dokumen_stok()->where('tanggal', $latestStandMeter->tanggal)->where('jam_kerja_id', $latestStandMeter->jam_kerja_id)->where('dombak_id', $latestStandMeter->dombak_id)->where('is_confirmation', 1)->first();
         }
 
         if (is_null($dokStok)) {
@@ -277,7 +276,8 @@ class StandMeterController extends Controller
             $jamKerja = JamKerja::where('urutan', $nextJamKerja)->first();
             $tanggal = is_null($tgl) ? null : ($latestStandMeter->urutan == $jamKerjaCount ? $tgl->addDay()->format('Y-m-d') : $tgl->format('Y-m-d'));
         } else {
-            $jamKerja = JamKerja::where('jam_kerja_id', $request->jam_kerja_id)->first();
+            $jk = JamKerja::select('jam_kerja_id')->where('nama_jam_kerja', $request->jam_kerja_id)->first();
+            $jamKerja = JamKerja::where('jam_kerja_id', $jk->jam_kerja_id)->first();
             $tanggal = $request->tanggal;
         }
 
@@ -300,11 +300,11 @@ class StandMeterController extends Controller
             'nozzle_id' => $nozzle->nozzle_id,
             'dombak_id' => $request->dombak_id,
             'jam_kerja_id' => $jamKerja->jam_kerja_id,
-            'tanggal' => $tanggal,
+            'tanggal' => is_null($tanggal) ? date('Y-m-d') : $tanggal,
             'stand_meter_awal' => $standMeter,
             'stand_meter_akhir' => 0,
             'urutan' => $urutan,
-            'is_confirmation' => false
+            'is_confirmation' => 0
         ]);
 
 
@@ -328,8 +328,8 @@ class StandMeterController extends Controller
      */
     public function edit(StandMeter $standMeter)
     {
-        $dombak = Dombak::where('is_aktif', true)->get();
-        $nozzle = Nozzle::where('is_aktif', true)->get();
+        $dombak = Dombak::where('is_aktif', 1)->get();
+        $nozzle = Nozzle::where('is_aktif', 1)->get();
         $jamKerja = JamKerja::get();
         return view('stok/totalisator/edit', compact('dombak', 'nozzle', 'jamKerja', 'standMeter'));
     }
@@ -350,8 +350,8 @@ class StandMeterController extends Controller
 
     public function final(StandMeter $standMeter)
     {
-        $dombak = Dombak::where('is_aktif', true)->get();
-        $nozzle = Nozzle::where('is_aktif', true)->get();
+        $dombak = Dombak::where('is_aktif', 1)->get();
+        $nozzle = Nozzle::where('is_aktif', 1)->get();
         $jamKerja = JamKerja::get();
         return view('stok/totalisator/final', compact('dombak', 'nozzle', 'jamKerja', 'standMeter'));
     }
@@ -370,7 +370,7 @@ class StandMeterController extends Controller
     public function confirmation(StandMeter $standMeter)
     {
         $standMeter->update([
-            'is_confirmation' => true
+            'is_confirmation' => 1
         ]);
 
         if (DB::table('stand_meter_dokumen_stok')->where('stand_meter_id', $standMeter->stand_meter_id)->count() == 0) {
@@ -424,7 +424,7 @@ class StandMeterController extends Controller
             ]);
 
             if (
-                $type_dokumen_stock_penjualan->dokumen_stok()->where('stok_inventory_id', $standMeter->dombak()->first()->stok_inventory_dombak()->first()->stok_inventory()->first()->stok_inventory_id)->where('jam_kerja_id', $standMeter->jam_kerja_id)->where('member_id', Auth::user()->member_id)->where('dombak_id', $standMeter->dombak_id)->where('tanggal', date($standMeter->tanggal))->where('stok_awal', $stokInventory)->where('stok_akhir', $stokInventory - $selisih)->where('is_confirmation', true)->count() == 0
+                $type_dokumen_stock_penjualan->dokumen_stok()->where('stok_inventory_id', $standMeter->dombak()->first()->stok_inventory_dombak()->first()->stok_inventory()->first()->stok_inventory_id)->where('jam_kerja_id', $standMeter->jam_kerja_id)->where('member_id', Auth::user()->member_id)->where('dombak_id', $standMeter->dombak_id)->where('tanggal', date($standMeter->tanggal))->where('stok_awal', $stokInventory)->where('stok_akhir', $stokInventory - $selisih)->where('is_confirmation', 1)->count() == 0
             ) {
                 $dokumenStokPenjualan = $type_dokumen_stock_penjualan->dokumen_stok()->create([
                     'stok_inventory_id' => $standMeter->dombak()->first()->stok_inventory_dombak()->first()->stok_inventory()->first()->stok_inventory_id,
@@ -434,7 +434,7 @@ class StandMeterController extends Controller
                     'tanggal' => date($standMeter->tanggal),
                     'stok_awal' => $stokInventory,
                     'stok_akhir' => $stokInventory - $selisih,
-                    'is_confirmation' => true
+                    'is_confirmation' => 1
                 ]);
 
                 DB::table('stand_meter_dokumen_stok')->insert([

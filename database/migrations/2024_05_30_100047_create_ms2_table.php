@@ -15,7 +15,7 @@ return new class extends Migration
             $table->uuid('ms2_id')->primary();
             $table->uuid('member_id');
             $table->date('tanggal');
-            $table->string('kode_sms', 64);
+            $table->text('kode_sms')->nullable();
             $table->boolean('is_done');
             $table->timestamps();
 

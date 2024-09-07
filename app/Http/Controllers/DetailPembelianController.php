@@ -38,7 +38,7 @@ class DetailPembelianController extends Controller
                 ->rawColumns(['action'])
                 ->make(true);
         }
-        $pajakLib = PajakPembelianLib::where('is_aktif', true)->first();
+        $pajakLib = PajakPembelianLib::where('is_aktif', 1)->first();
         return view('procurement/pembelian_detail/index', compact('pembelian', 'pajakLib'));
     }
 
@@ -76,7 +76,7 @@ class DetailPembelianController extends Controller
             'grand_total' => $grandTotal
         ]);
 
-        $pajakLib = PajakPembelianLib::where('is_aktif', true)->first();
+        $pajakLib = PajakPembelianLib::where('is_aktif', 1)->first();
         $pajak = [
             'pajak_pembelian_lib_id' => $pajakLib->pajak_pembelian_lib_id,
             'ppn' => ($pajakLib->ppn / 100) * $grandTotal,
@@ -107,7 +107,7 @@ class DetailPembelianController extends Controller
 
     public function edit_pajak(RencanaPembelian $pembelian)
     {
-        $pajakLib = PajakPembelianLib::where('is_aktif', true)->first();
+        $pajakLib = PajakPembelianLib::where('is_aktif', 1)->first();
         return view('procurement/pembelian_detail/pajak', compact('pembelian', 'pajakLib'));
     }
     public function update_pajak(RencanaPembelian $pembelian)
@@ -121,7 +121,7 @@ class DetailPembelianController extends Controller
     }
     public function pajakData()
     {
-        $pajakLib = PajakPembelianLib::where('is_aktif', true)->first();
+        $pajakLib = PajakPembelianLib::where('is_aktif', 1)->first();
         return [
             'pajak_pembelian_lib_id' => $pajakLib->pajak_pembelian_lib_id,
             'ppn' => str_replace(',', '', request('ppn')),

@@ -83,8 +83,8 @@ class OpenPenjualanController extends Controller
                     'tanggal' => request('tanggal'),
                     'total_penjualan' => 0,
                     'total_uang_kotak' => 0,
-                    'is_accepted_admin' => false,
-                    'is_accepted_top' => false,
+                    'is_accepted_admin' => 0,
+                    'is_accepted_top' => 0,
                 ]);
             }
 
@@ -94,7 +94,7 @@ class OpenPenjualanController extends Controller
                 if (!is_null($nozzle)) {
                     $sm = $nozzle->stand_meter()->where('tanggal', request('tanggal'))->where('jam_kerja_id', request('jam_kerja_id'))->first();
                     if (!is_null($sm)) {
-                        $harga = $sm->nozzle()->first()->produk()->first()->harga()->where('is_default', 'true')->first();
+                        $harga = $sm->nozzle()->first()->produk()->first()->harga()->where('is_default', '1')->first();
 
                         $totalDetailJual = ($sm->stand_meter_akhir - $sm->stand_meter_awal) * $harga->harga_jual;
                         $total += $totalDetailJual;
@@ -105,7 +105,7 @@ class OpenPenjualanController extends Controller
                                 'harga_id' => $harga->harga_id,
                                 'liter' => $sm->stand_meter_akhir - $sm->stand_meter_awal,
                                 'total_detail_jual' => $totalDetailJual,
-                                'is_confirmed' => false
+                                'is_confirmed' => 0
                             ]);
                             $total += ($sm->stand_meter_akhir - $sm->stand_meter_awal) * $harga->harga_jual;
                         }
@@ -171,7 +171,7 @@ class OpenPenjualanController extends Controller
         $nozzle = Nozzle::where('nozzle_id', $request->nozzle_id)->first();
 
         if (!is_null($nozzle)) {
-            $sm = $nozzle->stand_meter()->where('tanggal', request('tanggal'))->where('jam_kerja_id', request('jam_kerja_id'))->where('is_confirmation', true)->first();
+            $sm = $nozzle->stand_meter()->where('tanggal', request('tanggal'))->where('jam_kerja_id', request('jam_kerja_id'))->where('is_confirmation', 1)->first();
 
             if (!is_null($sm)) {
                 return response()->json([

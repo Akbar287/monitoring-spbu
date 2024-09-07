@@ -19,19 +19,19 @@ class Ms2Controller extends Controller
     public function index_produk(Request $request)
     {
         if ($request->ajax()) {
-            $data = Produk::where('is_aktif', true)->orderBy('nama_produk', 'asc')->get();
+            $data = Produk::where('is_aktif', 1)->orderBy('nama_produk', 'asc')->get();
             return DataTables::of($data)
                 ->addIndexColumn()
                 ->addColumn('stok_kl', function ($row) {
-                    return number_format($row->detail_rencana_pembelian()->selectRaw('SUM("jumlah") as stok')->join('rencana_pembelian', 'rencana_pembelian.rencana_pembelian_id', 'detail_rencana_pembelian.rencana_pembelian_id')->join('status_purchase', 'status_purchase.status_purchase_id', 'rencana_pembelian.status_purchase_id')->where('status_purchase.nama_status', 'MS2')->where('detail_rencana_pembelian.ms2', false)->where('detail_rencana_pembelian.delivery', false)->first()->stok / 8000 ?? 0, 2, ".", ",");
+                    return number_format($row->detail_rencana_pembelian()->selectRaw('SUM("jumlah") as stok')->join('rencana_pembelian', 'rencana_pembelian.rencana_pembelian_id', 'detail_rencana_pembelian.rencana_pembelian_id')->join('status_purchase', 'status_purchase.status_purchase_id', 'rencana_pembelian.status_purchase_id')->where('status_purchase.nama_status', 'MS2')->where('detail_rencana_pembelian.ms2', 0)->where('detail_rencana_pembelian.delivery', 0)->first()->stok / 8000 ?? 0, 2, ".", ",");
                 })
                 ->addColumn('total_pembelian', function ($row) {
                     return $row->detail_rencana_pembelian()
                         ->join('rencana_pembelian', 'rencana_pembelian.rencana_pembelian_id', 'detail_rencana_pembelian.rencana_pembelian_id')
                         ->join('status_purchase', 'status_purchase.status_purchase_id', 'rencana_pembelian.status_purchase_id')
                         ->where('status_purchase.nama_status', 'MS2')
-                        ->where('detail_rencana_pembelian.ms2', false)
-                        ->where('detail_rencana_pembelian.delivery', false)
+                        ->where('detail_rencana_pembelian.ms2', 0)
+                        ->where('detail_rencana_pembelian.delivery', 0)
                         ->count();
                 })
                 ->addColumn('action', function ($row) {
@@ -55,8 +55,8 @@ class Ms2Controller extends Controller
                 ->join('rencana_pembelian', 'rencana_pembelian.rencana_pembelian_id', 'detail_rencana_pembelian.rencana_pembelian_id')
                 ->join('status_purchase', 'status_purchase.status_purchase_id', 'rencana_pembelian.status_purchase_id')
                 ->where('status_purchase.nama_status', 'MS2')
-                ->where('detail_rencana_pembelian.ms2', false)
-                ->where('detail_rencana_pembelian.delivery', false)
+                ->where('detail_rencana_pembelian.ms2', 0)
+                ->where('detail_rencana_pembelian.delivery', 0)
                 ->get();
             return DataTables::of($data)
                 ->addIndexColumn()
@@ -83,7 +83,7 @@ class Ms2Controller extends Controller
     public function index_pengiriman(Request $request)
     {
         if ($request->ajax()) {
-            $data = Ms2::where('is_done', false)->get();
+            $data = Ms2::where('is_done', 0)->get();
             return DataTables::of($data)
                 ->addIndexColumn()
                 ->addColumn('tanggal', function ($row) {
@@ -103,7 +103,7 @@ class Ms2Controller extends Controller
     }
     public function create_pengiriman(Request $request)
     {
-        $produk = Produk::where('is_aktif', true)->get();
+        $produk = Produk::where('is_aktif', 1)->get();
         $shift = JamKerja::orderBy('urutan', 'asc')->get();
         return view('procurement/ms2/ajukan/create_pengiriman', compact('produk', 'shift'));
     }
@@ -117,13 +117,13 @@ class Ms2Controller extends Controller
             $kode = $this->generateKodeSms($request->detail_rencana_pembelian_id, $request->detail_rencana_pembelian_id_shift);
             $loop = true;
             do {
-                $ms2 = Ms2::where('tanggal', $request->tanggal)->where('member_id', Auth::user()->member_id)->where('is_done', false)->where('kode_sms', $kode)->count();
+                $ms2 = Ms2::where('tanggal', $request->tanggal)->where('member_id', Auth::user()->member_id)->where('is_done', 0)->where('kode_sms', $kode)->count();
 
                 if ($ms2 == 0) {
                     $ms2 = new Ms2();
                     $ms2->tanggal = $request->tanggal;
                     $ms2->member_id = Auth::user()->member_id;
-                    $ms2->is_done = false;
+                    $ms2->is_done = 0;
                     $ms2->kode_sms = $kode;
                     $ms2->save();
                 }
@@ -136,18 +136,18 @@ class Ms2Controller extends Controller
                 }
             } while ($loop);
 
-            $ms2 = Ms2::where('tanggal', $request->tanggal)->where('member_id', Auth::user()->member_id)->where('is_done', false)->where('kode_sms', $kode)->first();
+            $ms2 = Ms2::where('tanggal', $request->tanggal)->where('member_id', Auth::user()->member_id)->where('is_done', 0)->where('kode_sms', $kode)->first();
 
             foreach ($request->detail_rencana_pembelian_id as $drp) {
                 DetailRencanaPembelian::where('detail_rencana_pembelian_id', $drp)->update([
-                    'ms2' => true
+                    'ms2' => 1
                 ]);
 
-                if (is_null(DetailRencanaPembelianMs2::where('ms2_id', $ms2->ms2_id)->where('detail_rencana_pembelian_id', $drp)->where('is_delivery', false)->first())) {
+                if (is_null(DetailRencanaPembelianMs2::where('ms2_id', $ms2->ms2_id)->where('detail_rencana_pembelian_id', $drp)->where('is_delivery', 0)->first())) {
                     DetailRencanaPembelianMs2::create([
                         'ms2_id' => $ms2->ms2_id,
                         'detail_rencana_pembelian_id' => $drp,
-                        'is_delivery' => false
+                        'is_delivery' => 0
                     ]);
                 }
             }
@@ -172,7 +172,7 @@ class Ms2Controller extends Controller
     {
         foreach ($ms2->detail_rencana_pembelian_ms2()->get() as $dr) {
             $dr->detail_rencana_pembelian()->first()->update([
-                'ms2' => false
+                'ms2' => 0
             ]);
         }
         $ms2->delete();
@@ -186,46 +186,46 @@ class Ms2Controller extends Controller
             foreach ($ms2->detail_rencana_pembelian_ms2()->get() as $drms) {
                 if (in_array($drms->detail_rencana_pembelian_id, $request->detail_rencana_pembelian_id)) {
                     DetailRencanaPembelian::where('detail_rencana_pembelian_id', $drms->detail_rencana_pembelian_id)->first()->update([
-                        'ms2' => false,
-                        'delivery' => true
+                        'ms2' => 0,
+                        'delivery' => 1
                     ]);
                     $drms->update([
-                        'is_delivery' => true
+                        'is_delivery' => 1
                     ]);
                 } else {
                     DetailRencanaPembelian::where('detail_rencana_pembelian_id', $drms->detail_rencana_pembelian_id)->first()->update([
-                        'ms2' => false,
-                        'delivery' => false
+                        'ms2' => 0,
+                        'delivery' => 0
                     ]);
                 }
             }
 
             $ms2->update([
-                'is_done' => true
+                'is_done' => 1
             ]);
 
             $loop = true;
             do {
-                $pengiriman = Pengiriman::where('member_id', $ms2->member_id)->where('tanggal', $request->tanggal)->where('no_do', $request->no_do)->where('no_pol', $request->no_pol)->where('is_confirmation_admin', false)->where('is_confirmation_top', false)->where('is_done', false)->where('catatan', $request->catatan)->count();
+                $pengiriman = Pengiriman::where('member_id', $ms2->member_id)->where('tanggal', $request->tanggal)->where('no_do', $request->no_do)->where('no_pol', $request->no_pol)->where('is_confirmation_admin', 0)->where('is_confirmation_top', 0)->where('is_done', 0)->where('catatan', $request->catatan)->count();
                 if ($pengiriman == 0) {
                     $pengiriman = Pengiriman::create([
                         'member_id' => $ms2->member_id,
                         'tanggal' => $request->tanggal,
                         'no_do' => $request->no_do,
                         'no_pol' => $request->no_pol,
-                        'is_confirmation_admin' => false,
-                        'is_confirmation_top' => false,
-                        'is_done' => false,
+                        'is_confirmation_admin' => 0,
+                        'is_confirmation_top' => 0,
+                        'is_done' => 0,
                         'catatan' => $request->catatan,
                     ]);
                 } else if ($pengiriman == 1) {
                     $loop = false;
                 } else {
-                    Pengiriman::where('member_id', $ms2->member_id)->where('tanggal', $request->tanggal)->where('no_do', $request->no_do)->where('no_pol', $request->no_pol)->where('is_confirmation_admin', false)->where('is_confirmation_top', false)->where('is_done', false)->where('catatan', $request->catatan)->delete();
+                    Pengiriman::where('member_id', $ms2->member_id)->where('tanggal', $request->tanggal)->where('no_do', $request->no_do)->where('no_pol', $request->no_pol)->where('is_confirmation_admin', 0)->where('is_confirmation_top', 0)->where('is_done', 0)->where('catatan', $request->catatan)->delete();
                 }
             } while ($loop);
 
-            $pengiriman = Pengiriman::where('member_id', $ms2->member_id)->where('tanggal', $request->tanggal)->where('no_do', $request->no_do)->where('no_pol', $request->no_pol)->where('is_confirmation_admin', false)->where('is_confirmation_top', false)->where('is_done', false)->where('catatan', $request->catatan)->first();
+            $pengiriman = Pengiriman::where('member_id', $ms2->member_id)->where('tanggal', $request->tanggal)->where('no_do', $request->no_do)->where('no_pol', $request->no_pol)->where('is_confirmation_admin', 0)->where('is_confirmation_top', 0)->where('is_done', 0)->where('catatan', $request->catatan)->first();
 
             if (DB::table('pengiriman_ms2')->where('pengiriman_id', $pengiriman->pengiriman_id)->where('ms2_id', $ms2->ms2_id)->count() == 0) {
                 DB::table('pengiriman_ms2')->insert([

@@ -20,7 +20,7 @@ class DombakController extends Controller
             return DataTables::of($data)
                 ->addIndexColumn()
                 ->addColumn('is_aktif', function ($row) {
-                    $actionBtn = $row->is_aktif == true ? 'Aktif' : 'Tidak Aktif';
+                    $actionBtn = $row->is_aktif == 1 ? 'Aktif' : 'Tidak Aktif';
                     return $actionBtn;
                 })
                 ->addColumn('action', function ($row) {
@@ -49,7 +49,7 @@ class DombakController extends Controller
     {
         $spbu = Spbu::find($dombakRequest->spbu_id);
 
-        $dombak = $spbu->dombak()->where('nama_dombak', request('nama_dombak'))->where('keterangan', request('keterangan'))->where('is_aktif', request('is_aktif'))->first();
+        $dombak = $spbu->dombak()->where('nama_dombak', request('nama_dombak'))->where('keterangan', request('keterangan'))->where('is_aktif', request('is_aktif') ? 1 : 0)->first();
         if (is_null($dombak)) {
             $dombak = $spbu->dombak()->create($this->dombakData());
         }
@@ -99,7 +99,7 @@ class DombakController extends Controller
         return [
             'nama_dombak' => request('nama_dombak'),
             'keterangan' => request('keterangan'),
-            'is_aktif' => request('is_aktif')
+            'is_aktif' => request('is_aktif') ? 1 : 0
         ];
     }
 

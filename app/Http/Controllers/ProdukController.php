@@ -48,7 +48,7 @@ class ProdukController extends Controller
     public function store(ProdukRequest $produkRequest)
     {
         $spbu = Spbu::find($produkRequest->spbu_id);
-        $produk = $spbu->produk()->where('nama_produk', request('nama_produk'))->where('is_aktif', request('is_aktif'))->first();
+        $produk = $spbu->produk()->where('nama_produk', request('nama_produk'))->where('is_aktif', request('is_aktif') ? 1 : 0)->first();
         if (is_null($produk)) {
             $produk = $spbu->produk()->create($this->produkData());
         }
@@ -103,7 +103,7 @@ class ProdukController extends Controller
     {
         return [
             'nama_produk' => request('nama_produk'),
-            'is_aktif' => request('is_aktif'),
+            'is_aktif' => request('is_aktif') ? 1 : 0,
             'singkatan' => request('singkatan'),
         ];
     }

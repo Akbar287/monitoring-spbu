@@ -10,7 +10,6 @@ use App\Models\RencanaPembelian;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\Validator;
 use Yajra\DataTables\DataTables;
 
 class FileLoController extends Controller

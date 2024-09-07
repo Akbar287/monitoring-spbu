@@ -36,8 +36,8 @@ class KehadiranOperatorController extends Controller
                 ->leftJoin('nozzle', 'penjadwalan_nozzle.nozzle_id', 'nozzle.nozzle_id')
                 ->whereBetween('penjadwalan.tanggal', [$waktuMulai, $waktuSelesai])
                 ->where('member_id', Auth::user()->member_id)
-                ->where('is_attended', false)
-                ->where('is_confirm', false)
+                ->where('is_attended', 0)
+                ->where('is_confirm', 0)
                 ->orderBy('penjadwalan.tanggal', 'desc')
                 ->orderBy('jam_kerja.urutan', 'asc')
                 ->get();
@@ -83,7 +83,7 @@ class KehadiranOperatorController extends Controller
                 ], 200);
                 exit;
             }
-            $qrcode = $penjadwalan->random_string_barcode()->where('is_active', true)->where('is_done', false)->first();
+            $qrcode = $penjadwalan->random_string_barcode()->where('is_active', 1)->where('is_done', 0)->first();
 
             if (is_null($qrcode)) {
                 if (!$is_double) {
@@ -109,12 +109,12 @@ class KehadiranOperatorController extends Controller
                     ], 200);
                     exit;
                 } else {
-                    $qrcode->update(['is_done' => true, 'is_active' => false]);
+                    $qrcode->update(['is_done' => 1, 'is_active' => 0]);
                     $is_double = true;
                     $cek = false;
                     if (!$penjadwalan->is_attended) {
                         $penjadwalan->update([
-                            'is_attended' => true,
+                            'is_attended' => 1,
                             'kode_penjadwalan' => $request->code,
                             'start_time' => date('Y-m-d H:i:s'),
                             'attended' => date('Y-m-d H:i:s')

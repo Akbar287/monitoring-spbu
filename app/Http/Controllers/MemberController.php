@@ -147,7 +147,7 @@ class MemberController extends Controller
         return [
             'username' => request('username'),
             'password' => $password != null ? $password : request('password'),
-            'is_aktif' => request('is_aktif') != null ? request('is_aktif') : false,
+            'is_aktif' => request('is_aktif') != null ? request('is_aktif') : 0,
         ];
     }
 

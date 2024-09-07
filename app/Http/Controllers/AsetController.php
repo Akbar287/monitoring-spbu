@@ -98,7 +98,7 @@ class AsetController extends Controller
             'tanggal_digunakan' => request('tanggal_digunakan'),
             'harga' => str_replace(',', '', request('harga')),
             'penyusutan_per_hari' => str_replace(',', '', request('penyusutan_per_hari')),
-            'is_digunakan' => request('is_digunakan'),
+            'is_digunakan' => request('is_digunakan') ? 1 : 0,
             'keterangan' => request('keterangan'),
         ];
     }

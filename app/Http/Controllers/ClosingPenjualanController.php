@@ -66,7 +66,7 @@ class ClosingPenjualanController extends Controller
     public function confirmed_to(Penjualan $penjualan, DetailPenjualan $detail)
     {
         $detail->update([
-            'is_confirmed' => true
+            'is_confirmed' => 1
         ]);
 
         return redirect('/setoran/closing-penjualan/' . $penjualan->penjualan_id)->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> Penjualan Stand Meter sudah dikonfirmasi.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
@@ -75,7 +75,7 @@ class ClosingPenjualanController extends Controller
     public function confirmed_from(Penjualan $penjualan, DetailPenjualan $detail)
     {
         $detail->update([
-            'is_confirmed' => false
+            'is_confirmed' => 0
         ]);
 
         return redirect('/setoran/closing-penjualan/' . $penjualan->penjualan_id)->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> Penjualan Stand Meter sudah dibatalkan.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');

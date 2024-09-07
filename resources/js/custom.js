@@ -1402,7 +1402,6 @@ $(function () {
                 });
             } else {
                 $('input#volume').val("0")
-
             }
         }
 
@@ -1496,68 +1495,41 @@ $(function () {
         });
     }
     if (routeName == 'penerimaan.show') {
-        $('#tinggi_dombak_sebelumnya').on('change', function () {
-            checkKonversiDombak($(this).val()).then(res => {
-                $('#volume_sebelumnya').val(res.data.volume)
+        $('.tinggi_dombak_sebelumnya').on('change', function () {
+            checkKonversiDombak($(this).val(), $(this).data('dombak')).then(res => {
+                $(this).parent().parent().siblings('.volume_sebelumnya-row').children('div').children('input').val(res.data.volume);
                 volume_terisi();
             }).catch(err => console.error(err));
         });
-        $('#tinggi_dombak_setelahnya').on('change', function () {
-            checkKonversiDombak($(this).val()).then(res => {
-                $('#volume_penerimaan').val(res.data.volume)
+        $('.tinggi_dombak_setelahnya').on('change', function () {
+            checkKonversiDombak($(this).val(), $(this).data('dombak')).then(res => {
+                $(this).parent().parent().siblings('.volume_penerimaan-row').children('div').children('input').val(res.data.volume);
                 volume_terisi();
             }).catch(err => console.error(err));
-        });
-
-        $('select#dombak_id').on('change', function(e) {
-            checkVolumeDombak();
         });
 
         function volume_terisi() {
             if($('input#volume_sebelumnya').val() != '' && $('input#volume_penerimaan').val() != ' ') {
-                let v_sbl = $('input#volume_sebelumnya').val().replace(',', '');
-                let v_stl = $('input#volume_penerimaan').val().replace(',', '');
-                let v_dbl = $('input#volume_dibeli').val().replace(',', '');
-                let v_akt = v_stl - v_sbl;
-                let v_lpt = v_akt - v_dbl;
+                let i=0, total = 0;
+                for(i=0; i < $('.volume_sebelumnya').length; i++) {
+                    total += $('.volume_penerimaan')[i].value.replace(',', '') - $('.volume_sebelumnya')[i].value.replace(',', '');
+                }
 
-                $('#volume_aktual').val(v_akt.toLocaleString('en'));
+                let v_dbl = $('input#volume_dibeli').val().replace(',', '');
+                let v_lpt = total - v_dbl;
+
+                $('#volume_aktual').val(total.toLocaleString('en'));
                 $('#volume_selisih').val(v_lpt.toLocaleString('en'));
             }
         }
-        function checkVolumeDombak() {
-            if($('select#dombak_id').val() != '') {
-                $.ajax({
-                    url: document.location.origin + '/master/dombak/api',
-                    method: 'get',
-                    data: {
-                        dombak_id: $('select#dombak_id').val(),
-                    },
-                    dataType: 'json',
-                    success: function(data) {
-                        if(data.status == 200){
-                            if(data.data != null){
-                                $('input#tinggi_dombak_sebelumnya').attr('min', data.tinggi.min).attr('max', data.tinggi.max).removeAttr('readonly');
-                                $('input#tinggi_dombak_setelahnya').attr('min', data.tinggi.min).attr('max', data.tinggi.max).removeAttr('readonly');
-                                $('span#show-last-volume').removeClass('d-none');
-                                $('span#show-last-volume > span').text(data.data.stok)
-                            } else {
-                                console.error('Terdapat Error');
-                            }
-                        }
-                    },
-                    error: function(err) {console.error(err)}
-                });
-            }
-        }
 
-        async function checkKonversiDombak (tinggi) {
+        async function checkKonversiDombak (tinggi, dombak) {
             if($('select#dombak_id').val() != '' && $('input#tinggi_dombak').val() != '') {
                 return await $.ajax({
                     url: document.location.origin + '/master/dombak/konversi/api',
                     method: 'get',
                     data: {
-                        dombak_id: $('select#dombak_id').val(),
+                        dombak_id: dombak,
                         tinggi: tinggi,
                     },
                     dataType: 'json',
@@ -1572,6 +1544,39 @@ $(function () {
                 console.error('Pilih dombak dan tinggi')
             }
         }
+
+        // $('select#dombak_id').on('change', function(e) {
+        //     if($(this).children('option').first()[0] == '<option value="">Pilih Dombak</option>') {
+        //         $(this).children('option').first().remove();
+        //     }
+        //     checkVolumeDombak();
+        // });
+
+        // function checkVolumeDombak() {
+        //     if($('select#dombak_id').val() != '') {
+        //         $.ajax({
+        //             url: document.location.origin + '/master/dombak/api',
+        //             method: 'get',
+        //             data: {
+        //                 dombak_id: $('select#dombak_id').val(),
+        //             },
+        //             dataType: 'json',
+        //             success: function(data) {
+        //                 if(data.status == 200){
+        //                     if(data.data != null){
+        //                         $('input#tinggi_dombak_sebelumnya').attr('min', data.tinggi.min).attr('max', data.tinggi.max).removeAttr('readonly');
+        //                         $('input#tinggi_dombak_setelahnya').attr('min', data.tinggi.min).attr('max', data.tinggi.max).removeAttr('readonly');
+        //                         $('span#show-last-volume').removeClass('d-none');
+        //                         $('span#show-last-volume > span').text(data.data.stok)
+        //                     } else {
+        //                         console.error('Terdapat Error');
+        //                     }
+        //                 }
+        //             },
+        //             error: function(err) {console.error(err)}
+        //         });
+        //     }
+        // }
     }
     if (routeName == 'setoran.open') {
         $('.table-open-setoran').DataTable({

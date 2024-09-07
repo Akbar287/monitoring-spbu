@@ -20,7 +20,7 @@ class MarginController extends Controller
     public function index(Request $request)
     {
         $spbu = Spbu::get();
-        $produk = Produk::where('is_aktif', true)->get();
+        $produk = Produk::where('is_aktif', 1)->get();
         $typeReport = [['type_report_id' => 1, 'nama_type_report' => 'Totalisator'], ['type_report_id' => 2, 'nama_type_report' => 'Total Penjualan BBM'], ['type_report_id' => 3, 'nama_type_report' => 'Setoran, Penerimaan BBM'], ['type_report_id' => 4, 'nama_type_report' => 'Bongkaran BBM Aktual'], ['type_report_id' => 5, 'nama_type_report' => 'Stok BBM di Dombak']];
 
         $spbuSelected = $request->spbu_id;
@@ -53,7 +53,7 @@ class MarginController extends Controller
     }
     public function totalisator($mulai, $selesai)
     {
-        $data = StandMeter::select('stand_meter.tanggal', 'jam_kerja.nama_jam_kerja', 'nozzle.nama_nozzle', 'produk.nama_produk', 'stand_meter.stand_meter_awal', 'stand_meter.stand_meter_akhir', 'harga.harga_jual')->join('nozzle', 'nozzle.nozzle_id', 'stand_meter.nozzle_id')->join('jam_kerja', 'jam_kerja.jam_kerja_id', 'stand_meter.jam_kerja_id')->join('produk', 'produk.produk_id', 'nozzle.produk_id')->join('harga', 'harga.produk_id', 'produk.produk_id')->where('harga.is_default', true)->where('stand_meter.is_confirmation', true)->whereBetween('stand_meter.tanggal', [$mulai, $selesai])->orderBy('stand_meter.tanggal', 'asc')->orderBy('stand_meter.urutan', 'asc')->orderBy('nozzle.nama_nozzle', 'asc')->get()->toArray();
+        $data = StandMeter::select('stand_meter.tanggal', 'jam_kerja.nama_jam_kerja', 'nozzle.nama_nozzle', 'produk.nama_produk', 'stand_meter.stand_meter_awal', 'stand_meter.stand_meter_akhir', 'harga.harga_jual')->join('nozzle', 'nozzle.nozzle_id', 'stand_meter.nozzle_id')->join('jam_kerja', 'jam_kerja.jam_kerja_id', 'stand_meter.jam_kerja_id')->join('produk', 'produk.produk_id', 'nozzle.produk_id')->join('harga', 'harga.produk_id', 'produk.produk_id')->where('harga.is_default', 1)->where('stand_meter.is_confirmation', 1)->whereBetween('stand_meter.tanggal', [$mulai, $selesai])->orderBy('stand_meter.tanggal', 'asc')->orderBy('stand_meter.urutan', 'asc')->orderBy('nozzle.nama_nozzle', 'asc')->get()->toArray();
 
         $temp = [];
         $tgl = null;
@@ -114,7 +114,14 @@ class MarginController extends Controller
         unset($data);
 
         $header = [
-            "Tanggal", "Shift", "Nama Nozzle", "Produk", "Stand Meter Awal", "Stand Meter Akhir", "Harga Jual", "Total Penjualan"
+            "Tanggal",
+            "Shift",
+            "Nama Nozzle",
+            "Produk",
+            "Stand Meter Awal",
+            "Stand Meter Akhir",
+            "Harga Jual",
+            "Total Penjualan"
         ];
 
         array_unshift($temp, $header);
@@ -125,11 +132,11 @@ class MarginController extends Controller
     }
     public function total_penjualan($mulai, $selesai)
     {
-        $produk = Produk::orderBy('nama_produk', 'asc')->where('is_aktif', true)->get();
+        $produk = Produk::orderBy('nama_produk', 'asc')->where('is_aktif', 1)->get();
 
         $temp = [];
         foreach ($produk as $p) {
-            $r = $p->nozzle()->join('stand_meter', 'stand_meter.nozzle_id', 'nozzle.nozzle_id')->selectRaw('SUM("stand_meter_akhir") as stand_meter_akhir')->selectRaw('SUM("stand_meter_awal") as stand_meter_awal')->selectRaw('stand_meter.tanggal')->orderBy('stand_meter.tanggal')->where('stand_meter.is_confirmation', true)->whereBetween('stand_meter.tanggal', [$mulai, $selesai])->groupBy('stand_meter.tanggal')->get()->toArray();
+            $r = $p->nozzle()->join('stand_meter', 'stand_meter.nozzle_id', 'nozzle.nozzle_id')->selectRaw('SUM("stand_meter_akhir") as stand_meter_akhir')->selectRaw('SUM("stand_meter_awal") as stand_meter_awal')->selectRaw('stand_meter.tanggal')->orderBy('stand_meter.tanggal')->where('stand_meter.is_confirmation', 1)->whereBetween('stand_meter.tanggal', [$mulai, $selesai])->groupBy('stand_meter.tanggal')->get()->toArray();
 
             $tempre = [];
             $totalPenjualan = 0;
@@ -153,11 +160,11 @@ class MarginController extends Controller
                 $tempre[] = [
                     'tanggal' => $e['tanggal'],
                     'penjualan' => $e['stand_meter_akhir'] - $e['stand_meter_awal'],
-                    'harga_jual' => number_format($p->harga()->where('harga.is_default', true)->first()->harga_jual, 2, ",", "."),
-                    'total_penjualan' => '\'' . number_format((floatval($e['stand_meter_akhir']) - floatval($e['stand_meter_awal'])) * $p->harga()->where('harga.is_default', true)->first()->harga_jual, 2, ",", ".")
+                    'harga_jual' => number_format($p->harga()->where('harga.is_default', 1)->first()->harga_jual, 2, ",", "."),
+                    'total_penjualan' => '\'' . number_format((floatval($e['stand_meter_akhir']) - floatval($e['stand_meter_awal'])) * $p->harga()->where('harga.is_default', 1)->first()->harga_jual, 2, ",", ".")
                 ];
                 $totalPenjualan += $e['stand_meter_akhir'] - $e['stand_meter_awal'];
-                $jumlahPenjualan += ((floatval($e['stand_meter_akhir']) - floatval($e['stand_meter_awal'])) * $p->harga()->where('harga.is_default', true)->first()->harga_jual);
+                $jumlahPenjualan += ((floatval($e['stand_meter_akhir']) - floatval($e['stand_meter_awal'])) * $p->harga()->where('harga.is_default', 1)->first()->harga_jual);
             }
             $tempre[] = [
                 'tanggal' => '',
@@ -189,7 +196,7 @@ class MarginController extends Controller
     }
     public function bongkaran($mulai, $selesai)
     {
-        $produk = Produk::orderBy('nama_produk', 'asc')->where('is_aktif', true)->get();
+        $produk = Produk::orderBy('nama_produk', 'asc')->where('is_aktif', 1)->get();
         $temp = [];
         $data = [];
 
@@ -202,7 +209,7 @@ class MarginController extends Controller
                 ->join('jam_kerja', 'jam_kerja.jam_kerja_id', 'dokumen_stok.jam_kerja_id')
                 ->join('member', 'member.member_id', 'pengiriman.member_id')
                 ->join('ktp', 'ktp.ktp_id', 'member.ktp_id')
-                ->where('pengiriman.is_done', true)
+                ->where('pengiriman.is_done', 1)
                 ->whereBetween('penerimaan.tanggal', [$mulai, $selesai])
                 ->where('file_lo.produk_id', $p->produk_id)
                 ->orderBy('penerimaan.tanggal', 'asc')
@@ -264,7 +271,7 @@ class MarginController extends Controller
     }
     public function stok_dombak(Carbon $mulai, Carbon $selesai)
     {
-        $produk = Produk::orderBy('nama_produk', 'asc')->where('is_aktif', true)->get();
+        $produk = Produk::orderBy('nama_produk', 'asc')->where('is_aktif', 1)->get();
         $temp = [];
 
         foreach ($produk as $p) {
@@ -276,7 +283,7 @@ class MarginController extends Controller
                 ->leftJoin('stand_meter_dokumen_stok', 'stand_meter_dokumen_stok.dokumen_stok_id', 'dokumen_stok.dokumen_stok_id')
                 ->leftJoin('stand_meter', 'stand_meter_dokumen_stok.stand_meter_id', 'stand_meter.stand_meter_id')
                 ->whereBetween('dokumen_stok.tanggal', [$mulai, $selesai])
-                ->where('dokumen_stok.is_confirmation', true)
+                ->where('dokumen_stok.is_confirmation', 1)
                 ->where('stok_inventory.produk_id', $p->produk_id)
                 ->orderBy('dokumen_stok.tanggal', 'asc')
                 ->orderBy('jam_kerja.urutan', 'asc')

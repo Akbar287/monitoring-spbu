@@ -19,7 +19,7 @@ class HariController extends Controller
             return DataTables::of($data)
                 ->addIndexColumn()
                 ->addColumn('hari_kerja', function ($row) {
-                    $actionBtn = $row->hari_kerja == true ? 'Hari Kerja' : 'Hari Libur';
+                    $actionBtn = $row->hari_kerja == 1 ? 'Hari Kerja' : 'Hari Libur';
                     return $actionBtn;
                 })
                 ->addColumn('action', function ($row) {
@@ -45,7 +45,7 @@ class HariController extends Controller
      */
     public function store(HariRequest $hariRequest)
     {
-        $hari = Hari::where('nama_hari', request('nama_hari'))->where('hari_kerja', request('hari_kerja') == 'true' ? true : false)->where('keterangan', request('keterangan'))->first();
+        $hari = Hari::where('nama_hari', request('nama_hari'))->where('hari_kerja', request('hari_kerja') == 'true' ? 1 : 0)->where('keterangan', request('keterangan'))->first();
         if (is_null($hari)) {
             $hari = Hari::create($this->hariData());
         }
@@ -93,7 +93,7 @@ class HariController extends Controller
     {
         return [
             'nama_hari' => request('nama_hari'),
-            'hari_kerja' => request('hari_kerja') == 'true' ? true : false,
+            'hari_kerja' => request('hari_kerja') == 'true' ? 1 : 0,
             'keterangan' => request('keterangan'),
         ];
     }

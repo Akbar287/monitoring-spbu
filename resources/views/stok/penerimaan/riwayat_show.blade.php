@@ -406,12 +406,14 @@
 
                                 <div class="col-md-6">
                                     <div class="input-group mb-2">
+                                        @if(!is_null($penerimaan->dokumen_stok()->first()->losses()->first()))
                                         <div class="input-group-prepend">
                                             <div class="input-group-text">{{ $penerimaan->dokumen_stok()->first()->losses()->first()->simbol == 'kurang' ? '-' : '+' }}</div>
                                         </div>
+                                        @endif
                                         <input id="volume_selisih" type="text" readonly
                                             class="form-control thousand-style" name="volume_selisih"
-                                            value="{{ $penerimaan->dokumen_stok()->first()->losses()->first()->jumlah }}" readonly
+                                            value="{{ $penerimaan->dokumen_stok()->first()->losses()->first()->jumlah ?? 0 }}" readonly
                                             >
                                         <div class="input-group-append">
                                             <div class="input-group-text">{{ $satuan_volume }}</div>

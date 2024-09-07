@@ -132,12 +132,12 @@
                                 <div class="col-md-6">
                                     <div class="input-group mb-2">
                                         <div class="input-group-prepend">
-                                          <div class="input-group-text">Rp</div>
+                                            <div class="input-group-text">Rp</div>
                                         </div>
                                         <input id="harga" type="text" readonly
                                             class="form-control" name="harga"
                                             value="{{ number_format($fileLo->detail_rencana_pembelian()->first()->harga, 6, ".", ",") }}" />
-                                      </div>
+                                    </div>
                                 </div>
                             </div>
 
@@ -148,13 +148,12 @@
                                 <div class="col-md-6">
                                     <div class="input-group mb-2">
                                         <div class="input-group-prepend">
-                                          <div class="input-group-text">Rp</div>
+                                            <div class="input-group-text">Rp</div>
                                         </div>
                                         <input id="total_harga" type="text" readonly
                                             class="form-control" name="total_harga"
                                             value="{{ number_format($fileLo->detail_rencana_pembelian()->first()->total_harga, 6, ".", ",") }}" />
-
-                                      </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -284,29 +283,104 @@
                             <div class="col-12">
                                 <div class="alert alert-info">Stok Taking Shift Sebelumnya akan terclose. Sistem otomatis akan membuka shift baru.</div>
                             </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-12">
+                                <div class="accordion" id="accordionExample">
+                                    @foreach($dombak as $d)
+                                    <div class="card">
+                                        <div class="card-header" id="heading-{{ $d->dombak_id }}">
+                                            <h2 class="mb-0">
+                                                <button class="btn btn-link btn-block text-left" type="button" data-toggle="collapse" data-target="#dombak-{{$d->dombak_id}}" aria-expanded="true" aria-controls="dombak-{{$d->dombak_id}}">
+                                                    {{ $d->dombak()->first()->nama_dombak }}
+                                                </button>
+                                            </h2>
+                                        </div>
+
+                                        <div id="dombak-{{$d->dombak_id}}" class="collapse" aria-labelledby="heading-{{ $d->dombak_id }}" data-parent="#accordionExample">
+                                            <div class="card-body">
+                                                <div class="row">
+                                                    <div class="col-md-12">
+                                                        <input type="hidden" name="dombak_id[]" value="{{ $d->dombak_id }}">
+                                                        <div class="row mb-3 justify-content-center tinggi_dombak_sebelumnya-row">
+                                                            <label for="tinggi_dombak_sebelumnya-{{ $d->dombak_id }}" class="col-md-4 col-form-label text-md-end">{{ __('Tinggi Dombak (cm) Sebelum nya')
+                                                                }}</label>
+
+                                                            <div class="col-md-6">
+                                                                <input id="tinggi_dombak_sebelumnya-{{ $d->dombak_id }}" type="number" step=".1" data-dombak="{{ $d->dombak_id }}" class="form-control tinggi_dombak_sebelumnya @error('tinggi_dombak_sebelumnya') is-invalid @enderror" name="tinggi_dombak_sebelumnya[]" min="{{ $d->dombak()->first()->konversi()->select('tinggi')->orderBy('tinggi', 'asc')->limit(1)->first()->tinggi }}" max="{{ $d->dombak()->first()->konversi()->select('tinggi')->orderBy('tinggi', 'desc')->limit(1)->first()->tinggi }}" value="{{ old("tinggi_dombak_sebelumnya") }}" />
+
+                                                                @error('tinggi_dombak_sebelumnya')
+                                                                <span class="invalid-feedback" role="alert">
+                                                                    <strong>{{ $message }}</strong>
+                                                                </span>
+                                                                @enderror
+                                                            </div>
+                                                        </div>
+
+                                                        <div class="row mb-3 justify-content-center tinggi_dombak_setelahnya-row">
+                                                            <label for="tinggi_dombak_setelahnya-{{ $d->dombak_id }}" class="col-md-4 col-form-label text-md-end">{{ __('Tinggi Dombak (cm) Setelah nya')
+                                                                }}</label>
+
+                                                            <div class="col-md-6">
+                                                                <input id="tinggi_dombak_setelahnya-{{ $d->dombak_id }}" type="number" step=".1" data-dombak="{{ $d->dombak_id }}" class="form-control tinggi_dombak_setelahnya  @error('tinggi_dombak_setelahnya') is-invalid @enderror" name="tinggi_dombak_setelahnya[]" min="{{ $d->dombak()->first()->konversi()->select('tinggi')->orderBy('tinggi', 'asc')->limit(1)->first()->tinggi }}" max="{{ $d->dombak()->first()->konversi()->select('tinggi')->orderBy('tinggi', 'desc')->limit(1)->first()->tinggi }}" value="{{ old("tinggi_dombak_setelahnya") }}" />
+
+                                                                @error('tinggi_dombak_setelahnya')
+                                                                <span class="invalid-feedback" role="alert">
+                                                                    <strong>{{ $message }}</strong>
+                                                                </span>
+                                                                @enderror
+                                                            </div>
+                                                        </div>
+
+                                                        <div class="row mb-3 justify-content-center volume_sebelumnya-row">
+                                                            <label for="volume_sebelumnya-{{ $d->dombak_id }}" class="col-md-4 col-form-label text-md-end">{{ __('Volume (liter) Sebelumnya')
+                                                                }}</label>
+
+                                                            <div class="col-md-6">
+                                                                <input id="volume_sebelumnya-{{ $d->dombak_id }}" type="text" class="form-control volume_sebelumnya thousand-style @error('volume_sebelumnya') is-invalid @enderror" name="volume_sebelumnya[]" value="0" readonly />
+                                                                <span class="text-muted">Volume Sebelumnya didapatkan dari tinggi dombak sebelum Penerimaan</span>
+
+                                                                @error('volume_sebelumnya')
+                                                                <span class="invalid-feedback" role="alert">
+                                                                    <strong>{{ $message }}</strong>
+                                                                </span>
+                                                                @enderror
+                                                            </div>
+                                                        </div>
+
+                                                        <div class="row mb-3 justify-content-center volume_penerimaan-row">
+                                                            <label for="volume_penerimaan-{{ $d->dombak_id }}" class="col-md-4 col-form-label text-md-end">{{ __('Volume (liter) (Penerimaan)')
+                                                                }}</label>
+
+                                                            <div class="col-md-6">
+                                                                <input id="volume_penerimaan-{{ $d->dombak_id }}" type="text" class="form-control volume_penerimaan thousand-style @error('volume_penerimaan') is-invalid @enderror" name="volume_penerimaan" value="0" readonly />
+                                                                <span class="text-muted">Volume Penerimaan didapatkan dari tinggi dombak Setelah Penerimaan</span>
+
+                                                                @error('volume_penerimaan')
+                                                                <span class="invalid-feedback" role="alert">
+                                                                    <strong>{{ $message }}</strong>
+                                                                </span>
+                                                                @enderror
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    @endforeach
+                                </div>
+                            </div>
 
                             <div class="col-md-12">
                                 <div class="row mb-3 justify-content-center">
-                                    <label for="dombak_id" class="col-md-4 col-form-label text-md-end">{{ __('Dombak')
-                                        }}</label>
-
-                                    <div class="col-md-6">
-                                        <select class="custom-select @error('dombak_id') is-invalid @enderror" name="dombak_id" id="dombak_id">
-                                            <option value="">Pilih Dombak</option>
-                                            @foreach($dombak as $s)
-                                            <option {{ old('dombak_id') == $s->dombak_id ? 'selected' : '' }} value="{{ $s->dombak_id }}">{{ $s->nama_dombak . ' ('. $s->stok_inventory()->first()->produk()->first()->nama_produk . '-' . $s->stok .'Liter)' }}</option>
-                                            @endforeach
-                                        </select>
-                                        <span class="text-muted" class="d-none" id="show-last-volume">Terdapat: <span></span> saat Stok Taking terakhir.</span>
-
-                                        @error('dombak_id')
-                                        <span class="invalid-feedback" role="alert">
-                                            <strong>{{ $message }}</strong>
-                                        </span>
-                                        @enderror
+                                    <div class="col-12">
+                                        <div class="alert alert-info">Loss / Profit Penerimaan BBM akan ditempel ke Penerimaan Dombak Pertama</div>
                                     </div>
                                 </div>
+                            </div>
 
+                            <div class="col-md-12">
                                 <div class="row mb-3 justify-content-center">
                                     <label for="tanggal" class="col-md-4 col-form-label text-md-end">{{ __('Tanggal')
                                         }}</label>
@@ -344,83 +418,11 @@
                                 </div>
 
                                 <div class="row mb-3 justify-content-center">
-                                    <label for="tinggi_dombak_sebelumnya" class="col-md-4 col-form-label text-md-end">{{ __('Tinggi Dombak (cm) Sebelum nya')
-                                        }}</label>
-
-                                    <div class="col-md-6">
-                                        <input id="tinggi_dombak_sebelumnya" type="number" step=".1" readonly
-                                            class="form-control @error('tinggi_dombak_sebelumnya') is-invalid @enderror" name="tinggi_dombak_sebelumnya" min="" max=""
-                                            value="{{ old("tinggi_dombak_sebelumnya") }}" />
-
-                                        @error('tinggi_dombak_sebelumnya')
-                                        <span class="invalid-feedback" role="alert">
-                                            <strong>{{ $message }}</strong>
-                                        </span>
-                                        @enderror
-                                    </div>
-                                </div>
-
-                                <div class="row mb-3 justify-content-center">
-                                    <label for="tinggi_dombak_setelahnya" class="col-md-4 col-form-label text-md-end">{{ __('Tinggi Dombak (cm) Setelah nya')
-                                        }}</label>
-
-                                    <div class="col-md-6">
-                                        <input id="tinggi_dombak_setelahnya" type="number" step=".1" readonly
-                                            class="form-control @error('tinggi_dombak_setelahnya') is-invalid @enderror" name="tinggi_dombak_setelahnya" min="" max=""
-                                            value="{{ old("tinggi_dombak_setelahnya") }}" />
-
-                                        @error('tinggi_dombak_setelahnya')
-                                        <span class="invalid-feedback" role="alert">
-                                            <strong>{{ $message }}</strong>
-                                        </span>
-                                        @enderror
-                                    </div>
-                                </div>
-
-                                <div class="row mb-3 justify-content-center">
-                                    <label for="volume_sebelumnya" class="col-md-4 col-form-label text-md-end">{{ __('Volume (liter) Sebelumnya')
-                                        }}</label>
-
-                                    <div class="col-md-6">
-                                        <input id="volume_sebelumnya" type="text"
-                                            class="form-control thousand-style @error('volume_sebelumnya') is-invalid @enderror" name="volume_sebelumnya"
-                                            value="0" readonly />
-                                        <span class="text-muted">Volume Sebelumnya didapatkan dari tinggi dombak sebelum Penerimaan</span>
-
-                                        @error('volume_sebelumnya')
-                                        <span class="invalid-feedback" role="alert">
-                                            <strong>{{ $message }}</strong>
-                                        </span>
-                                        @enderror
-                                    </div>
-                                </div>
-
-                                <div class="row mb-3 justify-content-center">
-                                    <label for="volume_penerimaan" class="col-md-4 col-form-label text-md-end">{{ __('Volume (liter) (Penerimaan)')
-                                        }}</label>
-
-                                    <div class="col-md-6">
-                                        <input id="volume_penerimaan" type="text"
-                                            class="form-control thousand-style @error('volume_penerimaan') is-invalid @enderror" name="volume_penerimaan"
-                                            value="0" readonly />
-                                        <span class="text-muted">Volume Penerimaan didapatkan dari tinggi dombak Setelah Penerimaan</span>
-
-                                        @error('volume_penerimaan')
-                                        <span class="invalid-feedback" role="alert">
-                                            <strong>{{ $message }}</strong>
-                                        </span>
-                                        @enderror
-                                    </div>
-                                </div>
-
-                                <div class="row mb-3 justify-content-center">
                                     <label for="volume_aktual" class="col-md-4 col-form-label text-md-end">{{ __('Volume (liter) Aktual')
                                         }}</label>
 
                                     <div class="col-md-6">
-                                        <input id="volume_aktual" type="text"
-                                            class="form-control thousand-style @error('volume_aktual') is-invalid @enderror" name="volume_aktual"
-                                            value="0" readonly />
+                                        <input id="volume_aktual" type="text" class="form-control thousand-style @error('volume_aktual') is-invalid @enderror" name="volume_aktual" value="0" readonly />
                                         <span class="text-muted">Volume Aktual didapatkan dari Volume penerimaan dikurangi Volume Sebelum </span>
 
                                         @error('volume_aktual')

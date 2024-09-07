@@ -64,10 +64,10 @@ class DokumenStok extends Model
         return $this->belongsTo(Dombak::class, 'dombak_id', 'dombak_id');
     }
 
-    public function penerimaan()
-    {
-        return $this->hasOne(Penerimaan::class, 'dokumen_stok_id', 'dokumen_stok_id');
-    }
+    // public function penerimaan()
+    // {
+    //     return $this->hasOne(Penerimaan::class, 'dokumen_stok_id', 'dokumen_stok_id');
+    // }
 
     public function detail_tera()
     {

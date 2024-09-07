@@ -23,7 +23,7 @@ class PajakPembelianLibController extends Controller
                     return Carbon::createFromFormat('Y-m-d H:i:s', $row->created_at)->format('d F Y');
                 })
                 ->addColumn('is_aktif', function ($row) {
-                    $actionBtn = $row->is_aktif == true ? 'Aktif' : 'Tidak Aktif';
+                    $actionBtn = $row->is_aktif == 1 ? 'Aktif' : 'Tidak Aktif';
                     return $actionBtn;
                 })
                 ->addColumn('action', function ($row) {
@@ -49,7 +49,7 @@ class PajakPembelianLibController extends Controller
      */
     public function store(PajakPembelianLibRequest $pajakPembelianLibRequest)
     {
-        $pajakPembelianLib = PajakPembelianLib::where('ppn', request('ppn'))->where('ppbkb', request('ppbkb'))->where('pph', request('pph'))->where('is_aktif', request('is_aktif'))->first();
+        $pajakPembelianLib = PajakPembelianLib::where('ppn', request('ppn'))->where('ppbkb', request('ppbkb'))->where('pph', request('pph'))->where('is_aktif', request('is_aktif') ? 1 : 0)->first();
         if (is_null($pajakPembelianLib)) {
             $pajakPembelianLib = PajakPembelianLib::create($this->pajakPembelianLibData());
         }
@@ -99,7 +99,7 @@ class PajakPembelianLibController extends Controller
             'ppn' => request('ppn'),
             'ppbkb' => request('ppbkb'),
             'pph' => request('pph'),
-            'is_aktif' => request('is_aktif'),
+            'is_aktif' => request('is_aktif') ? 1 : 0,
         ];
     }
 }

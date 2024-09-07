@@ -23,7 +23,7 @@ class PayungController extends Controller
             return DataTables::of($data)
                 ->addIndexColumn()
                 ->addColumn('is_aktif', function ($row) {
-                    $actionBtn = $row->is_aktif == true ? 'Aktif' : 'Tidak Aktif';
+                    $actionBtn = $row->is_aktif == 1 ? 'Aktif' : 'Tidak Aktif';
                     return $actionBtn;
                 })
                 ->addColumn('action', function ($row) {
@@ -52,7 +52,7 @@ class PayungController extends Controller
     {
         $spbu = Spbu::find($payungRequest->spbu_id);
 
-        $payung = $spbu->payung()->where('nama_payung', request('nama_payung'))->where('keterangan', request('keterangan'))->where('is_aktif', request('is_aktif'))->first();
+        $payung = $spbu->payung()->where('nama_payung', request('nama_payung'))->where('keterangan', request('keterangan'))->where('is_aktif', request('is_aktif') ? 1 : 0)->first();
         if (is_null($payung)) {
             $payung = $spbu->payung()->create($this->payungData());
         }
@@ -102,7 +102,7 @@ class PayungController extends Controller
         return [
             'nama_payung' => request('nama_payung'),
             'keterangan' => request('keterangan'),
-            'is_aktif' => request('is_aktif'),
+            'is_aktif' => request('is_aktif') ? 1 : 0,
         ];
     }
 
@@ -129,7 +129,7 @@ class PayungController extends Controller
             return DataTables::of($data)
                 ->addIndexColumn()
                 ->addColumn('is_aktif', function ($row) {
-                    return $row->is_aktif == true ? "Aktif" : "Tidak Aktif";
+                    return $row->is_aktif == 1 ? "Aktif" : "Tidak Aktif";
                 })
                 ->addColumn('action', function ($row) {
                     $actionBtn = $row->payung()->where('payung.payung_id', Route::getCurrentRoute()->originalParameters()['payung'])->count() > 0 ? 'Sudah'  : '<form action="' . url('/master/payung/' . Route::getCurrentRoute()->originalParameters()['payung'] . '/dombak/' . $row->dombak_id) . '" method="POST">' . csrf_field() . '<button class="edit btn btn-success btn-sm" title="Pilih" type="submit">Pilih</button></form>';

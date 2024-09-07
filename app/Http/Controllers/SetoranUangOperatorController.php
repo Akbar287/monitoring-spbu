@@ -190,7 +190,7 @@ class SetoranUangOperatorController extends Controller
     public function update_status_top_0x002(Penjualan $penjualan)
     {
         $penjualan->update([
-            'is_accepted_top' =>  false
+            'is_accepted_top' =>  0
         ]);
 
         return redirect('/setoran/setoran-bank/' . $penjualan->penjualan_id)->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> Sukses. Top Manajemen telah Membatalkan Konfirmasi Setoran.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
@@ -198,14 +198,14 @@ class SetoranUangOperatorController extends Controller
     public function update_status_top_0x003(Penjualan $penjualan)
     {
         $penjualan->update([
-            'is_accepted_top' => true
+            'is_accepted_top' => 1
         ]);
         return redirect('/setoran/setoran-bank/' . $penjualan->penjualan_id)->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> Sukses. Top Manajemen telah Mengonfirmasi Setoran.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
     }
     public function update_status_admin_0x002(Penjualan $penjualan)
     {
         $penjualan->update([
-            'is_accepted_admin' =>  false
+            'is_accepted_admin' =>  0
         ]);
 
         return redirect('/setoran/setoran-bank/' . $penjualan->penjualan_id)->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> Sukses. Admin telah Membatalkan Konfirmasi Setoran.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
@@ -213,7 +213,7 @@ class SetoranUangOperatorController extends Controller
     public function update_status_admin_0x003(Penjualan $penjualan)
     {
         $penjualan->update([
-            'is_accepted_admin' =>  true
+            'is_accepted_admin' =>  1
         ]);
 
         return redirect('/setoran/setoran-bank/' . $penjualan->penjualan_id)->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> Sukses. Admin telah Mengonfirmasi Setoran.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
@@ -239,19 +239,19 @@ class SetoranUangOperatorController extends Controller
             'nama_bank' => request('nama_bank'),
             'no_referensi' => request('no_referensi'),
             'metode_transfer' => request('metode_transfer'),
-            'is_accepted' => false
+            'is_accepted' => 0
         ];
     }
 
     public function update_confirmation_0x002(Request $request, Penjualan $penjualan, Penarikan $penitipan)
     {
-        $penitipan->update(['is_accepted' => false]);
+        $penitipan->update(['is_accepted' => 0]);
         return redirect('/setoran/setoran-bank/' . $penjualan->penjualan_id . '/bank/' . $penitipan->penarikan_id)->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> Konfirmasi Data Bank Sudah dibatalkan.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
     }
 
     public function update_confirmation_0x003(Request $request, Penjualan $penjualan, Penarikan $penitipan)
     {
-        $penitipan->update(['is_accepted' => true]);
+        $penitipan->update(['is_accepted' => 1]);
         return redirect('/setoran/setoran-bank/' . $penjualan->penjualan_id . '/bank/' . $penitipan->penarikan_id)->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> Data Bank Sudah di Konfirmasi.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
     }
 }

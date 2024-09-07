@@ -66,7 +66,7 @@ class DetailRencanaPembelianController extends Controller
 
         $harga = $this->getHargaSatuanProduk(request('produk_id'));
 
-        $detail = $rencana->detail_rencana_pembelian()->where("produk_id", request('produk_id'))->where("satuan_jumlah", request('satuan_jumlah'))->where("rit", $this->checkRecommendedRit(str_replace(',', '', request('jumlah'))))->where("harga", $harga)->where("total_harga", $harga * str_replace(',', '', request('jumlah')))->where("is_confirmation", false)->where('kode_detail', $request->kode)->where("ms2", false)->where("delivery", false)->first();
+        $detail = $rencana->detail_rencana_pembelian()->where("produk_id", request('produk_id'))->where("satuan_jumlah", request('satuan_jumlah'))->where("rit", $this->checkRecommendedRit(str_replace(',', '', request('jumlah'))))->where("harga", $harga)->where("total_harga", $harga * str_replace(',', '', request('jumlah')))->where("is_confirmation", 0)->where('kode_detail', $request->kode)->where("ms2", 0)->where("delivery", 0)->first();
 
         if (is_null($detail)) {
             $detail = $rencana->detail_rencana_pembelian()->create($this->detailData(request('kode')));
@@ -129,9 +129,9 @@ class DetailRencanaPembelianController extends Controller
             "rit" => $this->checkRecommendedRit(str_replace(',', '', request('jumlah'))),
             "harga" => $harga,
             "total_harga" => $harga * str_replace(',', '', request('jumlah')),
-            "is_confirmation" => false,
-            "ms2" => false,
-            "delivery" => false,
+            "is_confirmation" => 0,
+            "ms2" => 0,
+            "delivery" => 0,
             'kode_detail' => $kode
         ];
     }
@@ -139,9 +139,8 @@ class DetailRencanaPembelianController extends Controller
     public function getHargaSatuanProduk($produk)
     {
         $produk = Produk::where('produk_id', $produk)->first();
-
         if (!is_null($produk)) {
-            return is_null($produk->harga()->where('is_default', true)->first()) ? 0 : $produk->harga()->where('is_default', true)->first()->harga_beli;
+            return is_null($produk->harga()->where('is_default', 1)->first()) ? 0 : $produk->harga()->where('is_default', 1)->first()->harga_beli;
         } else {
             return 0;
         }

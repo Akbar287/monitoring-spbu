@@ -161,7 +161,7 @@ class MonitoringController extends Controller
                 }
 
                 $tgl = date('Y-m-d H:i:s');
-                if (is_null($stok->dokumen_stok()->where('member_id', Auth::user()->member_id)->where('jam_kerja_id', $jamKerja->jam_kerja_id)->where('type_dokumen_stok_id', $type->type_dokumen_stok_id)->where('dombak_id', $request->dombak_id[$i])->where('tanggal', $tgl)->where('stok_awal', $awal)->where('stok_akhir', $request->stok[$i])->where('is_confirmation', true)->first()));
+                if (is_null($stok->dokumen_stok()->where('member_id', Auth::user()->member_id)->where('jam_kerja_id', $jamKerja->jam_kerja_id)->where('type_dokumen_stok_id', $type->type_dokumen_stok_id)->where('dombak_id', $request->dombak_id[$i])->where('tanggal', $tgl)->where('stok_awal', $awal)->where('stok_akhir', $request->stok[$i])->where('is_confirmation', 1)->first()));
                 $stok->dokumen_stok()->create([
                     'member_id' => Auth::user()->member_id,
                     'jam_kerja_id' => $jamKerja->jam_kerja_id,
@@ -170,7 +170,7 @@ class MonitoringController extends Controller
                     'tanggal' => $tgl,
                     'stok_awal' => $awal,
                     'stok_akhir' => $request->stok[$i],
-                    'is_confirmation' => true
+                    'is_confirmation' => 1
                 ]);
             }
         }
@@ -296,7 +296,7 @@ class MonitoringController extends Controller
                 ->join('dombak', 'dombak.dombak_id', 'dokumen_stok.dombak_id')
                 ->join('jam_kerja', 'jam_kerja.jam_kerja_id', 'dokumen_stok.jam_kerja_id')
                 ->leftJoin('losses', 'losses.dokumen_stok_id', 'dokumen_stok.dokumen_stok_id')
-                ->where('dokumen_stok.is_confirmation', true)
+                ->where('dokumen_stok.is_confirmation', 1)
                 ->whereBetween('dokumen_stok.tanggal', [$waktuMulai, $waktuSelesai])
                 ->orderBy('tanggal', 'desc')
                 ->orderBy('jam_datang_in', 'desc')

@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('penerimaan', function (Blueprint $table) {
             $table->uuid('penerimaan_id')->primary();
             $table->uuid('file_lo_id');
-            $table->uuid('dokumen_stok_id');
+            // $table->uuid('dokumen_stok_id');
             $table->date('tanggal');
             $table->timestamps();
 

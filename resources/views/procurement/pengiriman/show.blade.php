@@ -129,7 +129,7 @@
                                     @endif
                                     @endif
 
-                                    @if(Auth::user()->member()->first()->jabatan()->first()->level()->first()->divisi()->first()->nama_divisi == 'Top Manajemen')
+                                    {{-- @if(Auth::user()->member()->first()->jabatan()->first()->level()->first()->divisi()->first()->nama_divisi == 'Top Manajemen') --}}
                                     @if(!$pengiriman->is_done)
                                     @if($pengiriman->is_confirmation_top)
                                     <form action="{{ route('pengiriman.top_down', [$pengiriman->pengiriman_id]) }}" method="POST">@csrf @method('put')
@@ -141,7 +141,7 @@
                                     </form>
                                     @endif
                                     @endif
-                                    @endif
+                                    {{-- @endif --}}
 
                                     @if($pengiriman->is_confirmation_admin && $pengiriman->is_confirmation_top && !$pengiriman->is_done)
                                     <form action="{{ route('pengiriman.done', [$pengiriman->pengiriman_id]) }}" method="POST">@csrf @method('put')

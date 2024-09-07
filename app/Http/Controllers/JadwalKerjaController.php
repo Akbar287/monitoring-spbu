@@ -138,8 +138,8 @@ class JadwalKerjaController extends Controller
                         'jam_kerja_id' => $jamKerja[$r['3']],
                         'tanggal' => $tgl,
                         'deskripsi' => null,
-                        'is_attended' => false,
-                        'is_confirm' => false,
+                        'is_attended' => 0,
+                        'is_confirm' => 0,
                         'attended' => null
                     ]);
                     $loop += 1;
@@ -188,15 +188,15 @@ class JadwalKerjaController extends Controller
 
         if ($statusKehadiranSelected === 'all') {
             if ($memberSelected === 'all') {
-                $data = Penjadwalan::select('random_string_barcode.is_active', 'random_string_barcode.barcode', 'random_string_barcode.finish', 'penjadwalan.tanggal', 'jabatan.nama_jabatan', 'jam_kerja.nama_jam_kerja', 'ktp.nama')->join('member', 'member.member_id', 'penjadwalan.member_id')->join('ktp', 'member.ktp_id', 'ktp.ktp_id')->join('random_string_barcode', 'random_string_barcode.penjadwalan_id', 'penjadwalan.penjadwalan_id')->join('jam_kerja', 'penjadwalan.jam_kerja_id', 'jam_kerja.jam_kerja_id')->join('jabatan', 'jabatan.jabatan_id', 'penjadwalan.jabatan_id')->where('random_string_barcode.is_active', 'true')->orderBy('tanggal', 'desc')->where('tanggal', $tanggal)->get();
+                $data = Penjadwalan::select('random_string_barcode.is_active', 'random_string_barcode.barcode', 'random_string_barcode.finish', 'penjadwalan.tanggal', 'jabatan.nama_jabatan', 'jam_kerja.nama_jam_kerja', 'ktp.nama')->join('member', 'member.member_id', 'penjadwalan.member_id')->join('ktp', 'member.ktp_id', 'ktp.ktp_id')->join('random_string_barcode', 'random_string_barcode.penjadwalan_id', 'penjadwalan.penjadwalan_id')->join('jam_kerja', 'penjadwalan.jam_kerja_id', 'jam_kerja.jam_kerja_id')->join('jabatan', 'jabatan.jabatan_id', 'penjadwalan.jabatan_id')->where('random_string_barcode.is_active', '1')->orderBy('tanggal', 'desc')->where('tanggal', $tanggal)->get();
             } else {
-                $data = Penjadwalan::select('random_string_barcode.is_active', 'random_string_barcode.barcode', 'random_string_barcode.finish', 'penjadwalan.tanggal', 'jabatan.nama_jabatan', 'jam_kerja.nama_jam_kerja', 'ktp.nama')->join('member', 'member.member_id', 'penjadwalan.member_id')->join('ktp', 'member.ktp_id', 'ktp.ktp_id')->join('random_string_barcode', 'random_string_barcode.penjadwalan_id', 'penjadwalan.penjadwalan_id')->join('jam_kerja', 'penjadwalan.jam_kerja_id', 'jam_kerja.jam_kerja_id')->join('jabatan', 'jabatan.jabatan_id', 'penjadwalan.jabatan_id')->where('random_string_barcode.is_active', 'true')->orderBy('tanggal', 'desc')->where('tanggal', $tanggal)->where('member_id', $memberSelected)->get();
+                $data = Penjadwalan::select('random_string_barcode.is_active', 'random_string_barcode.barcode', 'random_string_barcode.finish', 'penjadwalan.tanggal', 'jabatan.nama_jabatan', 'jam_kerja.nama_jam_kerja', 'ktp.nama')->join('member', 'member.member_id', 'penjadwalan.member_id')->join('ktp', 'member.ktp_id', 'ktp.ktp_id')->join('random_string_barcode', 'random_string_barcode.penjadwalan_id', 'penjadwalan.penjadwalan_id')->join('jam_kerja', 'penjadwalan.jam_kerja_id', 'jam_kerja.jam_kerja_id')->join('jabatan', 'jabatan.jabatan_id', 'penjadwalan.jabatan_id')->where('random_string_barcode.is_active', '1')->orderBy('tanggal', 'desc')->where('tanggal', $tanggal)->where('member_id', $memberSelected)->get();
             }
         } else {
             if ($memberSelected === 'all') {
-                $data = StatusKehadiran::where('status_kehadiran_id', $statusKehadiranSelected)->first()->penjadwalan()->select('random_string_barcode.is_active', 'random_string_barcode.barcode', 'random_string_barcode.finish', 'penjadwalan.tanggal', 'jabatan.nama_jabatan', 'jam_kerja.nama_jam_kerja', 'ktp.nama')->join('member', 'member.member_id', 'penjadwalan.member_id')->join('ktp', 'member.ktp_id', 'ktp.ktp_id')->join('random_string_barcode', 'random_string_barcode.penjadwalan_id', 'penjadwalan.penjadwalan_id')->join('jam_kerja', 'penjadwalan.jam_kerja_id', 'jam_kerja.jam_kerja_id')->join('jabatan', 'jabatan.jabatan_id', 'penjadwalan.jabatan_id')->where('random_string_barcode.is_active', 'true')->orderBy('tanggal', 'desc')->where('tanggal', $tanggal)->get();
+                $data = StatusKehadiran::where('status_kehadiran_id', $statusKehadiranSelected)->first()->penjadwalan()->select('random_string_barcode.is_active', 'random_string_barcode.barcode', 'random_string_barcode.finish', 'penjadwalan.tanggal', 'jabatan.nama_jabatan', 'jam_kerja.nama_jam_kerja', 'ktp.nama')->join('member', 'member.member_id', 'penjadwalan.member_id')->join('ktp', 'member.ktp_id', 'ktp.ktp_id')->join('random_string_barcode', 'random_string_barcode.penjadwalan_id', 'penjadwalan.penjadwalan_id')->join('jam_kerja', 'penjadwalan.jam_kerja_id', 'jam_kerja.jam_kerja_id')->join('jabatan', 'jabatan.jabatan_id', 'penjadwalan.jabatan_id')->where('random_string_barcode.is_active', '1')->orderBy('tanggal', 'desc')->where('tanggal', $tanggal)->get();
             } else {
-                $data = StatusKehadiran::where('status_kehadiran_id', $statusKehadiranSelected)->first()->penjadwalan()->select('random_string_barcode.is_active', 'random_string_barcode.barcode', 'random_string_barcode.finish', 'penjadwalan.tanggal', 'jabatan.nama_jabatan', 'jam_kerja.nama_jam_kerja', 'ktp.nama')->join('member', 'member.member_id', 'penjadwalan.member_id')->join('ktp', 'member.ktp_id', 'ktp.ktp_id')->join('random_string_barcode', 'random_string_barcode.penjadwalan_id', 'penjadwalan.penjadwalan_id')->join('jam_kerja', 'penjadwalan.jam_kerja_id', 'jam_kerja.jam_kerja_id')->join('jabatan', 'jabatan.jabatan_id', 'penjadwalan.jabatan_id')->where('random_string_barcode.is_active', 'true')->where('member_id', $memberSelected)->orderBy('tanggal', 'desc')->where('tanggal', $tanggal)->get();
+                $data = StatusKehadiran::where('status_kehadiran_id', $statusKehadiranSelected)->first()->penjadwalan()->select('random_string_barcode.is_active', 'random_string_barcode.barcode', 'random_string_barcode.finish', 'penjadwalan.tanggal', 'jabatan.nama_jabatan', 'jam_kerja.nama_jam_kerja', 'ktp.nama')->join('member', 'member.member_id', 'penjadwalan.member_id')->join('ktp', 'member.ktp_id', 'ktp.ktp_id')->join('random_string_barcode', 'random_string_barcode.penjadwalan_id', 'penjadwalan.penjadwalan_id')->join('jam_kerja', 'penjadwalan.jam_kerja_id', 'jam_kerja.jam_kerja_id')->join('jabatan', 'jabatan.jabatan_id', 'penjadwalan.jabatan_id')->where('random_string_barcode.is_active', '1')->where('member_id', $memberSelected)->orderBy('tanggal', 'desc')->where('tanggal', $tanggal)->get();
             }
         }
         return view('jadwal_absensi/penjadwalan/qrcode', compact('tanggal', 'member', 'statusKehadiran', 'memberSelected', 'statusKehadiranSelected', 'data'));
@@ -205,7 +205,7 @@ class JadwalKerjaController extends Controller
     public function checkAndCreateQrCode()
     {
         $penjadwalanDijadwalkan = StatusKehadiran::where('nama_kehadiran', 'Dijadwalkan')->first()->penjadwalan()->get();
-        $validateBarcode = ValidateBarcode::where('is_active', true)->first();
+        $validateBarcode = ValidateBarcode::where('is_active', 1)->first();
 
         foreach ($penjadwalanDijadwalkan as $dj) {
             if ($dj->random_string_barcode()->count() == 0) {
@@ -217,21 +217,21 @@ class JadwalKerjaController extends Controller
                 $start = Carbon::now();
                 $finish = Carbon::now()->addSeconds($validateBarcode->is_expired);
 
-                if ($dj->random_string_barcode()->where('barcode', $hash)->where('validate_barcode_id', $validateBarcode->validate_barcode_id)->where('start', $start->format('Y-m-d H:i:s'))->where('finish', $finish->format('Y-m-d H:i:s'))->where('is_done', false)->where('is_active', true)->count() == 0) {
+                if ($dj->random_string_barcode()->where('barcode', $hash)->where('validate_barcode_id', $validateBarcode->validate_barcode_id)->where('start', $start->format('Y-m-d H:i:s'))->where('finish', $finish->format('Y-m-d H:i:s'))->where('is_done', 0)->where('is_active', 1)->count() == 0) {
                     $dj->random_string_barcode()->create([
                         'barcode' => $hash,
                         'validate_barcode_id' => $validateBarcode->validate_barcode_id,
                         'start' => $start->format('Y-m-d H:i:s'),
                         'finish' => $finish->format('Y-m-d H:i:s'),
-                        'is_done' => false,
-                        'is_active' => true,
+                        'is_done' => 0,
+                        'is_active' => 1,
                     ]);
                 }
             } else {
-                if ($dj->random_string_barcode()->where('is_active', true)->where('finish', '>', Carbon::now()->format('Y-m-d H:i:s'))->count() == 0) {
-                    // update all data to is_active is false
-                    foreach ($dj->random_string_barcode()->where('is_active', true)->get() as $up) {
-                        $up->update(['is_active' => false]);
+                if ($dj->random_string_barcode()->where('is_active', 1)->where('finish', '>', Carbon::now()->format('Y-m-d H:i:s'))->count() == 0) {
+                    // update all data to is_active is 0
+                    foreach ($dj->random_string_barcode()->where('is_active', 1)->get() as $up) {
+                        $up->update(['is_active' => 0]);
                     }
                     // create
 
@@ -242,14 +242,14 @@ class JadwalKerjaController extends Controller
                     $start = Carbon::now();
                     $finish = Carbon::now()->addSeconds($validateBarcode->is_expired);
 
-                    if ($dj->random_string_barcode()->where('barcode', $hash)->where('validate_barcode_id', $validateBarcode->validate_barcode_id)->where('start', $start->format('Y-m-d H:i:s'))->where('finish', $finish->format('Y-m-d H:i:s'))->where('is_done', false)->where('is_active', true)->count() == 0) {
+                    if ($dj->random_string_barcode()->where('barcode', $hash)->where('validate_barcode_id', $validateBarcode->validate_barcode_id)->where('start', $start->format('Y-m-d H:i:s'))->where('finish', $finish->format('Y-m-d H:i:s'))->where('is_done', 0)->where('is_active', 1)->count() == 0) {
                         $dj->random_string_barcode()->create([
                             'barcode' => $hash,
                             'validate_barcode_id' => $validateBarcode->validate_barcode_id,
                             'start' => $start->format('Y-m-d H:i:s'),
                             'finish' => $finish->format('Y-m-d H:i:s'),
-                            'is_done' => false,
-                            'is_active' => true,
+                            'is_done' => 0,
+                            'is_active' => 1,
                         ]);
                     }
                 } else {
@@ -377,25 +377,25 @@ class JadwalKerjaController extends Controller
                     'jam_kerja_id' => $request->jam_kerja[$i],
                     'tanggal' => $request->tanggal[$i],
                     'deskripsi' => null,
-                    'is_attended' => false,
-                    'is_confirm' => false,
+                    'is_attended' => 0,
+                    'is_confirm' => 0,
                     'attended' => null
                 ]);
 
                 // Create Start dan Finish
                 $hash = hash('sha512', 'BARBIE_SPBU2434520_' . $penjadwalan->tanggal . '_' . $penjadwalan->member_id . '_' . $penjadwalan->jabatan_id . Str::random(30));
-                $validateBarcode = ValidateBarcode::where('is_active', true)->first();
+                $validateBarcode = ValidateBarcode::where('is_active', 1)->first();
                 $start = Carbon::now();
                 $finish = Carbon::now()->addSeconds($validateBarcode->is_expired);
 
-                if ($penjadwalan->random_string_barcode()->where('barcode', $hash)->where('validate_barcode_id', $validateBarcode->validate_barcode_id)->where('start', $start->format('Y-m-d H:i:s'))->where('finish', $finish->format('Y-m-d H:i:s'))->where('is_done', false)->where('is_active', true)->count() == 0) {
+                if ($penjadwalan->random_string_barcode()->where('barcode', $hash)->where('validate_barcode_id', $validateBarcode->validate_barcode_id)->where('start', $start->format('Y-m-d H:i:s'))->where('finish', $finish->format('Y-m-d H:i:s'))->where('is_done', 0)->where('is_active', 1)->count() == 0) {
                     $penjadwalan->random_string_barcode()->create([
                         'barcode' => $hash,
                         'validate_barcode_id' => $validateBarcode->validate_barcode_id,
                         'start' => $start->format('Y-m-d H:i:s'),
                         'finish' => $finish->format('Y-m-d H:i:s'),
-                        'is_done' => false,
-                        'is_active' => true,
+                        'is_done' => 0,
+                        'is_active' => 1,
                     ]);
                 }
                 // End Barcode

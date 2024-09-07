@@ -15,7 +15,7 @@ class HargaController extends Controller
     public function riwayat_index(Request $request)
     {
         if ($request->ajax()) {
-            $data = Harga::where('is_default', false)->orderBy('tanggal', 'desc')->get();
+            $data = Harga::where('is_default', 0)->orderBy('tanggal', 'desc')->get();
             return DataTables::of($data)
                 ->addIndexColumn()
                 ->addColumn('produk', function ($row) {
@@ -52,7 +52,7 @@ class HargaController extends Controller
     public function index(Request $request)
     {
         if ($request->ajax()) {
-            $data = Harga::where('is_default', true)->get();
+            $data = Harga::where('is_default', 1)->get();
             return DataTables::of($data)
                 ->addIndexColumn()
                 ->addColumn('produk', function ($row) {
@@ -86,7 +86,7 @@ class HargaController extends Controller
     public function create()
     {
         $jamKerja = JamKerja::get();
-        $produk = Produk::where('is_aktif', true)->get();
+        $produk = Produk::where('is_aktif', 1)->get();
         return view('master/harga/create', compact('jamKerja', 'produk'));
     }
 
@@ -97,15 +97,15 @@ class HargaController extends Controller
     {
         $produk = Produk::where('produk_id', $hargaRequest->produk_id)->first();
 
-        $check = $produk->harga()->where('is_default', true)->first();
+        $check = $produk->harga()->where('is_default', 1)->first();
         if (!is_null($check)) {
             $check->update([
-                'is_default' => false
+                'is_default' => 0
             ]);
         }
 
 
-        $harga = $produk->harga()->where('jam_kerja_id', request('jam_kerja_id'))->where('tanggal', request('tanggal'))->where('harga_jual', str_replace(',', '', request('harga_jual')))->where('harga_beli', str_replace(',', '', request('harga_beli')))->where('is_default', true)->first();
+        $harga = $produk->harga()->where('jam_kerja_id', request('jam_kerja_id'))->where('tanggal', request('tanggal'))->where('harga_jual', str_replace(',', '', request('harga_jual')))->where('harga_beli', str_replace(',', '', request('harga_beli')))->where('is_default', 1)->first();
         if (is_null($harga)) {
             $harga = $produk->harga()->create($this->hargaData());
         }
@@ -127,7 +127,7 @@ class HargaController extends Controller
     public function edit(Harga $harga)
     {
         $jamKerja = JamKerja::get();
-        $produk = Produk::where('is_aktif', true)->get();
+        $produk = Produk::where('is_aktif', 1)->get();
         return view('master/harga/edit', compact('harga', 'jamKerja', 'produk'));
     }
 
@@ -152,7 +152,7 @@ class HargaController extends Controller
 
         if ($temp) {
             $harga->produk()->first()->harga()->orderBy('tanggal', 'desc')->first()->update([
-                'is_default' => true
+                'is_default' => 1
             ]);
         }
 
@@ -166,7 +166,7 @@ class HargaController extends Controller
             'tanggal' => request('tanggal'),
             'harga_jual' => str_replace(',', '', request('harga_jual')),
             'harga_beli' => str_replace(',', '', request('harga_beli')),
-            'is_default' => true,
+            'is_default' => 1,
         ];
     }
 }

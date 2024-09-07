@@ -51,7 +51,7 @@
 
                                 <div class="row mb-0">
                                     <div class="col-md-6 offset-md-4 d-flex align-items-end">
-                                        <a type="button" href="{{ route('pembayaran.show', [$rencana->rencana_pembelian_id, $pembayaran->pembayaran_id]) }}" class="btn btn-primary mr-2"><i class="fas fa-arrow-left"></i> Kembali</a>
+                                        <a type="button" href="{{ route('pembayaran.detail', [$rencana->rencana_pembelian_id, $pembayaran->pembayaran_id]) }}" class="btn btn-primary mr-2"><i class="fas fa-arrow-left"></i> Kembali</a>
                                         <button type="submit" class="btn mx-2 btn-success"><i class="fas fa-pen"></i> Simpan</button>
                                     </div>
                                 </div>

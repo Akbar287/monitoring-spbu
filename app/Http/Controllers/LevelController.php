@@ -20,7 +20,7 @@ class LevelController extends Controller
             return DataTables::of($data)
                 ->addIndexColumn()
                 ->addColumn('is_aktif', function ($row) {
-                    $actionBtn = $row->is_aktif == true ? 'Aktif' : 'Tidak Aktif';
+                    $actionBtn = $row->is_aktif == 1 ? 'Aktif' : 'Tidak Aktif';
                     return $actionBtn;
                 })
                 ->addColumn('action', function ($row) {
@@ -49,7 +49,7 @@ class LevelController extends Controller
     {
         $divisi = Divisi::find($levelRequest->divisi_id);
 
-        $level = $divisi->level()->where('nama_level', request('nama_level'))->where('keterangan', request('keterangan'))->where('is_aktif', request('is_aktif') == 'true' ? true : false)->first();
+        $level = $divisi->level()->where('nama_level', request('nama_level'))->where('keterangan', request('keterangan'))->where('is_aktif', request('is_aktif') == 'true' ? 1 : 0)->first();
         if (is_null($level)) {
             $level = $divisi->level()->create($this->levelData());
         }
@@ -99,7 +99,7 @@ class LevelController extends Controller
         return [
             'nama_level' => request('nama_level'),
             'keterangan' => request('keterangan'),
-            'is_aktif' => request('is_aktif') == 'true' ? true : false,
+            'is_aktif' => request('is_aktif') == 'true' ? 1 : 0,
         ];
     }
 }

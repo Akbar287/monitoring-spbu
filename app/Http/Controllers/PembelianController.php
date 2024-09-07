@@ -57,7 +57,7 @@ class PembelianController extends Controller
      */
     public function show(RencanaPembelian $pembelian)
     {
-        $pajak = PajakPembelianLib::where('is_aktif', true)->first();
+        $pajak = PajakPembelianLib::where('is_aktif', 1)->first();
         return view('procurement/pembelian/show', compact('pembelian', 'pajak'));
     }
 
@@ -76,8 +76,8 @@ class PembelianController extends Controller
         $status = StatusPurchase::where('nama_status', "Rencana")->first();
         $pembelian->update([
             'status_purchase_id' => $status->status_purchase_id,
-            'is_confirmation' => true,
-            'is_denied' => false
+            'is_confirmation' => 1,
+            'is_denied' => 0
         ]);
         return redirect('/procurement/pembelian')->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> Berhasil Mengubah Data Pembelian dengan konfirmasi ditolak.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
     }

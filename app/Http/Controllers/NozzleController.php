@@ -29,7 +29,7 @@ class NozzleController extends Controller
                     return $actionBtn;
                 })
                 ->addColumn('is_aktif', function ($row) {
-                    $actionBtn =  $row->is_aktif == true ? 'Aktif' : 'Tidak Aktif';
+                    $actionBtn =  $row->is_aktif == 1 ? 'Aktif' : 'Tidak Aktif';
                     return $actionBtn;
                 })
                 ->addColumn('action', function ($row) {
@@ -59,7 +59,7 @@ class NozzleController extends Controller
     {
         $dispenser = Dispenser::find($nozzleRequest->dispenser_id);
 
-        $nozzle = $dispenser->nozzle()->where('produk_id', request('produk_id'))->where('nama_nozzle', request('nama_nozzle'))->where('keterangan', request('keterangan'))->where('is_aktif', request('is_aktif'))->first();
+        $nozzle = $dispenser->nozzle()->where('produk_id', request('produk_id'))->where('nama_nozzle', request('nama_nozzle'))->where('keterangan', request('keterangan'))->where('is_aktif', request('is_aktif') ? 1 : 0)->first();
         if (is_null($nozzle)) {
             $nozzle = $dispenser->nozzle()->create($this->nozzleData());
         }
@@ -111,7 +111,7 @@ class NozzleController extends Controller
             'produk_id' => request('produk_id'),
             'nama_nozzle' => request('nama_nozzle'),
             'keterangan' => request('keterangan'),
-            'is_aktif' => request('is_aktif'),
+            'is_aktif' => request('is_aktif') ? 1 : 0,
         ];
     }
 }
