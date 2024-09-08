@@ -29,7 +29,7 @@ class MemberController extends Controller
                     return $actionBtn;
                 })
                 ->addColumn('verified', function ($row) {
-                    $actionBtn = $row->verified == true ? 'Terverifikasi' : 'Tidak Verifikasi';
+                    $actionBtn = $row->verified == 1 ? 'Terverifikasi' : 'Tidak Verifikasi';
                     return $actionBtn;
                 })
                 ->addColumn('action', function ($row) {
@@ -56,7 +56,7 @@ class MemberController extends Controller
      */
     public function store(MemberRequest $memberRequest)
     {
-        $ktp = Ktp::where('nik', request('nik'),)->where('nama', request('nama'))->where('tempat_lahir', request('tempat_lahir'))->where('tanggal_lahir', request('tanggal_lahir'))->where('jenis_kelamin', request('jenis_kelamin'))->where('verified', request('verified'))->first();
+        $ktp = Ktp::where('nik', request('nik'),)->where('nama', request('nama'))->where('tempat_lahir', request('tempat_lahir'))->where('tanggal_lahir', request('tanggal_lahir'))->where('jenis_kelamin', request('jenis_kelamin'))->where('verified', request('verified') ? 1 : 0)->first();
         if (is_null($ktp)) {
             $ktp = Ktp::create($this->ktpData());
         }
@@ -66,7 +66,7 @@ class MemberController extends Controller
             $member = $ktp->member()->create($this->memberData());
         }
 
-        $userlogin = $member->user_login()->where('username', request('username'))->where('is_aktif', request('is_aktif') != null ? request('is_aktif') : false)->first();
+        $userlogin = $member->user_login()->where('username', request('username'))->where('is_aktif', request('is_aktif') != null ? 1 : 0)->first();
         if (is_null($userlogin)) {
             $userlogin = $member->user_login()->create($this->userloginData());
         }
@@ -128,7 +128,7 @@ class MemberController extends Controller
             'tempat_lahir' => request('tempat_lahir'),
             'tanggal_lahir' => request('tanggal_lahir'),
             'jenis_kelamin' => request('jenis_kelamin'),
-            'verified' => request('verified'),
+            'verified' => request('verified') ? 1 : 0,
         ];
     }
     public function memberData()
@@ -147,7 +147,7 @@ class MemberController extends Controller
         return [
             'username' => request('username'),
             'password' => $password != null ? $password : request('password'),
-            'is_aktif' => request('is_aktif') != null ? request('is_aktif') : 0,
+            'is_aktif' => request('is_aktif') != null ? (request('is_aktif') ? 1 : 0) : 0,
         ];
     }
 
