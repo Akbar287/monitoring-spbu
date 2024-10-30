@@ -131,13 +131,12 @@
                                 <div class="col-md-6">
                                     <div class="input-group mb-2">
                                         <div class="input-group-prepend">
-                                          <div class="input-group-text">Rp</div>
+                                            <div class="input-group-text">Rp</div>
                                         </div>
                                         <input id="harga" type="text" readonly
                                             class="form-control" name="harga"
-                                            value="{{ number_format($penerimaan->file_lo()->first()->detail_rencana_pembelian()->first()->harga, 6, ".", ",") }}" autocomplete="name"
-                                            >
-                                      </div>
+                                            value="{{ number_format($penerimaan->file_lo()->first()->detail_rencana_pembelian()->first()->harga, 6, ".", ",") }}">
+                                    </div>
                                 </div>
                             </div>
 
@@ -148,14 +147,12 @@
                                 <div class="col-md-6">
                                     <div class="input-group mb-2">
                                         <div class="input-group-prepend">
-                                          <div class="input-group-text">Rp</div>
+                                            <div class="input-group-text">Rp</div>
                                         </div>
                                         <input id="total_harga" type="text" readonly
                                             class="form-control" name="total_harga"
-                                            value="{{ number_format($penerimaan->file_lo()->first()->detail_rencana_pembelian()->first()->total_harga, 6, ".", ",") }}" autocomplete="name"
-                                            >
-
-                                      </div>
+                                            value="{{ number_format($penerimaan->file_lo()->first()->detail_rencana_pembelian()->first()->total_harga, 6, ".", ",") }}">
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -306,6 +303,15 @@
                                     <input id="jam_kerja" type="text" readonly
                                         class="form-control" name="jam_kerja"
                                         value="{{ $penerimaan->dokumen_stok()->first()->jam_kerja()->first()->nama_jam_kerja }}" />
+                                </div>
+                            </div>
+
+                            <div class="row mb-3 justify-content-center">
+                                <label for="jam_penerimaan" class="col-md-4 col-form-label text-md-end">{{ __('Jam Penerimaan')
+                                    }}</label>
+
+                                <div class="col-md-6">
+                                    <input id="jam_penerimaan" type="time" readonly class="form-control" name="jam_penerimaan" value="{{ $penerimaan->dokumen_stok()->first()->waktu ?? '' }}" />
                                 </div>
                             </div>
 

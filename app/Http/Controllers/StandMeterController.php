@@ -243,6 +243,8 @@ class StandMeterController extends Controller
             'dombak_id' => ['required'],
         ]);
 
+        // dd($request->all());
+
         // Ambil nozzle berdasarkan nozzle_id
         $nozzle = Nozzle::where('nozzle_id', $request->nozzle_id)->first();
 
@@ -294,22 +296,28 @@ class StandMeterController extends Controller
             }
         } while ($cek);
 
-        $standMeter = $latestStandMeter->stand_meter_akhir ?? str_replace(',', '', request('stand_meter_awal'));
+        if (is_null($latestStandMeter->stand_meter_akhir)) {
+            $standMeter =  str_replace(',', '', request('stand_meter_awal'));
+        } else {
+            if ($latestStandMeter->stand_meter_akhir == '0') {
+                $standMeter =  str_replace(',', '', request('stand_meter_awal'));
+            } else {
+                $standMeter =  $latestStandMeter->stand_meter_akhir;
+            }
+        }
 
-        StandMeter::create([
-            'nozzle_id' => $nozzle->nozzle_id,
-            'dombak_id' => $request->dombak_id,
-            'jam_kerja_id' => $jamKerja->jam_kerja_id,
-            'tanggal' => is_null($tanggal) ? date('Y-m-d') : $tanggal,
-            'stand_meter_awal' => $standMeter,
-            'stand_meter_akhir' => 0,
-            'urutan' => $urutan,
-            'is_confirmation' => 0
-        ]);
-
-
-        // Hapus Duplikat Database
-        StandMeter::where('nozzle_id', $nozzle->nozzle_id)->where('dombak_id', $request->dombak_id)->where('jam_kerja_id', $jamKerja->jam_kerja_id)->where('tanggal', $tanggal)->where('stand_meter_awal', 0)->where('stand_meter_akhir', 0)->delete();
+        if (is_null(StandMeter::where('nozzle_id', $nozzle->nozzle_id)->where('dombak_id', $request->dombak_id)->where('tanggal', is_null($tanggal) ? date('Y-m-d') : $tanggal)->where('stand_meter_awal', $standMeter)->where('stand_meter_akhir', 0)->where('urutan', $urutan)->where('is_confirmation', 0)->first())) {
+            StandMeter::create([
+                'nozzle_id' => $nozzle->nozzle_id,
+                'dombak_id' => $request->dombak_id,
+                'jam_kerja_id' => $jamKerja->jam_kerja_id,
+                'tanggal' => is_null($tanggal) ? date('Y-m-d') : $tanggal,
+                'stand_meter_awal' => $standMeter,
+                'stand_meter_akhir' => 0,
+                'urutan' => $urutan,
+                'is_confirmation' => 0
+            ]);
+        }
 
         return redirect()->route('totalisator.index')->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> Stand Meter sudah di tambah.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
         exit;
@@ -411,9 +419,7 @@ class StandMeterController extends Controller
                 $selisih = ($stok - ($stokAwal + $selisihGReceive - $selisih));
             }
 
-            // cek value
-            // dd($stok, $stokAwal, $selisihGReceive, $selisih, $stok - $selisih);
-            // end check value
+            $stok_dombak = $standMeter->dombak()->first()->stok_inventory_dombak()->first();
 
             $standMeter->dombak()->first()->stok_inventory_dombak()->first()->update([
                 'stok' => $stok - $selisih
@@ -423,18 +429,19 @@ class StandMeterController extends Controller
                 'stok' => $stokInventory - $selisih
             ]);
 
-            if (
-                $type_dokumen_stock_penjualan->dokumen_stok()->where('stok_inventory_id', $standMeter->dombak()->first()->stok_inventory_dombak()->first()->stok_inventory()->first()->stok_inventory_id)->where('jam_kerja_id', $standMeter->jam_kerja_id)->where('member_id', Auth::user()->member_id)->where('dombak_id', $standMeter->dombak_id)->where('tanggal', date($standMeter->tanggal))->where('stok_awal', $stokInventory)->where('stok_akhir', $stokInventory - $selisih)->where('is_confirmation', 1)->count() == 0
-            ) {
+            $jamKerja = JamKerja::where('jam_kerja_id', $standMeter->jam_kerja_id)->first();
+
+            if ($type_dokumen_stock_penjualan->dokumen_stok()->where('stok_inventory_id', $standMeter->dombak()->first()->stok_inventory_dombak()->first()->stok_inventory()->first()->stok_inventory_id)->where('jam_kerja_id', $standMeter->jam_kerja_id)->where('member_id', Auth::user()->member_id)->where('dombak_id', $standMeter->dombak_id)->where('tanggal', date($standMeter->tanggal))->where('stok_awal', !is_null($stok_dombak) ? $stok_dombak->stok : 0)->where('stok_akhir', (!is_null($stok_dombak) ? $stok_dombak->stok : 0) - $selisih)->where('is_confirmation', 1)->where('waktu', is_null($jamKerja) ? '00:00:00' : $jamKerja->jam_pulang_out)->count() == 0) {
                 $dokumenStokPenjualan = $type_dokumen_stock_penjualan->dokumen_stok()->create([
                     'stok_inventory_id' => $standMeter->dombak()->first()->stok_inventory_dombak()->first()->stok_inventory()->first()->stok_inventory_id,
                     'jam_kerja_id' => $standMeter->jam_kerja_id,
                     'member_id' => Auth::user()->member_id,
                     'dombak_id' => $standMeter->dombak_id,
                     'tanggal' => date($standMeter->tanggal),
-                    'stok_awal' => $stokInventory,
-                    'stok_akhir' => $stokInventory - $selisih,
-                    'is_confirmation' => 1
+                    'stok_awal' => !is_null($stok_dombak) ? $stok_dombak->stok : 0,
+                    'stok_akhir' => (!is_null($stok_dombak) ? $stok_dombak->stok : 0) - $selisih,
+                    'is_confirmation' => 1,
+                    'waktu' => is_null($jamKerja) ? '00:00:00' : $jamKerja->jam_pulang_out
                 ]);
 
                 DB::table('stand_meter_dokumen_stok')->insert([

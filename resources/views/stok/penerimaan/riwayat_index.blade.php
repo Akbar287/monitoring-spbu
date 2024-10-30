@@ -32,6 +32,19 @@
                     </div>
                 </div>
                 <div class="card-body">
+                    <form action="{{ route('penerimaan.riwayat') }}" method="get"> @csrf
+                        <div class="row mb-4">
+                            <div class="col-12 col-sm-12 col-md-4">
+                                <input type="date" name="waktu_mulai" id="waktuMulai" class="form-control" value="{{ $waktuMulai }}" />
+                            </div>
+                            <div class="col-12 col-sm-12 col-md-4">
+                                <input type="date" name="waktu_selesai" id="waktuSelesai" class="form-control" value="{{ $waktuSelesai }}" />
+                            </div>
+                            <div class="col-12 col-sm-12 col-md-4">
+                                <button type="submit" class="btn btn-success btn-block">Filter</button>
+                            </div>
+                        </div>
+                    </form>
                     <div class="table-responsive">
                         <table class="table table-hover table-penerimaan-riwayat">
                             <thead>

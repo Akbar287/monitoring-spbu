@@ -55,7 +55,7 @@
                                     <div class="input-group mb-2">
                                         <input readonly id="jadwal_absen_masuk" type="text"
                                         class="form-control @error('jadwal_absen_masuk') is-invalid @enderror" name="jadwal_absen_masuk"
-                                        value="{{ Carbon\Carbon::createFromFormat('Y-m-d H:i:s', $penjadwalan->start_time)->format('d F Y H:i:s') }}" >
+                                        value="{{ is_null($penjadwalan->start_time) ? '' : Carbon\Carbon::createFromFormat('Y-m-d H:i:s', $penjadwalan->start_time)->format('d F Y H:i:s') }}" >
                                     </div>
                                 </div>
                             </div>
@@ -68,7 +68,7 @@
                                     <div class="input-group mb-2">
                                         <input readonly id="jadwal_absen_keluar" type="text"
                                         class="form-control @error('jadwal_absen_keluar') is-invalid @enderror" name="jadwal_absen_keluar"
-                                        value="{{ Carbon\Carbon::createFromFormat('Y-m-d H:i:s', $penjadwalan->finish_time)->format('d F Y H:i:s') }}" >
+                                        value="{{ is_null($penjadwalan->finish_time) ? '' : Carbon\Carbon::createFromFormat('Y-m-d H:i:s', $penjadwalan->finish_time)->format('d F Y H:i:s') }}" >
                                     </div>
                                 </div>
                             </div>

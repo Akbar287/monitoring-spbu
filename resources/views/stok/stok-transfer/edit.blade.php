@@ -23,7 +23,7 @@
                     <h4>{{ __('Ubah Stok Taking') }}</h4>
                 </div>
                 <div class="card-body">
-                    <form action="{{ route('stok-taking.update', $stok->dokumen_stok_id) }}" method="post" enctype="multipart/form-data">@csrf @method('put') 
+                    <form action="{{ route('stok-taking.update', $stok->dokumen_stok_id) }}" method="post" enctype="multipart/form-data">@csrf @method('put')
                         <div class="row">
                             <div class="col-md-12">
                                 @if(session('msg')){!! session('msg') !!} @endif
@@ -42,7 +42,7 @@
                                             <option {{ old('type_dokumen_id') == $s->type_dokumen_stok_id ? 'selected' : '' }} value="{{ $s->type_dokumen_stok_id }}">{{ $s->type_movement }}</option>
                                             @endforeach
                                         </select>
-            
+
                                         @error('type_dokumen_id')
                                         <span class="invalid-feedback" role="alert">
                                             <strong>{{ $message }}</strong>
@@ -50,7 +50,7 @@
                                         @enderror
                                     </div>
                                 </div>
-                                
+
                                 <div class="row mb-3 justify-content-center">
                                     <label for="dombak_id" class="col-md-4 col-form-label text-md-end">{{ __('Dombak')
                                         }}</label>
@@ -61,7 +61,7 @@
                                             <option {{ old('dombak_id') == $s->dombak_id ? 'selected' : '' }} value="{{ $s->dombak_id }}">{{ $s->nama_dombak . ' ('. $s->stok_inventory_dombak()->first()->stok_inventory()->first()->produk()->first()->nama_produk . '-' . $s->stok_inventory_dombak()->first()->stok .'Liter)' }}</option>
                                             @endforeach
                                         </select>
-            
+
                                         @error('dombak_id')
                                         <span class="invalid-feedback" role="alert">
                                             <strong>{{ $message }}</strong>
@@ -73,13 +73,13 @@
                                 <div class="row mb-3 justify-content-center">
                                     <label for="tanggal" class="col-md-4 col-form-label text-md-end">{{ __('Tanggal')
                                         }}</label>
-            
+
                                     <div class="col-md-6">
                                         <input id="tanggal" type="date"
                                             class="form-control @error('tanggal') is-invalid @enderror" name="tanggal"
                                             value="{{ old("tanggal") != null ? old("tanggal") : date('Y-m-d') }}" autocomplete="name"
                                             autofocus>
-            
+
                                         @error('tanggal')
                                         <span class="invalid-feedback" role="alert">
                                             <strong>{{ $message }}</strong>
@@ -87,19 +87,34 @@
                                         @enderror
                                     </div>
                                 </div>
-                                
+
                                 <div class="row mb-3 justify-content-center">
                                     <label for="jam_kerja_id" class="col-md-4 col-form-label text-md-end">{{ __('Jam Kerja')
                                         }}</label>
-            
+
                                     <div class="col-md-6">
                                         <select class="custom-select @error('jam_kerja_id') is-invalid @enderror" name="jam_kerja_id" id="jam_kerja_id">
                                             @foreach($jamKerja as $s)
                                             <option {{ old('jam_kerja_id') == $s->jam_kerja_id ? 'selected' : '' }} value="{{ $s->jam_kerja_id }}">{{ $s->nama_jam_kerja . ' (' . $s->batas_awal_in . '-' . $s->batas_akhir_in . ')' }}</option>
                                             @endforeach
                                         </select>
-            
+
                                         @error('jam_kerja_id')
+                                        <span class="invalid-feedback" role="alert">
+                                            <strong>{{ $message }}</strong>
+                                        </span>
+                                        @enderror
+                                    </div>
+                                </div>
+
+                                <div class="row mb-3 justify-content-center">
+                                    <label for="waktu" class="col-md-4 col-form-label text-md-end">{{ __('Waktu')
+                                        }}</label>
+
+                                    <div class="col-md-6">
+                                        <input type="time" value="{{ $stok->waktu }}" class="custom-select @error('waktu') is-invalid @enderror" name="waktu" id="waktu">
+
+                                        @error('waktu')
                                         <span class="invalid-feedback" role="alert">
                                             <strong>{{ $message }}</strong>
                                         </span>
@@ -124,7 +139,7 @@
                                         @enderror
                                     </div>
                                 </div>
-                                
+
                                 <div class="row mb-3 justify-content-center">
                                     <label for="volume_sebelumnya" class="col-md-4 col-form-label text-md-end">{{ __('Volume (liter) Sebelumnya')
                                         }}</label>
@@ -134,7 +149,7 @@
                                             class="form-control thousand-style @error('volume_sebelumnya') is-invalid @enderror" name="volume_sebelumnya"
                                             value="{{ $stok->stok_akhir - ($stok->stok_awal + is_null($stok->losses()->first()) ? 0 : ($stok->losses()->first()->simbol == 'kurang' ?  $stok->losses()->first()->jumlah : -1 * $stok->losses()->first()->jumlah)) }}" autocomplete="name" readonly
                                             autofocus>
-            
+
                                         @error('volume_sebelumnya')
                                         <span class="invalid-feedback" role="alert">
                                             <strong>{{ $message }}</strong>
@@ -142,7 +157,7 @@
                                         @enderror
                                     </div>
                                 </div>
-                                
+
                                 <div class="row mb-3 justify-content-center">
                                     <label for="volume" class="col-md-4 col-form-label text-md-end">{{ __('Volume (liter) Aktual')
                                         }}</label>
@@ -152,7 +167,7 @@
                                             class="form-control thousand-style @error('volume') is-invalid @enderror" name="volume"
                                             value="{{ $stok->stok_akhir }}" autocomplete="name" readonly
                                             autofocus>
-            
+
                                         @error('volume')
                                         <span class="invalid-feedback" role="alert">
                                             <strong>{{ $message }}</strong>
@@ -160,7 +175,7 @@
                                         @enderror
                                     </div>
                                 </div>
-                                
+
                                 <div class="row mb-3 justify-content-center">
                                     <label for="volume_selisih" class="col-md-4 col-form-label text-md-end">{{ __('Volume (liter) (Loss/Profit)')
                                         }}</label>
@@ -170,7 +185,7 @@
                                             class="form-control thousand-style @error('volume_selisih') is-invalid @enderror" name="volume_selisih"
                                             value="{{ is_null($stok->losses()->first()) ? 0 : $stok->losses()->first()->jumlah }}" autocomplete="name" readonly
                                             autofocus>
-            
+
                                         @error('volume_selisih')
                                         <span class="invalid-feedback" role="alert">
                                             <strong>{{ $message }}</strong>
@@ -178,7 +193,7 @@
                                         @enderror
                                     </div>
                                 </div>
-                                
+
                                 <div class="row mb-0">
                                     <div class="col-md-6 offset-md-4 d-flex align-items-end">
                                         <a type="button" href="{{ route('stok-taking.show', $stok->dokumen_stok_id) }}" class="btn btn-primary mr-2"><i class="fas fa-arrow-left"></i> Kembali</a>

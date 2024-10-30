@@ -74,6 +74,15 @@
                             </div>
 
                             <div class="row mb-3 justify-content-center">
+                                <label for="waktu" class="col-md-4 col-form-label text-md-end">{{ __('Waktu')
+                                    }}</label>
+
+                                <div class="col-md-6">
+                                    <input type="time" readonly value="{{ $stok->waktu }}" class="form-control" name="waktu" id="waktu">
+                                </div>
+                            </div>
+
+                            <div class="row mb-3 justify-content-center">
                                 <label for="tinggi_dombak" class="col-md-4 col-form-label text-md-end">{{ __('Tinggi Dombak (cm)')
                                     }}</label>
 

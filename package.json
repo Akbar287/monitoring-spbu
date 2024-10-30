@@ -28,7 +28,6 @@
         "jquery-ui": "^1.12.1",
         "moment": "^2.29.1",
         "qr-scanner": "^1.4.2",
-        "summernote": "^0.8.20",
         "sweetalert2": "^10.15.6",
         "typed.js": "^2.1.0"
     }

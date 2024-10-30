@@ -45,6 +45,15 @@
                                     <input id="jam_kerja_id" type="text" class="form-control @error('jam_kerja_id') is-invalid @enderror" readonly name="jam_kerja_id" value="{{ $dombakTransfer->jam_kerja()->first()->nama_jam_kerja .' ('. $dombakTransfer->jam_kerja()->first()->jam_datang_in .'-' . $dombakTransfer->jam_kerja()->first()->jam_pulang_out .')' }}" />
                                 </div>
                             </div>
+
+                            <div class="row mb-3 justify-content-center">
+                                <label for="waktu" class="col-md-4 col-form-label text-md-end">{{ __('Waktu')
+                                    }}</label>
+
+                                <div class="col-md-6">
+                                    <input type="time" readonly value="{{ $dombakTransfer->waktu }}" class="form-control" name="waktu" id="waktu">
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>

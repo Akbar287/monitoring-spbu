@@ -47,7 +47,7 @@
 
                                 <div class="col-md-6">
                                     <input id="dombak_id" type="text" readonly class="form-control"
-                                        value="{{ $stok->stok_inventory()->first()->stok_inventory_dombak()->first()->dombak()->first()->nama_dombak . ' ' . $stok->stok_inventory()->first()->stok_inventory_dombak()->first()->nama_dombak . ' ('. $stok->stok_inventory()->first()->stok_inventory_dombak()->first()->stok_inventory()->first()->produk()->first()->nama_produk . '-' . $stok->stok_inventory()->first()->stok_inventory_dombak()->first()->stok .'Liter)' }}" >
+                                        value="{{ $stok->dombak()->first()->nama_dombak . ' ('. $stok->stok_inventory()->first()->produk()->first()->nama_produk . '-' . $stok->dombak()->first()->stok_inventory_dombak()->first()->stok .'Liter)' }}" >
                                 </div>
                             </div>
 
@@ -110,9 +110,14 @@
                                     }}</label>
 
                                 <div class="col-md-6">
-                                    <input id="volume_selisih" type="text" readonly
-                                        class="form-control thousand-style" name="volume_selisih"
-                                        value="{{ is_null($stok->losses()->first()) ? 0 : $stok->losses()->first()->jumlah }}" readonly>
+                                    <div class="input-group mb-2">
+                                        <div class="input-group-prepend">
+                                            <div class="input-group-text">
+                                                @if($stok->losses()->first()->simbol == 'kurang') <i class="fas fa-minus"></i> @else <i class="fas fa-plus"></i> @endif
+                                            </div>
+                                        </div>
+                                        <input id="volume_selisih" type="text" readonly class="form-control thousand-style" name="volume_selisih" value="{{ is_null($stok->losses()->first()) ? 0 : $stok->losses()->first()->jumlah }}" readonly>
+                                    </div>
                                 </div>
                             </div>
 

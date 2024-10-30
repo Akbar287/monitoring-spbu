@@ -55,6 +55,8 @@ class MarginController extends Controller
     {
         $data = StandMeter::select('stand_meter.tanggal', 'jam_kerja.nama_jam_kerja', 'nozzle.nama_nozzle', 'produk.nama_produk', 'stand_meter.stand_meter_awal', 'stand_meter.stand_meter_akhir', 'harga.harga_jual')->join('nozzle', 'nozzle.nozzle_id', 'stand_meter.nozzle_id')->join('jam_kerja', 'jam_kerja.jam_kerja_id', 'stand_meter.jam_kerja_id')->join('produk', 'produk.produk_id', 'nozzle.produk_id')->join('harga', 'harga.produk_id', 'produk.produk_id')->where('harga.is_default', 1)->where('stand_meter.is_confirmation', 1)->whereBetween('stand_meter.tanggal', [$mulai, $selesai])->orderBy('stand_meter.tanggal', 'asc')->orderBy('stand_meter.urutan', 'asc')->orderBy('nozzle.nama_nozzle', 'asc')->get()->toArray();
 
+        dd($data);
+
         $temp = [];
         $tgl = null;
         $shift = null;

@@ -15,6 +15,7 @@
     </p>
     <div class="row justify-content-center">
         <div class="col-md-12">
+            @if(session('msg')){!! session('msg') !!} @endif
             <div class="card">
                 <div class="card-header">
                     <h4>{{ __('List Totalisator Aktif') }}</h4>

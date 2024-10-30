@@ -12,7 +12,7 @@ Auth::routes([
 ]);
 
 // Route::get('/upload', [App\Http\Controllers\WelcomeController::class, 'uploadTest'])->name('uploadTest');
-// Route::get('/upload', [App\Http\Controllers\DumpController::class, 'uploadDataStokTaking'])->name('uploadDataStokTaking');
+Route::get('/upload', [App\Http\Controllers\DumpController::class, 'uploadDataTotalisator'])->name('uploadDataTotalisator');
 // Route::get('/upload', [App\Http\Controllers\DumpController::class, 'uploadStokTaking'])->name('uploadStokTaking');
 // Route::get('/temp', [App\Http\Controllers\DumpController::class, 'temp'])->name('temp');
 
@@ -318,6 +318,16 @@ Route::middleware(['auth', 'cache.header'])->group(function ($route) {
     $route->get('/stok/stok-transfer/{dombakTransfer}/stok/{dokumenStok}/file/{fileDokumenStok}/edit', [App\Http\Controllers\FileStokTransferController::class, 'edit'])->name('stok-transfer.file.edit');
     $route->put('/stok/stok-transfer/{dombakTransfer}/stok/{dokumenStok}/file/{fileDokumenStok}', [App\Http\Controllers\FileStokTransferController::class, 'update'])->name('stok-transfer.file.update');
     $route->delete('/stok/stok-transfer/{dombakTransfer}/stok/{dokumenStok}/file/{fileDokumenStok}', [App\Http\Controllers\FileStokTransferController::class, 'destroy'])->name('stok-transfer.file.delete');
+
+    $route->get('/stok/stok-summary/api', [App\Http\Controllers\StokSummaryController::class, 'api_call'])->name('stok-summary.api_call');
+    $route->get('/stok/stok-summary', [App\Http\Controllers\StokSummaryController::class, 'index'])->name('stok-summary.index');
+    $route->get('/stok/stok-summary/create', [App\Http\Controllers\StokSummaryController::class, 'create'])->name('stok-summary.create');
+    $route->post('/stok/stok-summary', [App\Http\Controllers\StokSummaryController::class, 'store'])->name('stok-summary.store');
+    $route->get('/stok/stok-summary/{date}', [App\Http\Controllers\StokSummaryController::class, 'show'])->name('stok-summary.show');
+    $route->get('/stok/stok-summary/{date}/edit', [App\Http\Controllers\StokSummaryController::class, 'edit'])->name('stok-summary.edit');
+    $route->put('/stok/stok-summary/{date}', [App\Http\Controllers\StokSummaryController::class, 'edit'])->name('stok-summary.edit');
+    $route->delete('/stok/stok-summary/{date}', [App\Http\Controllers\StokSummaryController::class, 'edit'])->name('stok-summary.edit');
+
 
     $route->get('/stok/stok-taking/riwayat', [App\Http\Controllers\StokTakingController::class, 'riwayat'])->name('stok-taking.riwayat');
     $route->get('/stok/stok-taking/riwayat/{stok}', [App\Http\Controllers\StokTakingController::class, 'riwayat_show'])->name('stok-taking.riwayat.show');

@@ -135,6 +135,7 @@ class StokTransferController extends Controller
     {
         $request->validate([
             'tanggal' => ['required'],
+            'waktu' => ['required'],
             'jam_kerja_id' => ['required'],
             'dombak_id' => ['required'],
             'tinggi_dombak' => ['required'],
@@ -151,7 +152,7 @@ class StokTransferController extends Controller
             // Instansiasi
             $typeDokumenStokSend = TypeDokumenStok::where('type_movement', 'Good Transfer Send')->first();
             $typeDokumenStokReceive = TypeDokumenStok::where('type_movement', 'Good Transfer Receive')->first();
-            $typeDokumenStokTaking = TypeDokumenStok::where('type_movement', 'Stok Taking')->first();
+            $typeDokumenStokTaking = TypeDokumenStok::where('type_movement', 'Stok Taking Good Transfer')->first();
 
             $stokInventory = $dombakPertama->stok_inventory_dombak()->first()->stok_inventory()->first();
             $produk = $stokInventory->produk()->first();
@@ -162,7 +163,8 @@ class StokTransferController extends Controller
                 $dt = $produk->dombak_transfer()->create([
                     'jam_kerja_id' => request('jam_kerja_id'),
                     'tanggal' => request('tanggal'),
-                    'is_confirmation' => 0
+                    'is_confirmation' => 0,
+                    'waktu' => request('waktu')
                 ]);
             }
 
@@ -186,8 +188,16 @@ class StokTransferController extends Controller
                         'tanggal' => request('tanggal'),
                         'stok_awal' => $dombakPertama->stok_inventory_dombak()->first()->stok ?? 0,
                         'stok_akhir' => $dombakPertamaLiterPertama->volume ?? 0,
-                        'is_confirmation' => 0
+                        'is_confirmation' => 0,
+                        'waktu' => request('waktu')
                     ]);
+
+                    if (is_null(DB::table('dombak_transfer_dokumen_stok')->where('dombak_transfer_id', $dt->dombak_transfer_id)->where('dokumen_stok_id', $stokSend->dokumen_stok_id)->first())) {
+                        DB::table('dombak_transfer_dokumen_stok')->insert([
+                            'dombak_transfer_id' => $dt->dombak_transfer_id,
+                            'dokumen_stok_id' => $stokSend->dokumen_stok_id
+                        ]);
+                    }
                 }
             }
 
@@ -203,8 +213,16 @@ class StokTransferController extends Controller
                     'tanggal' => request('tanggal'),
                     'stok_awal' => $dombakPertamaLiterPertama->volume ?? 0,
                     'stok_akhir' => $dombakPertamaLiterKedua->volume ?? 0,
-                    'is_confirmation' => 0
+                    'is_confirmation' => 0,
+                    'waktu' => request('waktu')
                 ]);
+
+                if (is_null(DB::table('dombak_transfer_dokumen_stok')->where('dombak_transfer_id', $dt->dombak_transfer_id)->where('dokumen_stok_id', $send->dokumen_stok_id)->first())) {
+                    DB::table('dombak_transfer_dokumen_stok')->insert([
+                        'dombak_transfer_id' => $dt->dombak_transfer_id,
+                        'dokumen_stok_id' => $send->dokumen_stok_id
+                    ]);
+                }
             }
             unset($typeDokumenStokSend);
 
@@ -225,8 +243,16 @@ class StokTransferController extends Controller
                         'tanggal' => request('tanggal'),
                         'stok_awal' => $dombakKedua->stok_inventory_dombak()->first()->stok ?? 0,
                         'stok_akhir' => $dombakKeduaLiterPertama->volume ?? 0,
-                        'is_confirmation' => 0
+                        'is_confirmation' => 0,
+                        'waktu' => request('waktu')
                     ]);
+
+                    if (is_null(DB::table('dombak_transfer_dokumen_stok')->where('dombak_transfer_id', $dt->dombak_transfer_id)->where('dokumen_stok_id', $stokReceive->dokumen_stok_id)->first())) {
+                        DB::table('dombak_transfer_dokumen_stok')->insert([
+                            'dombak_transfer_id' => $dt->dombak_transfer_id,
+                            'dokumen_stok_id' => $stokReceive->dokumen_stok_id
+                        ]);
+                    }
                 }
             }
 
@@ -241,8 +267,16 @@ class StokTransferController extends Controller
                     'tanggal' => request('tanggal'),
                     'stok_awal' => $dombakKeduaLiterPertama->volume ?? 0,
                     'stok_akhir' => $dombakKeduaLiterKedua->volume ?? 0,
-                    'is_confirmation' => 0
+                    'is_confirmation' => 0,
+                    'waktu' => request('waktu')
                 ]);
+
+                if (is_null(DB::table('dombak_transfer_dokumen_stok')->where('dombak_transfer_id', $dt->dombak_transfer_id)->where('dokumen_stok_id', $receive->dokumen_stok_id)->first())) {
+                    DB::table('dombak_transfer_dokumen_stok')->insert([
+                        'dombak_transfer_id' => $dt->dombak_transfer_id,
+                        'dokumen_stok_id' => $receive->dokumen_stok_id
+                    ]);
+                }
             }
 
             // Cek Loss Rumus: selisih stok setelah dan sebelum di dombak pertama dikurangi selisih stok sebelum dan setelah dombak kedua (Dombak2Stlh - Dombak2Sblm) - (Dombak1Stlh - Dombak1Sblm);
@@ -265,32 +299,6 @@ class StokTransferController extends Controller
             unset($dombakKeduaLiterPertama);
             unset($dombakKeduaLiterKedua);
 
-            // Relasi
-            if (is_null(DB::table('dombak_transfer_dokumen_stok')->where('dombak_transfer_id', $dt->dombak_transfer_id)->where('dokumen_stok_id', $stokSend->dokumen_stok_id)->first())) {
-                DB::table('dombak_transfer_dokumen_stok')->insert([
-                    'dombak_transfer_id' => $dt->dombak_transfer_id,
-                    'dokumen_stok_id' => $stokSend->dokumen_stok_id
-                ]);
-            }
-            if (is_null(DB::table('dombak_transfer_dokumen_stok')->where('dombak_transfer_id', $dt->dombak_transfer_id)->where('dokumen_stok_id', $stokReceive->dokumen_stok_id)->first())) {
-                DB::table('dombak_transfer_dokumen_stok')->insert([
-                    'dombak_transfer_id' => $dt->dombak_transfer_id,
-                    'dokumen_stok_id' => $stokReceive->dokumen_stok_id
-                ]);
-            }
-            if (is_null(DB::table('dombak_transfer_dokumen_stok')->where('dombak_transfer_id', $dt->dombak_transfer_id)->where('dokumen_stok_id', $send->dokumen_stok_id)->first())) {
-                DB::table('dombak_transfer_dokumen_stok')->insert([
-                    'dombak_transfer_id' => $dt->dombak_transfer_id,
-                    'dokumen_stok_id' => $send->dokumen_stok_id
-                ]);
-            }
-            if (is_null(DB::table('dombak_transfer_dokumen_stok')->where('dombak_transfer_id', $dt->dombak_transfer_id)->where('dokumen_stok_id', $receive->dokumen_stok_id)->first())) {
-                DB::table('dombak_transfer_dokumen_stok')->insert([
-                    'dombak_transfer_id' => $dt->dombak_transfer_id,
-                    'dokumen_stok_id' => $receive->dokumen_stok_id
-                ]);
-            }
-
             return redirect('/stok/stok-transfer/' . $dt->dokumen_transfer_id)->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> Data Stok Transfer sudah dicatat.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
         } else {
             // Beda Produk
@@ -302,37 +310,39 @@ class StokTransferController extends Controller
     {
         // Inisiasi Dombak
         $dombakPertama = $dombakTransfer->dokumen_stok()->where('type_dokumen_stok_id', TypeDokumenStok::where('type_movement', 'Good Transfer Send')->first()->type_dokumen_stok_id)->first();
-        $dombakPertamaStokTaking = $dombakTransfer->dokumen_stok()->where('type_dokumen_stok_id', TypeDokumenStok::where('type_movement', 'Stok Taking')->first()->type_dokumen_stok_id)->where('dombak_id', $dombakPertama->dombak_id)->first();
+        $dombakPertamaStokTaking = $dombakTransfer->dokumen_stok()->where('type_dokumen_stok_id', TypeDokumenStok::where('type_movement', 'Stok Taking Good Transfer')->first()->type_dokumen_stok_id)->where('dombak_id', $dombakPertama->dombak_id)->first();
         $dombakKedua = $dombakTransfer->dokumen_stok()->where('type_dokumen_stok_id', TypeDokumenStok::where('type_movement', 'Good Transfer Receive')->first()->type_dokumen_stok_id)->first();
-        $dombakKeduaStokTaking = $dombakTransfer->dokumen_stok()->where('type_dokumen_stok_id', TypeDokumenStok::where('type_movement', 'Stok Taking')->first()->type_dokumen_stok_id)->where('dombak_id', $dombakKedua->dombak_id)->first();
+        $dombakKeduaStokTaking = $dombakTransfer->dokumen_stok()->where('type_dokumen_stok_id', TypeDokumenStok::where('type_movement', 'Stok Taking Good Transfer')->first()->type_dokumen_stok_id)->where('dombak_id', $dombakKedua->dombak_id)->first();
 
         // Update Stok Before Send
         $dombakPertamaStokTaking->stok_inventory()->update([
-            'stok' => $dombakPertamaStokTaking->stok_inventory()->first()->stok - ($dombakPertamaStokTaking->stok_akhir - $dombakPertamaStokTaking->stok_awal)
+            'stok' => $dombakPertamaStokTaking->stok_inventory()->first()->stok + ($dombakPertamaStokTaking->stok_akhir - $dombakPertamaStokTaking->stok_awal)
         ]);
-        $dombakPertamaStokTaking->dombak()->first()->stok_inventory_dombak()->update(['stok' => ($dombakPertamaStokTaking->stok_akhir - $dombakPertamaStokTaking->stok_awal)]);
+        $dombakPertamaStokTaking->dombak()->first()->stok_inventory_dombak()->update(['stok' => $dombakPertamaStokTaking->dombak()->first()->stok_inventory_dombak()->first()->stok + ($dombakPertamaStokTaking->stok_akhir - $dombakPertamaStokTaking->stok_awal)]);
 
         // Update Stok Dombak Pertama
         $dombakPertama->stok_inventory()->update([
-            'stok' => $dombakPertama->stok_inventory()->first()->stok - ($dombakPertama->stok_akhir - $dombakPertama->stok_awal)
+            'stok' => $dombakPertama->stok_inventory()->first()->stok + ($dombakPertama->stok_akhir - $dombakPertama->stok_awal)
         ]);
-        $dombakPertama->dombak()->first()->stok_inventory_dombak()->update(['stok' => ($dombakPertama->stok_akhir - $dombakPertama->stok_awal)]);
+        $dombakPertama->dombak()->first()->stok_inventory_dombak()->update(['stok' => $dombakPertama->dombak()->first()->stok_inventory_dombak()->first()->stok + ($dombakPertama->stok_akhir - $dombakPertama->stok_awal)]);
 
         // Update Stok Before Receive
         $dombakKeduaStokTaking->stok_inventory()->update([
             'stok' => $dombakKeduaStokTaking->stok_inventory()->first()->stok + ($dombakKeduaStokTaking->stok_akhir - $dombakKeduaStokTaking->stok_awal)
         ]);
-        $dombakKeduaStokTaking->dombak()->first()->stok_inventory_dombak()->update(['stok' => ($dombakKeduaStokTaking->stok_akhir - $dombakKeduaStokTaking->stok_awal)]);
+        $dombakKeduaStokTaking->dombak()->first()->stok_inventory_dombak()->update(['stok' => $dombakKeduaStokTaking->dombak()->first()->stok_inventory_dombak()->first()->stok + ($dombakKeduaStokTaking->stok_akhir - $dombakKeduaStokTaking->stok_awal)]);
 
         // Update Stok Dombak Kedua
         $dombakKedua->stok_inventory()->update([
             'stok' => $dombakKedua->stok_inventory()->first()->stok + ($dombakKedua->stok_akhir - $dombakKedua->stok_awal)
         ]);
-        $dombakKedua->dombak()->first()->stok_inventory_dombak()->update(['stok' => ($dombakKedua->stok_akhir - $dombakKedua->stok_awal)]);
+        $dombakKedua->dombak()->first()->stok_inventory_dombak()->update(['stok' => $dombakKedua->dombak()->first()->stok_inventory_dombak()->first()->stok + ($dombakKedua->stok_akhir - $dombakKedua->stok_awal)]);
 
         // Update Status Konfirmasi
         $dombakPertama->update(['is_confirmation' => 1]);
         $dombakKedua->update(['is_confirmation' => 1]);
+        $dombakPertamaStokTaking->update(['is_confirmation' => 1]);
+        $dombakKeduaStokTaking->update(['is_confirmation' => 1]);
         $dombakTransfer->update(['is_confirmation' => 1]);
 
         return redirect('/stok/stok-transfer/' . $dombakTransfer->dokumen_transfer_id)->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> Data Stok Transfer sudah dikonfirmasi.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');

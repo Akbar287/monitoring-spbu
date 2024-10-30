@@ -25,15 +25,15 @@
             </div>
         </div>
         @else
-        <div class="alert info">Tidak Ada Artikel yang tersedia</div>
+        <div class="alert alert-info">Tidak Ada Artikel yang tersedia</div>
         @endif
     </div>
     <div class="col-12 col-sm-12 col-lg-4 order-1 order-md-1 order-lg-2">
         <div class="card">
             <div class="card-body">
-              <h5 class="card-title">Login ke Aplikasi</h5>
-              <p class="card-text">Gunakan Username dan Password</p>
-              <a href="{{ url('/login') }}" class="btn btn-primary">Login</a>
+                <h5 class="card-title">Login ke Aplikasi</h5>
+                <p class="card-text">Gunakan Username dan Password</p>
+                <a href="{{ url('/login') }}" class="btn btn-primary">Login</a>
             </div>
         </div>
     </div>

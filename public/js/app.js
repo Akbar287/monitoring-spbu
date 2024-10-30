@@ -1458,6 +1458,20 @@ $(function () {
       }]
     });
   }
+  if (routeName == 'stok-summary.show') {
+    $('.see-more-window').on('click', function (e) {
+      e.preventDefault();
+      var temp = JSON.parse($(this).parent().parent().parent().siblings('.temp-depth')[0].textContent);
+      var wrap = "<p>ID Dokumen Stok: ".concat(temp.dokumen_stok_id, "</p><div class=\"form-group\" style=\"overflow-wrap: 'break-word';\"><label>Tanggal</label><div class=\"input-group\"><div class=\"input-group-prepend\"><div class=\"input-group-text\"><i class=\"fas fa-calendar\"></i></div></div><input readonly type=\"text\" class=\"form-control\" value=\"").concat(temp.tanggal, "\" name=\"calendar\"></div></div><div class=\"form-group\"><label>Jenis </label><div class=\"input-group\"><div class=\"input-group-prepend\"><div class=\"input-group-text\"><i class=\"fas fa-calendar\"></i></div></div><input readonly type=\"text\" class=\"form-control\" value=\"").concat(temp.type_movement, "\" name=\"jenis\"></div></div>");
+      $(this).fireModal({
+        title: 'My Modal',
+        body: wrap
+      });
+    });
+    $('.edit-more-window').on('click', function () {
+      console.log($(this).data('id'));
+    });
+  }
   if (routeName == 'stok-taking.file.index') {
     $('.table-stok-taking-file').DataTable({
       language: {
@@ -1601,7 +1615,7 @@ $(function () {
                   $('input#volume').val(Intl.NumberFormat('id-ID', {
                     style: 'decimal',
                     maximumFractionDigits: 6
-                  }).format(calc).replaceAll('.', ','));
+                  }).format(calc).replaceAll('.', ',').replace(/,(?=\d$)/, '.'));
                 } else {
                   $('input#volume_sebelumnya').val("Tidak ada Data");
                   $('input#volume').val("0");
@@ -1633,7 +1647,7 @@ $(function () {
                   $('input#volume').val(Intl.NumberFormat('id-ID', {
                     style: 'decimal',
                     maximumFractionDigits: 6
-                  }).format(calc).replaceAll('.', ','));
+                  }).format(calc).replaceAll('.', ',').replace(/,(?=\d$)/, '.'));
                 } else {
                   $('input#volume_setelah').val("Tidak ada Data");
                   $('input#volume').val("0");
@@ -1732,6 +1746,7 @@ $(function () {
                 if (data.data != null) {
                   var calc = parseFloat(data.data.volume.replace(',', '')) - parseFloat($('input#volume_sebelumnya_kedua').val().replace(',', ''));
                   var calc_ = parseFloat(data.data.volume.replace(',', '')) - parseFloat($('input#volume_sebelumnya_kedua').val().replace(',', '')) - parseFloat($('input#volume').val().replace(',', '')) * -1;
+                  console.log(calc, calc_, parseFloat(data.data.volume.replace(',', '')), parseFloat($('input#volume_sebelumnya_kedua').val().replace(',', '')), parseFloat($('input#volume').val().replace(',', '')));
                   $('input#volume_sebelumnya_kedua_setelah').val(data.data.volume);
                   $('input#volume_kedua').val(Intl.NumberFormat('id-ID', {
                     style: 'decimal',
@@ -2887,6 +2902,94 @@ $(function () {
         searchable: false
       }]
     });
+  }
+  if (routeName == 'stok-summary.index') {
+    $("#calendar").fullCalendar({
+      defaultView: 'month',
+      height: 750,
+      businessHours: true,
+      selectable: true,
+      header: {
+        left: 'prev,next today',
+        center: 'title',
+        right: 'month'
+      },
+      buttonIcons: true,
+      selectMirror: true,
+      locale: 'id',
+      dayMaxEvents: true,
+      editable: false,
+      droppable: false,
+      viewRender: function viewRender(view, element) {
+        var currentMonth = view.start.month() + 1; // Bulan dimulai dari 0, tambahkan 1
+        var currentYear = view.start.year();
+
+        // Panggil API berdasarkan bulan dan tahun aktif
+        // $.ajax({
+        //     url: window.location.href + '/api',
+        //     method: "GET",
+        //     data: {
+        //         month: currentMonth,
+        //         year: currentYear
+        //     },
+        //     success: function(response) {
+        //         console.log(response);
+        //         // Hapus event lama dari kalender
+        //         $('#calendar').fullCalendar('removeEvents');
+
+        //         // Tambahkan event baru dari hasil API ke kalender
+        //         $('#calendar').fullCalendar('renderEvents', response.events);
+
+        //         // Jika data berbentuk lain, sesuaikan pengolahan datanya di sini
+        //     },
+        //     error: function() {
+        //         alert("Gagal mengambil data dari API.");
+        //     }
+        // });
+
+        console.log('yeayy');
+      },
+      dayClick: function dayClick(date, jsEvent, view) {
+        // Mendapatkan tanggal, bulan, dan tahun dari objek date
+        var day = date.date(); // Tanggal
+        var month = date.month() + 1; // Bulan (di FullCalendar, bulan dimulai dari 0)
+        var year = date.year(); // Tahun
+
+        // Menampilkan alert
+        if (window.confirm("Apakah anda ingin menambah/Mengubah Data Tanggal " + day + " " + convertMonthToString(month) + " " + year)) {
+          var url = window.location.href.endsWith('/') ? window.location.href.slice(0, -1) : window.location.href;
+          window.location.href = url + '/' + year + '-' + (month < 10 ? '0' + month : month) + '-' + (day < 10 ? '0' + day : day);
+        }
+      },
+      select: function select(arg) {
+        return false;
+      },
+      eventClick: function eventClick(arg) {
+        console.log(arg);
+      },
+      events: [{
+        title: 'BS, PL, PX, PDX',
+        start: '2024-10-20T06:00:00',
+        end: '2024-10-20T22:00:00'
+      }],
+      drop: function drop() {}
+    });
+    $('#calendar').fullCalendar('render');
+  }
+  function convertMonthToString(month) {
+    if (month == 1) return 'Januari';
+    if (month == 2) return 'Februari';
+    if (month == 3) return 'Maret';
+    if (month == 4) return 'April';
+    if (month == 5) return 'Mei';
+    if (month == 6) return 'Juni';
+    if (month == 7) return 'Juli';
+    if (month == 8) return 'Agustus';
+    if (month == 9) return 'September';
+    if (month == 10) return 'Oktober';
+    if (month == 11) return 'November';
+    if (month == 12) return 'Desember';
+    return '';
   }
   if (routeName == 'jadwal-kerja.index') {
     $(function () {

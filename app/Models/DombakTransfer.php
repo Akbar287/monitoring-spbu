@@ -26,7 +26,8 @@ class DombakTransfer extends Model
         'produk_id',
         'jam_kerja_id',
         'tanggal',
-        'is_confirmation'
+        'is_confirmation',
+        'waktu'
     ];
 
     public function produk()

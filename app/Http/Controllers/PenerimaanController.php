@@ -87,8 +87,18 @@ class PenerimaanController extends Controller
 
     public function riwayat(Request $request)
     {
+        $waktuMulai = $request->has('waktu_mulai') ? Carbon::createFromFormat('Y-m-d', $request->waktu_mulai) : Carbon::now()->firstOfMonth();
+        $waktuSelesai = $request->has('waktu_selesai') ? Carbon::createFromFormat('Y-m-d', $request->waktu_selesai) : Carbon::now()->endOfMonth();
+        if ($waktuMulai->gt($waktuSelesai)) {
+            $temp = $waktuMulai;
+            $waktuMulai = $waktuSelesai;
+            $waktuSelesai = $temp;
+        }
+        $waktuMulai = $waktuMulai->format('Y-m-d');
+        $waktuSelesai = $waktuSelesai->format('Y-m-d');
+
         if ($request->ajax()) {
-            $data = Penerimaan::join('dokumen_stok', 'dokumen_stok.dokumen_stok_id', 'penerimaan.dokumen_stok_id')->where('dokumen_stok.is_confirmation', '1')->get();
+            $data = Penerimaan::join('dokumen_stok', 'dokumen_stok.dokumen_stok_id', 'penerimaan.dokumen_stok_id')->where('dokumen_stok.is_confirmation', '1')->whereBetween('dokumen_stok.tanggal', [$waktuMulai, $waktuSelesai])->get();
             return DataTables::of($data)
                 ->addIndexColumn()
                 ->addColumn('dombak', function ($row) {
@@ -121,7 +131,7 @@ class PenerimaanController extends Controller
                 ->rawColumns(['action', 'is_confirmation'])
                 ->make(true);
         }
-        return view('stok/penerimaan/riwayat_index');
+        return view('stok/penerimaan/riwayat_index', compact('waktuMulai', 'waktuSelesai'));
     }
 
     /**
@@ -167,76 +177,80 @@ class PenerimaanController extends Controller
         $stokAktual = 0;
         $dokumenStokForGRP = null;
         for ($i = 0; $i < count($request->volume_sebelumnya); $i++) {
-            $dombak = Dombak::where('dombak_id', $request->dombak_id[$i])->first();
-            $stokSebelumnya = $dombak->konversi()->where('tinggi', $request->tinggi_dombak_sebelumnya[$i])->first()->volume;
-            $stokPenerimaan = $dombak->konversi()->where('tinggi', $request->tinggi_dombak_setelahnya[$i])->first()->volume;
+            if (!is_null($request->tinggi_dombak_sebelumnya[$i])) {
+                $dombak = Dombak::where('dombak_id', $request->dombak_id[$i])->first();
+                $stokSebelumnya = $dombak->konversi()->where('tinggi', $request->tinggi_dombak_sebelumnya[$i])->first()->volume;
+                $stokPenerimaan = $dombak->konversi()->where('tinggi', $request->tinggi_dombak_setelahnya[$i])->first()->volume;
+                $stokAktual += $stokPenerimaan - $stokSebelumnya;
 
-            $stokAktual += $stokPenerimaan - $stokSebelumnya;
-            // Sesuaikan Stok Taking Ke Penerimaan
-            $dokumenStokForStokTaking = $dombak->stok_inventory_dombak()->first()->stok_inventory()->first()->dokumen_stok()->where('stok_inventory_id', $dombak->stok_inventory_dombak()->first()->stok_inventory()->first()->stok_inventory_id)->where('member_id', Auth::user()->member()->first()->member_id)->where('jam_kerja_id', $request->jam_kerja_id)->where('type_dokumen_stok_id', $typeDokumenST->type_dokumen_stok_id)->where('dombak_id', $request->dombak_id[$i])->where('tanggal', $request->tanggal)->where('stok_awal', $dombak->stok_inventory_dombak()->first()->stok)->where('stok_akhir', $stokSebelumnya)->where('is_confirmation', 0)->first();
-            if (is_null($dokumenStokForStokTaking)) {
-                $dokumenStokForStokTaking = $dombak->stok_inventory_dombak()->first()->stok_inventory()->first()->dokumen_stok()->create([
-                    'stok_inventory_id' => $dombak->stok_inventory_dombak()->first()->stok_inventory()->first()->stok_inventory_id,
-                    'member_id' => Auth::user()->member()->first()->member_id,
-                    'jam_kerja_id' => $request->jam_kerja_id,
-                    'type_dokumen_stok_id' => $typeDokumenST->type_dokumen_stok_id,
-                    'dombak_id' => $request->dombak_id[$i],
-                    'tanggal' => $request->tanggal,
-                    'stok_awal' => $dombak->stok_inventory_dombak()->first()->stok,
-                    'stok_akhir' => $stokSebelumnya,
-                    'is_confirmation' => 0
-                ]);
-            }
-            // End Penyesuaian Stok Taking
+                // Sesuaikan Stok Taking Ke Penerimaan
+                $dokumenStokForStokTaking = $dombak->stok_inventory_dombak()->first()->stok_inventory()->first()->dokumen_stok()->where('stok_inventory_id', $dombak->stok_inventory_dombak()->first()->stok_inventory()->first()->stok_inventory_id)->where('member_id', Auth::user()->member()->first()->member_id)->where('jam_kerja_id', $request->jam_kerja_id)->where('type_dokumen_stok_id', $typeDokumenST->type_dokumen_stok_id)->where('dombak_id', $request->dombak_id[$i])->where('tanggal', $request->tanggal)->where('stok_awal', $dombak->stok_inventory_dombak()->first()->stok)->where('stok_akhir', $stokSebelumnya)->where('is_confirmation', 0)->first();
+                if (is_null($dokumenStokForStokTaking)) {
+                    $dokumenStokForStokTaking = $dombak->stok_inventory_dombak()->first()->stok_inventory()->first()->dokumen_stok()->create([
+                        'stok_inventory_id' => $dombak->stok_inventory_dombak()->first()->stok_inventory()->first()->stok_inventory_id,
+                        'member_id' => Auth::user()->member()->first()->member_id,
+                        'jam_kerja_id' => $request->jam_kerja_id,
+                        'type_dokumen_stok_id' => $typeDokumenST->type_dokumen_stok_id,
+                        'dombak_id' => $request->dombak_id[$i],
+                        'tanggal' => $request->tanggal,
+                        'stok_awal' => $dombak->stok_inventory_dombak()->first()->stok,
+                        'stok_akhir' => $stokSebelumnya,
+                        'is_confirmation' => 0,
+                        'waktu' => $request->jam_penerimaan
+                    ]);
+                }
+                // End Penyesuaian Stok Taking
 
-            // Penerimaan
-            $dokumenStokForGRP = $dombak->stok_inventory_dombak()->first()->stok_inventory()->first()->dokumen_stok()->where('stok_inventory_id', $dombak->stok_inventory_dombak()->first()->stok_inventory()->first()->stok_inventory_id)->where('member_id', Auth::user()->member()->first()->member_id)->where('jam_kerja_id', $request->jam_kerja_id)->where('type_dokumen_stok_id', $typeDokumenGRP->type_dokumen_stok_id)->where('dombak_id', $request->dombak_id[$i])->where('tanggal', $request->tanggal)->where('stok_awal', $stokSebelumnya)->where('stok_akhir', $stokPenerimaan)->where('is_confirmation', 0)->first();
-            if (is_null($dokumenStokForGRP)) {
-                $dokumenStokForGRP = $dombak->stok_inventory_dombak()->first()->stok_inventory()->first()->dokumen_stok()->create([
-                    'stok_inventory_id' => $dombak->stok_inventory_dombak()->first()->stok_inventory()->first()->stok_inventory_id,
-                    'member_id' => Auth::user()->member()->first()->member_id,
-                    'jam_kerja_id' => $request->jam_kerja_id,
-                    'type_dokumen_stok_id' => $typeDokumenGRP->type_dokumen_stok_id,
-                    'dombak_id' => $request->dombak_id[$i],
-                    'tanggal' => $request->tanggal,
-                    'stok_awal' => $stokSebelumnya,
-                    'stok_akhir' => $stokPenerimaan,
-                    'is_confirmation' => 0
-                ]);
-            }
-            // End Penerimaan
+                // Penerimaan
+                $dokumenStokForGRP = $dombak->stok_inventory_dombak()->first()->stok_inventory()->first()->dokumen_stok()->where('stok_inventory_id', $dombak->stok_inventory_dombak()->first()->stok_inventory()->first()->stok_inventory_id)->where('member_id', Auth::user()->member()->first()->member_id)->where('jam_kerja_id', $request->jam_kerja_id)->where('type_dokumen_stok_id', $typeDokumenGRP->type_dokumen_stok_id)->where('dombak_id', $request->dombak_id[$i])->where('tanggal', $request->tanggal)->where('stok_awal', $stokSebelumnya)->where('stok_akhir', $stokPenerimaan)->where('is_confirmation', 0)->first();
+                if (is_null($dokumenStokForGRP)) {
+                    $dokumenStokForGRP = $dombak->stok_inventory_dombak()->first()->stok_inventory()->first()->dokumen_stok()->create([
+                        'stok_inventory_id' => $dombak->stok_inventory_dombak()->first()->stok_inventory()->first()->stok_inventory_id,
+                        'member_id' => Auth::user()->member()->first()->member_id,
+                        'jam_kerja_id' => $request->jam_kerja_id,
+                        'type_dokumen_stok_id' => $typeDokumenGRP->type_dokumen_stok_id,
+                        'dombak_id' => $request->dombak_id[$i],
+                        'tanggal' => $request->tanggal,
+                        'stok_awal' => $stokSebelumnya,
+                        'stok_akhir' => $stokPenerimaan,
+                        'is_confirmation' => 0,
+                        'waktu' => $request->jam_penerimaan
+                    ]);
+                }
+                // End Penerimaan
 
-            // Relasi ke Konversi
-            if (is_null(DB::table('konversi_dokumen_stok')->where('konversi_id',  $dombak->konversi()->where('tinggi', $request->tinggi_dombak_sebelumnya[$i])->first()->konversi_id)->where('dokumen_stok_id', $dokumenStokForStokTaking->dokumen_stok_id)->first())) {
-                DB::table('konversi_dokumen_stok')->insert([
-                    'konversi_id' =>  $dombak->konversi()->where('tinggi', $request->tinggi_dombak_sebelumnya[$i])->first()->konversi_id,
-                    'dokumen_stok_id' => $dokumenStokForStokTaking->dokumen_stok_id
-                ]);
-            }
-
-            if (is_null(DB::table('konversi_dokumen_stok')->where('konversi_id',  $dombak->konversi()->where('tinggi', $request->tinggi_dombak_setelahnya[$i])->first()->konversi_id)->where('dokumen_stok_id', $dokumenStokForGRP->dokumen_stok_id)->first())) {
-                DB::table('konversi_dokumen_stok')->insert([
-                    'konversi_id' => $dombak->konversi()->where('tinggi', $request->tinggi_dombak_setelahnya[$i])->first()->konversi_id,
-                    'dokumen_stok_id' => $dokumenStokForGRP->dokumen_stok_id
-                ]);
-            }
-            // End Relasi
-
-            // Penerimaan
-            $penerimaan = $fileLo->penerimaan()->where('dokumen_stok_id', $dokumenStokForGRP->dokumen_stok_id)->where('tanggal', $request->tanggal)->first();
-            if (is_null($penerimaan)) {
-                $penerimaan = $fileLo->penerimaan()->create([
-                    'dokumen_stok_id' => $dokumenStokForGRP->dokumen_stok_id,
-                    'tanggal' => $request->tanggal,
-                ]);
-
-                if (is_null($penerimaan->penerimaan_stok_taking()->where('dokumen_stok_id', $dokumenStokForStokTaking->dokumen_stok_id)->first())) {
-                    $penerimaan->penerimaan_stok_taking()->create([
+                // Relasi ke Konversi
+                if (is_null(DB::table('konversi_dokumen_stok')->where('konversi_id',  $dombak->konversi()->where('tinggi', $request->tinggi_dombak_sebelumnya[$i])->first()->konversi_id)->where('dokumen_stok_id', $dokumenStokForStokTaking->dokumen_stok_id)->first())) {
+                    DB::table('konversi_dokumen_stok')->insert([
+                        'konversi_id' =>  $dombak->konversi()->where('tinggi', $request->tinggi_dombak_sebelumnya[$i])->first()->konversi_id,
                         'dokumen_stok_id' => $dokumenStokForStokTaking->dokumen_stok_id
                     ]);
                 }
+
+                if (is_null(DB::table('konversi_dokumen_stok')->where('konversi_id',  $dombak->konversi()->where('tinggi', $request->tinggi_dombak_setelahnya[$i])->first()->konversi_id)->where('dokumen_stok_id', $dokumenStokForGRP->dokumen_stok_id)->first())) {
+                    DB::table('konversi_dokumen_stok')->insert([
+                        'konversi_id' => $dombak->konversi()->where('tinggi', $request->tinggi_dombak_setelahnya[$i])->first()->konversi_id,
+                        'dokumen_stok_id' => $dokumenStokForGRP->dokumen_stok_id
+                    ]);
+                }
+                // End Relasi
+
+                // Penerimaan
+                $penerimaan = $fileLo->penerimaan()->where('dokumen_stok_id', $dokumenStokForGRP->dokumen_stok_id)->where('tanggal', $request->tanggal)->first();
+                if (is_null($penerimaan)) {
+                    $penerimaan = $fileLo->penerimaan()->create([
+                        'dokumen_stok_id' => $dokumenStokForGRP->dokumen_stok_id,
+                        'tanggal' => $request->tanggal,
+                    ]);
+
+                    if (is_null($penerimaan->penerimaan_stok_taking()->where('dokumen_stok_id', $dokumenStokForStokTaking->dokumen_stok_id)->first())) {
+                        $penerimaan->penerimaan_stok_taking()->create([
+                            'dokumen_stok_id' => $dokumenStokForStokTaking->dokumen_stok_id
+                        ]);
+                    }
+                }
+                // End Penerimaan
             }
-            // End Penerimaan
         }
 
         $stokPL = $stokAktual - $fileLo->jumlah;

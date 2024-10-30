@@ -117,17 +117,24 @@ class StokTakingController extends Controller
             'tanggal' => ['required'],
             'tinggi_dombak' => ['required'],
         ]);
+        $tinggiDombak = Dombak::where('dombak_id', $request->dombak_id)->first()->konversi()->where('tinggi', $request->tinggi_dombak)->first();
 
         $type_dokumen_stock = TypeDokumenStok::where('type_dokumen_stok_id', $request->type_dokumen_id)->first();
         $stok_inventory = Dombak::where('dombak_id', $request->dombak_id)->first()->stok_inventory_dombak()->first()->stok_inventory()->first();
-        $tinggiDombak = Dombak::where('dombak_id', $request->dombak_id)->first()->konversi()->where('tinggi', $request->tinggi_dombak)->first();
+
         $dokumenStok = null;
 
         if ($type_dokumen_stock->type_movement == 'Stok Taking') {
             $awal = Dombak::where('dombak_id', $request->dombak_id)->first()->stok_inventory_dombak()->first()->stok;
+
+            if (is_null($tinggiDombak)) {
+                return redirect('/stok/stok-taking/create')->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Gagal!</strong> Tinggi Dombak tidak ditemukan di tabel konversi.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
+                exit;
+            }
             $akhir = $tinggiDombak->volume;
 
             $dokumenStok = $type_dokumen_stock->dokumen_stok()->where('stok_inventory_id', $stok_inventory->stok_inventory_id)->where('jam_kerja_id', $request->jam_kerja_id)->where('member_id', Auth::user()->member_id)->where('dombak_id', $request->dombak_id)->where('tanggal', $request->tanggal)->where('stok_awal', $awal)->where('stok_akhir', $akhir)->where('is_confirmation', 0)->first();
+            $jamKerja = JamKerja::where('jam_kerja_id', $request->jam_kerja_id)->first();
             if (is_null($dokumenStok)) {
                 $dokumenStok = $type_dokumen_stock->dokumen_stok()->create([
                     'stok_inventory_id' => $stok_inventory->stok_inventory_id,
@@ -137,7 +144,8 @@ class StokTakingController extends Controller
                     'tanggal' => $request->tanggal,
                     'stok_awal' => $awal,
                     'stok_akhir' => $akhir,
-                    'is_confirmation' => 0
+                    'is_confirmation' => 0,
+                    'waktu' => $jamKerja->jam_datang_in
                 ]);
             }
 

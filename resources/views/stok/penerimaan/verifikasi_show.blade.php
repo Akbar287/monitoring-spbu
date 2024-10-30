@@ -300,6 +300,15 @@
                             </div>
 
                             <div class="row mb-3 justify-content-center">
+                                <label for="jam_penerimaan" class="col-md-4 col-form-label text-md-end">{{ __('Jam Penerimaan')
+                                    }}</label>
+
+                                <div class="col-md-6">
+                                    <input id="jam_penerimaan" type="time" readonly class="form-control" name="jam_penerimaan" value="{{ $penerimaan->dokumen_stok()->first()->waktu ?? '' }}" />
+                                </div>
+                            </div>
+
+                            <div class="row mb-3 justify-content-center">
                                 <label for="tinggi_dombak" class="col-md-4 col-form-label text-md-end">{{ __('Tinggi Dombak (cm) Sebelum Penerimaan')
                                     }}</label>
 

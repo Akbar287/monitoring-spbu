@@ -31,7 +31,8 @@ class DokumenStok extends Model
         'tanggal',
         'stok_awal',
         'stok_akhir',
-        'is_confirmation'
+        'is_confirmation',
+        'waktu'
     ];
 
     public function losses()

@@ -418,6 +418,22 @@
                                 </div>
 
                                 <div class="row mb-3 justify-content-center">
+                                    <label for="jam_penerimaan" class="col-md-4 col-form-label text-md-end">{{ __('Jam Penerimaan')
+                                        }}</label>
+
+                                    <div class="col-md-6">
+                                        <input id="jam_penerimaan" type="time" class="form-control @error('jam_penerimaan') is-invalid @enderror" name="jam_penerimaan" value="{{ date('H:i') }}" />
+                                        <span class="text-muted">Jam Penerimaan BBM</span>
+
+                                        @error('jam_penerimaan')
+                                        <span class="invalid-feedback" role="alert">
+                                            <strong>{{ $message }}</strong>
+                                        </span>
+                                        @enderror
+                                    </div>
+                                </div>
+
+                                <div class="row mb-3 justify-content-center">
                                     <label for="volume_aktual" class="col-md-4 col-form-label text-md-end">{{ __('Volume (liter) Aktual')
                                         }}</label>
 
