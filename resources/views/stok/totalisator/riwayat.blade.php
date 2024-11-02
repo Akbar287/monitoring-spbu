@@ -23,13 +23,13 @@
                 <div class="card-body">
                     <form action="{{ route('totalisator.riwayat') }}" method="get"> @csrf
                         <div class="row mb-4">
-                            <div class="col-12 col-sm-12 col-md-6 col-lg-3 mb-2">
+                            <div class="col-12 col-sm-12 col-md-6 col-lg-4 mb-2">
                                 <input type="date" name="waktu_mulai" id="waktuMulai" class="form-control" value="{{ $waktuMulai }}" />
                             </div>
-                            <div class="col-12 col-sm-12 col-md-6 col-lg-3 mb-2">
+                            <div class="col-12 col-sm-12 col-md-6 col-lg-4 mb-2">
                                 <input type="date" name="waktu_selesai" id="waktuSelesai" class="form-control" value="{{ $waktuSelesai }}" />
                             </div>
-                            <div class="col-12 col-sm-12 col-md-6 col-lg-3 mb-2">
+                            <div class="col-12 col-sm-12 col-md-6 col-lg-4 mb-2">
                                 <select name="produk_id" class="custom-select" id="produk_id">
                                     <option value="all" {{ 'all' === $produkSelected ? 'selected' : '' }}>Semua Produk</option>
                                     @foreach($produk as $p)
@@ -37,7 +37,15 @@
                                     @endforeach
                                 </select>
                             </div>
-                            <div class="col-12 col-sm-12 col-md-6 col-lg-3 mb-2">
+                            <div class="col-12 col-sm-12 col-md-6 col-lg-4 mb-2">
+                                <select name="jam_kerja_id" class="custom-select" id="jam_kerja_id">
+                                    <option value="all" {{ 'all' === $produkSelected ? 'selected' : '' }}>Semua Jam Kerja</option>
+                                    @foreach($shift as $p)
+                                    <option value="{{ $p->jam_kerja_id }}" {{ $p->jam_kerja_id === $shiftSelected ? 'selected' : '' }}>{{ $p->nama_jam_kerja }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="col-12 col-sm-12 col-md-6 col-lg-4 mb-2">
                                 <button type="submit" class="btn btn-success btn-block">Filter</button>
                             </div>
                         </div>

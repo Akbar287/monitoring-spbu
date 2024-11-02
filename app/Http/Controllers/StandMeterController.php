@@ -80,7 +80,9 @@ class StandMeterController extends Controller
     public function riwayat(Request $request)
     {
         $produk = Produk::select()->orderBy('nama_produk', 'asc')->get();
+        $shift = JamKerja::select('nama_jam_kerja', 'jam_kerja_id')->orderBy('nama_jam_kerja', 'asc')->get();
         $produkSelected = $request->produk_id ??  'all';
+        $shiftSelected = $request->jam_kerja_id ?? 'all';
         $waktuMulai = $request->has('waktu_mulai') ? Carbon::createFromFormat('Y-m-d', $request->waktu_mulai) : Carbon::now()->firstOfMonth();
         $waktuSelesai = $request->has('waktu_selesai') ? Carbon::createFromFormat('Y-m-d', $request->waktu_selesai) : Carbon::now()->endOfMonth();
         if ($waktuMulai->gt($waktuSelesai)) {
@@ -92,7 +94,9 @@ class StandMeterController extends Controller
         $waktuSelesai = $waktuSelesai->format('Y-m-d');
 
         if ($request->ajax()) {
-            $data = $produkSelected === 'all' ? StandMeter::where('stand_meter_akhir', '!=', null)->where('is_confirmation', 1)->whereBetween('tanggal', [$waktuMulai, $waktuSelesai])->orderBy('tanggal', 'desc')->get() : StandMeter::where('stand_meter_akhir', '!=', null)->where('is_confirmation', 1)->where('nozzle.produk_id', $produkSelected)->join('nozzle', 'nozzle.nozzle_id', 'stand_meter.nozzle_id')->whereBetween('tanggal', [$waktuMulai, $waktuSelesai])->orderBy('tanggal', 'desc')->get();
+            $data = $shiftSelected === 'all' ? ($produkSelected === 'all' ? StandMeter::where('stand_meter_akhir', '!=', null)->where('is_confirmation', 1)->whereBetween('tanggal', [$waktuMulai, $waktuSelesai])->orderBy('tanggal', 'desc')->get() : StandMeter::where('stand_meter_akhir', '!=', null)->where('is_confirmation', 1)->where('nozzle.produk_id', $produkSelected)->join('nozzle', 'nozzle.nozzle_id', 'stand_meter.nozzle_id')->whereBetween('tanggal', [$waktuMulai, $waktuSelesai])->orderBy('tanggal', 'desc')->get()) :
+
+                ($produkSelected === 'all' ? StandMeter::where('stand_meter_akhir', '!=', null)->where('is_confirmation', 1)->whereBetween('tanggal', [$waktuMulai, $waktuSelesai])->where('jam_kerja_id', $shiftSelected)->orderBy('tanggal', 'desc')->get() : StandMeter::where('stand_meter_akhir', '!=', null)->where('is_confirmation', 1)->where('nozzle.produk_id', $produkSelected)->join('nozzle', 'nozzle.nozzle_id', 'stand_meter.nozzle_id')->whereBetween('tanggal', [$waktuMulai, $waktuSelesai])->where('jam_kerja_id', $shiftSelected)->orderBy('tanggal', 'desc')->get());
             return DataTables::of($data)
                 ->addIndexColumn()
                 ->addColumn('nozzle', function ($row) {
@@ -126,7 +130,7 @@ class StandMeterController extends Controller
                 ->rawColumns(['action', 'status'])
                 ->make(true);
         }
-        return view('stok/totalisator/riwayat', compact('waktuMulai', 'waktuSelesai', 'produk', 'produkSelected'));
+        return view('stok/totalisator/riwayat', compact('waktuMulai', 'waktuSelesai', 'produk', 'produkSelected', 'shift', 'shiftSelected'));
     }
 
     public function riwayat_show(StandMeter $standMeter)
