@@ -12,7 +12,7 @@ Auth::routes([
 ]);
 
 // Route::get('/upload', [App\Http\Controllers\WelcomeController::class, 'uploadTest'])->name('uploadTest');
-Route::get('/upload', [App\Http\Controllers\DumpController::class, 'uploadDataTotalisatorBaru'])->name('uploadDataTotalisator');
+// Route::get('/upload', [App\Http\Controllers\DumpController::class, 'uploadDataTotalisatorBaru'])->name('uploadDataTotalisator');
 // Route::get('/upload', [App\Http\Controllers\DumpController::class, 'uploadStokTaking'])->name('uploadStokTaking');
 // Route::get('/temp', [App\Http\Controllers\DumpController::class, 'temp'])->name('temp');
 
