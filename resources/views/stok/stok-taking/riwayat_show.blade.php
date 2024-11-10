@@ -41,35 +41,35 @@
                                         value="{{ $stok->type_dokumen_stok()->first()->type_movement }}" >
                                 </div>
                             </div>
-                            
+
                             <div class="row mb-3 justify-content-center">
                                 <label for="dombak_id" class="col-md-4 col-form-label text-md-end">{{ __('Dombak')
                                     }}</label>
 
                                 <div class="col-md-6">
                                     <input id="dombak_id" type="text" readonly class="form-control"
-                                        value="{{ $stok->stok_inventory()->first()->stok_inventory_dombak()->first()->dombak()->first()->nama_dombak . ' ' . $stok->stok_inventory()->first()->stok_inventory_dombak()->first()->nama_dombak . ' ('. $stok->stok_inventory()->first()->stok_inventory_dombak()->first()->stok_inventory()->first()->produk()->first()->nama_produk . '-' . $stok->stok_inventory()->first()->stok_inventory_dombak()->first()->stok .'Liter)' }}" >
+                                        value="{{ $stok->dombak()->first()->nama_dombak . ' ('. $stok->stok_inventory()->first()->produk()->first()->nama_produk . '-' . $stok->dombak()->first()->stok_inventory_dombak()->first()->stok .'Liter)' }}" >
                                 </div>
                             </div>
 
                             <div class="row mb-3 justify-content-center">
                                 <label for="tanggal" class="col-md-4 col-form-label text-md-end">{{ __('Tanggal')
                                     }}</label>
-        
+
                                 <div class="col-md-6">
                                     <input id="tanggal" type="date" readonly
                                         class="form-control @error('tanggal') is-invalid @enderror" name="tanggal"
-                                        value="{{ old("tanggal") != null ? old("tanggal") : date('Y-m-d') }}" >
+                                        value="{{ $stok->tanggal }}" >
                                 </div>
                             </div>
-                            
+
                             <div class="row mb-3 justify-content-center">
                                 <label for="jam_kerja_id" class="col-md-4 col-form-label text-md-end">{{ __('Jam Kerja')
                                     }}</label>
-        
+
                                 <div class="col-md-6">
                                     <input id="jam_kerja_id" type="text" readonly class="form-control"
-                                        value="{{ $stok->jam_kerja()->first()->nama_jam_kerja . ' (' . $stok->jam_kerja()->first()->batas_awal_in . '-' . $stok->jam_kerja()->first()->batas_akhir_in . ')' }}" >
+                                        value="{{ $stok->jam_kerja()->first()->nama_jam_kerja . ' (' . $stok->jam_kerja()->first()->jam_datang_in . '-' . $stok->jam_kerja()->first()->jam_pulang_out . ')' }}" >
                                 </div>
                             </div>
 
@@ -83,7 +83,7 @@
                                         value="{{ $stok->konversi()->first()->tinggi }}" >
                                 </div>
                             </div>
-                            
+
                             <div class="row mb-3 justify-content-center">
                                 <label for="volume_sebelumnya" class="col-md-4 col-form-label text-md-end">{{ __('Volume (liter) Sebelumnya')
                                     }}</label>
@@ -91,11 +91,10 @@
                                 <div class="col-md-6">
                                     <input id="volume_sebelumnya" type="text" readonly
                                         class="form-control thousand-style" name="volume_sebelumnya"
-                                        value="{{ $stok->stok_akhir - ($stok->stok_awal + is_null($stok->losses()->first()) ? 0 : ($stok->losses()->first()->simbol == 'kurang' ?  $stok->losses()->first()->jumlah : -1 * $stok->losses()->first()->jumlah)) }}" readonly
-                                        autofocus>
+                                        value="{{ $stok->stok_awal }}" readonly>
                                 </div>
                             </div>
-                            
+
                             <div class="row mb-3 justify-content-center">
                                 <label for="volume" class="col-md-4 col-form-label text-md-end">{{ __('Volume (liter) Aktual')
                                     }}</label>
@@ -106,7 +105,7 @@
                                         value="{{ $stok->stok_akhir }}" readonly>
                                 </div>
                             </div>
-                            
+
                             <div class="row mb-3 justify-content-center">
                                 <label for="volume_selisih" class="col-md-4 col-form-label text-md-end">{{ __('Volume (liter) (Loss/Profit)')
                                     }}</label>

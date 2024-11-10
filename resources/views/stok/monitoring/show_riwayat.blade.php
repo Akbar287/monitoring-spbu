@@ -25,13 +25,29 @@
                 <div class="card-body">
                     <form action="{{ route('monitoring.show_riwayat', $stok->stok_inventory_id) }}" method="get"> @csrf
                         <div class="row mb-4">
-                            <div class="col-12 col-sm-12 col-md-5">
+                            <div class="col-12 col-sm-12 col-md-6 pb-2">
                                 <input type="date" name="waktu_mulai" id="waktuMulai" class="form-control" value="{{ $waktuMulai }}" />
                             </div>
-                            <div class="col-12 col-sm-12 col-md-5">
+                            <div class="col-12 col-sm-12 col-md-6 pb-2">
                                 <input type="date" name="waktu_selesai" id="waktuSelesai" class="form-control" value="{{ $waktuSelesai }}" />
                             </div>
-                            <div class="col-12 col-sm-12 col-md-2">
+                            <div class="col-12 col-sm-12 col-md-4 pb-2">
+                                <select name="type_dokumen_stok" id="type_dokumen_stok" class="custom-select">
+                                    <option value="all">Semua Jenis Dokumen</option>
+                                    @foreach($typeDokumenStok as $item)
+                                    <option {{ $item->type_dokumen_stok_id == $typeDokumenStokSelected ? 'selected' : '' }} value="{{ $item->type_dokumen_stok_id }}">{{ $item->type_movement }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="col-12 col-sm-12 col-md-4 pb-2">
+                                <select name="dombak" id="dombak" class="custom-select">
+                                    <option value="all">Semua Dombak</option>
+                                    @foreach($dombak as $item)
+                                    <option {{ $item->dombak_id == $dombakSelected ? 'selected' : '' }} value="{{ $item->dombak_id }}">{{ $item->nama_dombak }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="col-12 col-sm-12 col-md-4 pb-2">
                                 <button type="submit" class="btn btn-success btn-block">Filter</button>
                             </div>
                         </div>

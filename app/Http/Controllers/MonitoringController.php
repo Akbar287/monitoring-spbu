@@ -268,8 +268,12 @@ class MonitoringController extends Controller
 
     public function show_riwayat(Request $request, StokInventory $stok)
     {
+        $dombak = $stok->stok_inventory_dombak()->select('dombak.dombak_id')->addSelect('dombak.nama_dombak')->join('dombak', 'dombak.dombak_id', 'stok_inventory_dombak.dombak_id')->get();
+        $typeDokumenStok = TypeDokumenStok::all();
         $waktuMulai = $request->has('waktu_mulai') ? Carbon::createFromFormat('Y-m-d', $request->waktu_mulai) : Carbon::now()->firstOfMonth();
         $waktuSelesai = $request->has('waktu_selesai') ? Carbon::createFromFormat('Y-m-d', $request->waktu_selesai) : Carbon::now()->endOfMonth();
+        $dombakSelected = $request->has('dombak') ? $request->dombak : 'all';
+        $typeDokumenStokSelected = $request->has('type_dokumen_stok') ? $request->type_dokumen_stok : 'all';
         if ($waktuMulai->gt($waktuSelesai)) {
             $temp = $waktuMulai;
             $waktuMulai = $waktuSelesai;
@@ -279,8 +283,7 @@ class MonitoringController extends Controller
         $waktuSelesai = $waktuSelesai->format('Y-m-d');
 
         if ($request->ajax()) {
-
-            $data = $stok->dokumen_stok()
+            $data = $dombakSelected == 'all' ? $stok->dokumen_stok()
                 ->select('stok_inventory.stok_inventory_id')
                 ->addSelect('dokumen_stok.dokumen_stok_id')
                 ->addSelect('dokumen_stok.tanggal')
@@ -297,6 +300,27 @@ class MonitoringController extends Controller
                 ->join('jam_kerja', 'jam_kerja.jam_kerja_id', 'dokumen_stok.jam_kerja_id')
                 ->leftJoin('losses', 'losses.dokumen_stok_id', 'dokumen_stok.dokumen_stok_id')
                 ->where('dokumen_stok.is_confirmation', 1)
+                ->whereBetween('dokumen_stok.tanggal', [$waktuMulai, $waktuSelesai])
+                ->orderBy('tanggal', 'desc')
+                ->orderBy('jam_datang_in', 'desc')
+                ->get() : $stok->dokumen_stok()
+                ->select('stok_inventory.stok_inventory_id')
+                ->addSelect('dokumen_stok.dokumen_stok_id')
+                ->addSelect('dokumen_stok.tanggal')
+                ->addSelect('dokumen_stok.stok_awal')
+                ->addSelect('dokumen_stok.stok_akhir')
+                ->addSelect('type_dokumen_stok.type_movement')
+                ->addSelect('dombak.nama_dombak')
+                ->addSelect('losses.simbol')
+                ->addSelect('losses.jumlah')
+                ->addSelect('jam_kerja.nama_jam_kerja')
+                ->join('stok_inventory', 'stok_inventory.stok_inventory_id', 'dokumen_stok.stok_inventory_id')
+                ->join('type_dokumen_stok', 'type_dokumen_stok.type_dokumen_stok_id', 'dokumen_stok.type_dokumen_stok_id')
+                ->join('dombak', 'dombak.dombak_id', 'dokumen_stok.dombak_id')
+                ->join('jam_kerja', 'jam_kerja.jam_kerja_id', 'dokumen_stok.jam_kerja_id')
+                ->leftJoin('losses', 'losses.dokumen_stok_id', 'dokumen_stok.dokumen_stok_id')
+                ->where('dokumen_stok.is_confirmation', 1)
+                ->where('dokumen_stok.dombak_id', $dombakSelected)
                 ->whereBetween('dokumen_stok.tanggal', [$waktuMulai, $waktuSelesai])
                 ->orderBy('tanggal', 'desc')
                 ->orderBy('jam_datang_in', 'desc')
@@ -323,7 +347,7 @@ class MonitoringController extends Controller
                 ->rawColumns(['action'])
                 ->make(true);
         }
-        return view('stok/monitoring/show_riwayat', compact('stok', 'waktuMulai', 'waktuSelesai'));
+        return view('stok/monitoring/show_riwayat', compact('stok', 'waktuMulai', 'waktuSelesai', 'dombakSelected', 'dombak', 'typeDokumenStokSelected', 'typeDokumenStok'));
     }
 
     public function show_detail_riwayat(StokInventory $stok, DokumenStok $dokumenStok)

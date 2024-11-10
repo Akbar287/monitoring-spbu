@@ -22,7 +22,7 @@
                     <h4>{{ __('Riwayat Stok Taking') }}</h4>
                 </div>
                 <div class="card-body">
-                    <form action="{{ route('stok-taking.index') }}" method="get"> @csrf
+                    <form action="{{ route('stok-taking.riwayat') }}" method="get"> @csrf
                         <div class="row mb-4">
                             <div class="col-12 col-sm-12 col-md-5">
                                 <input type="date" name="waktu_mulai" id="waktuMulai" class="form-control" value="{{ $waktuMulai }}" />

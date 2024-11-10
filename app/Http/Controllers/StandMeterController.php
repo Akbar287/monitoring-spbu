@@ -94,9 +94,7 @@ class StandMeterController extends Controller
         $waktuSelesai = $waktuSelesai->format('Y-m-d');
 
         if ($request->ajax()) {
-            $data = $shiftSelected === 'all' ? ($produkSelected === 'all' ? StandMeter::where('stand_meter_akhir', '!=', null)->where('is_confirmation', 1)->whereBetween('tanggal', [$waktuMulai, $waktuSelesai])->orderBy('tanggal', 'desc')->get() : StandMeter::where('stand_meter_akhir', '!=', null)->where('is_confirmation', 1)->where('nozzle.produk_id', $produkSelected)->join('nozzle', 'nozzle.nozzle_id', 'stand_meter.nozzle_id')->whereBetween('tanggal', [$waktuMulai, $waktuSelesai])->orderBy('tanggal', 'desc')->get()) :
-
-                ($produkSelected === 'all' ? StandMeter::where('stand_meter_akhir', '!=', null)->where('is_confirmation', 1)->whereBetween('tanggal', [$waktuMulai, $waktuSelesai])->where('jam_kerja_id', $shiftSelected)->orderBy('tanggal', 'desc')->get() : StandMeter::where('stand_meter_akhir', '!=', null)->where('is_confirmation', 1)->where('nozzle.produk_id', $produkSelected)->join('nozzle', 'nozzle.nozzle_id', 'stand_meter.nozzle_id')->whereBetween('tanggal', [$waktuMulai, $waktuSelesai])->where('jam_kerja_id', $shiftSelected)->orderBy('tanggal', 'desc')->get());
+            $data = $shiftSelected === 'all' ? ($produkSelected === 'all' ? StandMeter::where('stand_meter_akhir', '!=', null)->where('is_confirmation', 1)->whereBetween('tanggal', [$waktuMulai, $waktuSelesai])->orderBy('tanggal', 'desc')->get() : StandMeter::where('stand_meter_akhir', '!=', null)->where('is_confirmation', 1)->where('nozzle.produk_id', $produkSelected)->join('nozzle', 'nozzle.nozzle_id', 'stand_meter.nozzle_id')->whereBetween('tanggal', [$waktuMulai, $waktuSelesai])->orderBy('tanggal', 'desc')->get()) : ($produkSelected === 'all' ? StandMeter::where('stand_meter_akhir', '!=', null)->where('is_confirmation', 1)->whereBetween('tanggal', [$waktuMulai, $waktuSelesai])->where('jam_kerja_id', $shiftSelected)->orderBy('tanggal', 'desc')->get() : StandMeter::where('stand_meter_akhir', '!=', null)->where('is_confirmation', 1)->where('nozzle.produk_id', $produkSelected)->join('nozzle', 'nozzle.nozzle_id', 'stand_meter.nozzle_id')->whereBetween('tanggal', [$waktuMulai, $waktuSelesai])->where('jam_kerja_id', $shiftSelected)->orderBy('tanggal', 'desc')->get());
             return DataTables::of($data)
                 ->addIndexColumn()
                 ->addColumn('nozzle', function ($row) {
@@ -247,8 +245,6 @@ class StandMeterController extends Controller
             'dombak_id' => ['required'],
         ]);
 
-        // dd($request->all());
-
         // Ambil nozzle berdasarkan nozzle_id
         $nozzle = Nozzle::where('nozzle_id', $request->nozzle_id)->first();
 
@@ -287,19 +283,6 @@ class StandMeterController extends Controller
             $tanggal = $request->tanggal;
         }
 
-        // Masukan data ke DB
-        $urutan = 1;
-        $cek = true;
-        do {
-            $cek = StandMeter::where('nozzle_id', $nozzle->nozzle_id)->where('dombak_id', $request->dombak_id)->where('jam_kerja_id', $jamKerja->jam_kerja_id)->where('tanggal', $tanggal)->where('urutan', 1)->first();
-
-            if (is_null($cek)) {
-                $cek = false;
-            } else {
-                $urutan++;
-            }
-        } while ($cek);
-
         if (is_null($latestStandMeter->stand_meter_akhir)) {
             $standMeter =  str_replace(',', '', request('stand_meter_awal'));
         } else {
@@ -310,17 +293,29 @@ class StandMeterController extends Controller
             }
         }
 
-        if (is_null(StandMeter::where('nozzle_id', $nozzle->nozzle_id)->where('dombak_id', $request->dombak_id)->where('tanggal', is_null($tanggal) ? date('Y-m-d') : $tanggal)->where('stand_meter_awal', $standMeter)->where('stand_meter_akhir', 0)->where('urutan', $urutan)->where('is_confirmation', 0)->first())) {
-            StandMeter::create([
-                'nozzle_id' => $nozzle->nozzle_id,
-                'dombak_id' => $request->dombak_id,
-                'jam_kerja_id' => $jamKerja->jam_kerja_id,
-                'tanggal' => is_null($tanggal) ? date('Y-m-d') : $tanggal,
-                'stand_meter_awal' => $standMeter,
-                'stand_meter_akhir' => 0,
-                'urutan' => $urutan,
-                'is_confirmation' => 0
-            ]);
+        $cekWaktu = StandMeter::latest('created_at')->first();
+        if ($cekWaktu) {
+            $lastCreatedAt = $cekWaktu->created_at;
+
+            // Hitung selisih waktu antara created_at terakhir dan waktu saat ini
+            $now = Carbon::now();
+            $differenceInSeconds = $now->diffInSeconds($lastCreatedAt);
+
+            // Jika selisih kurang dari 20 detik, maka data tidak boleh di-insert
+            if ($differenceInSeconds > 5) {
+                if (is_null(StandMeter::where('nozzle_id', $nozzle->nozzle_id)->where('dombak_id', $request->dombak_id)->where('tanggal', is_null($tanggal) ? date('Y-m-d') : $tanggal)->where('stand_meter_awal', $standMeter)->where('stand_meter_akhir', 0)->where('urutan', $jamKerja->urutan)->where('is_confirmation', 0)->first())) {
+                    StandMeter::create([
+                        'nozzle_id' => $nozzle->nozzle_id,
+                        'dombak_id' => $request->dombak_id,
+                        'jam_kerja_id' => $jamKerja->jam_kerja_id,
+                        'tanggal' => is_null($tanggal) ? date('Y-m-d') : $tanggal,
+                        'stand_meter_awal' => $standMeter,
+                        'stand_meter_akhir' => 0,
+                        'urutan' => $jamKerja->urutan,
+                        'is_confirmation' => 0
+                    ]);
+                }
+            }
         }
 
         return redirect()->route('totalisator.index')->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> Stand Meter sudah di tambah.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
@@ -386,7 +381,6 @@ class StandMeterController extends Controller
         ]);
 
         if (DB::table('stand_meter_dokumen_stok')->where('stand_meter_id', $standMeter->stand_meter_id)->count() == 0) {
-
             // instansiasi untuk receive
             $type_dokumen_stock_penjualan = TypeDokumenStok::select('type_dokumen_stok_id')->where('type_movement', 'Good Issue Sales')->first();
             $typeReveive = TypeDokumenStok::select('type_dokumen_stok_id')->where('type_movement', 'Stok Taking Good Receive Penerimaan')->first();

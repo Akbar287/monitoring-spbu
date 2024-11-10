@@ -33,6 +33,7 @@
 
                                     <div class="col-md-6">
                                         <select class="custom-select @error('dombak_id') is-invalid @enderror" name="dombak_id" id="dombak_id">
+                                            <option value="">Pilih Dombak</option>
                                             @foreach($dombak as $s)
                                             <option {{ old('dombak_id') == $s->dombak_id ? 'selected' : '' }} value="{{ $s->dombak_id }}">{{ $s->nama_dombak . ' ('. $s->stok_inventory_dombak()->first()->stok_inventory()->first()->produk()->first()->nama_produk . ': ' . number_format($s->stok_inventory_dombak()->first()->stok,6, ".", ",") .'Liter)' }}</option>
                                             @endforeach
@@ -51,7 +52,8 @@
                                         }}</label>
 
                                     <div class="col-md-6">
-                                        <select class="custom-select @error('nozzle_id') is-invalid @enderror" name="nozzle_id" id="nozzle_id">
+                                        <select disabled class="custom-select @error('nozzle_id') is-invalid @enderror" name="nozzle_id" id="nozzle_id">
+                                            <option value="">Pilih Dombak Terlebih Dahulu</option>
                                             @foreach($nozzle as $s)
                                             <option {{ old('nozzle_id') == $s->nozzle_id ? 'selected' : '' }} value="{{ $s->nozzle_id }}">{{ $s->nama_nozzle . '-'. $s->nama_produk }}</option>
                                             @endforeach
@@ -92,6 +94,11 @@
                                     </div>
                                 </div>
 
+                                <div class="row mb-0">
+                                    <div class="col-md-6 offset-md-4 d-flex align-items-end">
+                                        <div class="alert alert-info">Pastikan Dombak dan Nozzle sudah sesuai nama produk nya</div>
+                                    </div>
+                                </div>
                                 <div class="row mb-0">
                                     <div class="col-md-6 offset-md-4 d-flex align-items-end">
                                         <a type="button" href="{{ route('totalisator.index') }}" class="btn btn-primary mr-2"><i class="fas fa-arrow-left"></i> Kembali</a>
