@@ -14,9 +14,6 @@ use Yajra\DataTables\DataTables;
 
 class RencanaPembelianController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
     public function index(Request $request)
     {
         $waktuMulai = $request->has('waktu_mulai') ? Carbon::createFromFormat('Y-m-d', $request->waktu_mulai) : Carbon::now()->firstOfMonth();
@@ -267,6 +264,10 @@ class RencanaPembelianController extends Controller
                 'pph' => $rencana->grand_total * ($lib->pph / 100),
                 'total_amount' => $total
             ]);
+        }
+
+        if ($rencana->pajak_pembelian()->count() > 1) {
+            $rencana->pajak_pembelian()->first()->delete();
         }
 
         return redirect('/procurement/perencanaan/' . $rencana->rencana_pembelian_id)->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> Data Rencana Pembelian sudah terkonfirmasi.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');

@@ -14,7 +14,7 @@ class WelcomeController extends Controller
      */
     public function index()
     {
-        $artikel = Post::paginate(8);
+        $artikel = Post::where('active', 1)->paginate(8);
         return view('welcome.index', compact('artikel'));
     }
 

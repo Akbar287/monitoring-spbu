@@ -77,6 +77,7 @@ class DetailPembelianController extends Controller
         ]);
 
         $pajakLib = PajakPembelianLib::where('is_aktif', 1)->first();
+
         $pajak = [
             'pajak_pembelian_lib_id' => $pajakLib->pajak_pembelian_lib_id,
             'ppn' => ($pajakLib->ppn / 100) * $grandTotal,
@@ -91,6 +92,10 @@ class DetailPembelianController extends Controller
 
         if (is_null($pembelian->pajak_pembelian()->where('pajak_pembelian_lib_id', $pajakLib->pajak_pembelian_lib_id)->where('ppn', $pajak['ppn'])->where('pph', $pajak['pph'])->where('ppbkb', $pajak['ppbkb'])->where('net_price', $pajak['net_price'])->where('total_amount', $pajak['total_amount'])->first())) {
             $pembelian->pajak_pembelian()->create($pajak);
+        }
+
+        if ($pembelian->pajak_pembelian()->count() > 1) {
+            $pembelian->pajak_pembelian()->first()->delete();
         }
 
         return redirect('/procurement/pembelian/' . $pembelian->rencana_pembelian_id . '/produk/' . $detail->detail_rencana_pembelian_id)->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> Data Produk Rencana Pembelian sudah diubah.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
@@ -128,7 +133,7 @@ class DetailPembelianController extends Controller
             'pph' => str_replace(',', '', request('pph')),
             'ppbkb' => str_replace(',', '', request('ppbkb')),
             'net_price' => str_replace(',', '', request('net_price')),
-            'total_amount' => str_replace('.', '', str_replace(',', '', request('total_amount')))
+            'total_amount' => (substr_count(request('total_amount'), '.') > 1) ?  str_replace('.', '', request('total_amount')) :  str_replace(',', '', request('total_amount'))
         ];
     }
 }
