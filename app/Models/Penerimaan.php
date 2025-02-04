@@ -52,4 +52,9 @@ class Penerimaan extends Model
     {
         return $this->hasOne(PenerimaanStokTaking::class, 'penerimaan_id', 'penerimaan_id');
     }
+
+    public function penerimaan_stok_taking_penyesuaian()
+    {
+        return $this->hasOne(PenerimaanStokTakingPenyesuaian::class, 'penerimaan_id', 'penerimaan_id');
+    }
 }

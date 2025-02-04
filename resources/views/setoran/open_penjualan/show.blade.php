@@ -75,17 +75,18 @@
                                         <th>Nama</th>
                                     </thead>
                                     <tbody>
-                                        @foreach($penjualan->pj_operasional_setoran()->distinct('jabatan_id')->get() as $pj)
+                                        @foreach($penjualan->pj_operasional_setoran()->distinct('pj_operasional_setoran.jabatan_id')->join('jabatan', 'pj_operasional_setoran.jabatan_id', 'jabatan.jabatan_id')->orderBy('nama_jabatan', 'asc')->get() as $pj)
                                         <tr>
                                             <td>{{ $pj->jabatan()->first()->nama_jabatan }}</td>
                                             <td>
-                                                @if($pj->penjualan()->first()->pj_operasional_setoran()->where('jabatan_id', $pj->jabatan_id)->count() > 0)
+                                                {{ $pj->member()->first()->ktp()->first()->nama }}
+                                                {{-- @if($pj->penjualan()->first()->pj_operasional_setoran()->where('jabatan_id', $pj->jabatan_id)->count() > 0)
                                                 <ul>
                                                 @foreach($pj->penjualan()->first()->pj_operasional_setoran()->where('jabatan_id', $pj->jabatan_id)->get() as $m)
                                                     <li>{{ $m->member()->first()->ktp()->first()->nama }}</li>
                                                 @endforeach
                                                 </ul>
-                                                @endif
+                                                @endif --}}
                                             </td>
                                         </tr>
                                         @endforeach

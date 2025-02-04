@@ -223,7 +223,7 @@
                                 <div class="input-group-prepend">
                                     <span class="input-group-text">Rp</span>
                                 </div>
-                                <input id="total_uang_penjualan" type="text" readonly class="form-control total_uang_penjualan thousand-style que-{{ $loop->iteration }}" name="total_uang_penjualan" value="{{ number_format($dp->stand_meter()->first()->stand_meter_akhir, 6, ".", ",") }}" />
+                                <input id="total_uang_penjualan" type="text" readonly class="form-control total_uang_penjualan thousand-style que-{{ $loop->iteration }}" name="total_uang_penjualan" value="{{ number_format((($dp->stand_meter()->first()->stand_meter_akhir - $dp->stand_meter()->first()->stand_meter_awal) * $dp->stand_meter()->first()->nozzle()->first()->produk()->first()->harga()->where('is_default', true)->first()->harga_jual), 6, ".", ",") }}" />
                             </div>
                         </div>
                     </div>

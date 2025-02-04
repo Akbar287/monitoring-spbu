@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('pajak_pembelian', function (Blueprint $table) {
             $table->uuid('pajak_pembelian_id')->primary();
             $table->uuid('rencana_pembelian_id');
-            $table->uuid('pajak_pembelian_lib_history_id');
+            $table->uuid('pajak_pembelian_lib_id');
             $table->double('net_price', 16, 6);
             $table->double('ppn', 16, 6);
             $table->double('ppbkb', 16, 6);
@@ -23,7 +23,7 @@ return new class extends Migration
             $table->timestamps();
 
             $table->foreign('rencana_pembelian_id')->references('rencana_pembelian_id')->on('rencana_pembelian')->cascadeOnDelete();
-            $table->foreign('pajak_pembelian_lib_history_id')->references('pajak_pembelian_lib_history_id')->on('pajak_pembelian_lib_history')->cascadeOnDelete();
+            $table->foreign('pajak_pembelian_lib_id')->references('pajak_pembelian_lib_id')->on('pajak_pembelian_lib')->cascadeOnDelete();
         });
     }
 

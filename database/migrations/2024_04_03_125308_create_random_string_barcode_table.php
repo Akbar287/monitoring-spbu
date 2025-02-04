@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('random_string_barcode', function (Blueprint $table) {
             $table->uuid('random_string_barcode_id')->primary();
-            $table->uuid('validate_barcode_id')->primary();
+            $table->uuid('validate_barcode_id');
             $table->uuid('penjadwalan_id');
             $table->string('barcode', 255);
             $table->timestamp('start');

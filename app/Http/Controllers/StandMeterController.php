@@ -386,11 +386,14 @@ class StandMeterController extends Controller
             // instansiasi untuk receive
             $type_dokumen_stock_penjualan = TypeDokumenStok::select('type_dokumen_stok_id')->where('type_movement', 'Good Issue Sales')->first();
             $typeReveive = TypeDokumenStok::select('type_dokumen_stok_id')->where('type_movement', 'Stok Taking Good Receive Penerimaan')->first();
+            $typeReveivePenyesuaian = TypeDokumenStok::select('type_dokumen_stok_id')->where('type_movement', 'Stok Taking Good Receive Penyesuaian')->first();
             $typeGoodReveive = TypeDokumenStok::select('type_dokumen_stok_id')->where('type_movement', 'Good Receive Penerimaan')->first();
             $receive = $standMeter->dombak()->first()->stok_inventory_dombak()->first()->stok_inventory()->first()->dokumen_stok()->where('tanggal', Carbon::createFromFormat('Y-m-d', $standMeter->tanggal)->toDateTime())->where('type_dokumen_stok_id', $typeReveive->type_dokumen_stok_id)->where('jam_kerja_id', $standMeter->jam_kerja_id)->get();
             $goodReceive = $standMeter->dombak()->first()->stok_inventory_dombak()->first()->stok_inventory()->first()->dokumen_stok()->where('tanggal', Carbon::createFromFormat('Y-m-d', $standMeter->tanggal)->toDateTime())->where('type_dokumen_stok_id', $typeGoodReveive->type_dokumen_stok_id)->where('jam_kerja_id', $standMeter->jam_kerja_id)->get();
             $stokTakingFirstInSameShift = $standMeter->dombak()->first()->stok_inventory_dombak()->first()->stok_inventory()->first()->dokumen_stok()->where('tanggal', Carbon::createFromFormat('Y-m-d', $standMeter->tanggal)->toDateTime())->where('type_dokumen_stok_id', $type_dokumen_stock_penjualan->type_dokumen_stok_id)->where('jam_kerja_id', $standMeter->jam_kerja_id)->get();
             // End Instansiasi
+
+            dd($type_dokumen_stock_penjualan, $typeReveive, $typeReveivePenyesuaian, $typeGoodReveive, $receive, $goodReceive, $stokTakingFirstInSameShift);
 
             $stokInventory = $standMeter->dombak()->first()->stok_inventory_dombak()->first()->stok_inventory()->first()->stok;
             $stok = $standMeter->dombak()->first()->stok_inventory_dombak()->first()->stok;

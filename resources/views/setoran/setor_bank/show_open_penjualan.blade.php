@@ -120,17 +120,18 @@
                                         <th>Nama</th>
                                     </thead>
                                     <tbody>
-                                        @foreach($penjualan->pj_operasional_setoran()->distinct('jabatan_id')->get() as $pj)
+                                        @foreach($penjualan->pj_operasional_setoran()->distinct('jabatan_id')->join('jabatan', 'pj_operasional_setoran.jabatan_id', 'jabatan.jabatan_id')->orderBy('jabatan.nama_jabatan')->get() as $pj)
                                         <tr>
                                             <td>{{ $pj->jabatan()->first()->nama_jabatan }}</td>
                                             <td>
-                                                @if($pj->penjualan()->first()->pj_operasional_setoran()->where('jabatan_id', $pj->jabatan_id)->count() > 0)
+                                                {{ $pj->member()->first()->ktp()->first()->nama }}
+                                                {{-- @if($pj->penjualan()->first()->pj_operasional_setoran()->where('jabatan_id', $pj->jabatan_id)->count() > 0)
                                                 <ul>
                                                 @foreach($pj->penjualan()->first()->pj_operasional_setoran()->where('jabatan_id', $pj->jabatan_id)->get() as $m)
                                                     <li>{{ $m->member()->first()->ktp()->first()->nama }}</li>
                                                 @endforeach
                                                 </ul>
-                                                @endif
+                                                @endif --}}
                                             </td>
                                         </tr>
                                         @endforeach
@@ -228,7 +229,7 @@
                                 <div class="input-group-prepend">
                                     <span class="input-group-text">Rp</span>
                                 </div>
-                                <input id="total_uang_penjualan" type="text" readonly class="form-control total_uang_penjualan thousand-style que-{{ $loop->iteration }}" name="total_uang_penjualan" value="{{ number_format($dp->stand_meter()->first()->stand_meter_akhir, 6, ".", ",") }}" />
+                                <input id="total_uang_penjualan" type="text" readonly class="form-control total_uang_penjualan thousand-style que-{{ $loop->iteration }}" name="total_uang_penjualan" value="{{ number_format((($dp->stand_meter()->first()->stand_meter_akhir - $dp->stand_meter()->first()->stand_meter_awal) * $dp->stand_meter()->first()->nozzle()->first()->produk()->first()->harga()->where('is_default', true)->first()->harga_jual), 6, ".", ",") }}" />
                             </div>
                         </div>
                     </div>

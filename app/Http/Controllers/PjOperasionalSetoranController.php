@@ -25,9 +25,10 @@ class PjOperasionalSetoranController extends Controller
                     return $actionBtn;
                 })
                 ->addColumn('nama', function ($row) {
-                    $actionBtn = $row->penjualan()->first()->pj_operasional_setoran()->select('ktp.nama')->join('member', 'member.member_id', 'pj_operasional_setoran.member_id')->join('ktp', 'ktp.ktp_id', 'member.ktp_id')->where('jabatan_id', $row->jabatan_id)->get()->toArray();
+                    // $actionBtn = $row->penjualan()->first()->pj_operasional_setoran()->select('ktp.nama')->join('member', 'member.member_id', 'pj_operasional_setoran.member_id')->join('ktp', 'ktp.ktp_id', 'member.ktp_id')->where('jabatan_id', $row->jabatan_id)->get()->toArray();
 
-                    return  implode(', ', array_column($actionBtn, "nama"));
+                    // return  implode(', ', array_column($actionBtn, "nama"));
+                    return $row->member()->first()->ktp()->first()->nama;
                 })
                 ->addColumn('action', function ($row) {
                     $actionBtn = '<a href="' . route('setoran.open.pj.show', [$row->penjualan_id, $row->jabatan_id]) . '" class="edit btn btn-success btn-sm">Detail</a>';
@@ -68,6 +69,10 @@ class PjOperasionalSetoranController extends Controller
                     'jabatan_id' => $request->jabatan_id,
                     'member_id' => $member
                 ]);
+            }
+
+            if ($penjualan->pj_operasional_setoran()->where('jabatan_id', $request->jabatan_id)->where('member_id', $member)->count() > 1) {
+                $penjualan->pj_operasional_setoran()->where('jabatan_id', $request->jabatan_id)->where('member_id', $member)->first()->delete();
             }
         }
 
