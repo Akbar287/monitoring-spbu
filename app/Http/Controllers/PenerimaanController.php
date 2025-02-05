@@ -175,18 +175,21 @@ class PenerimaanController extends Controller
         $typeDokumenGRP = TypeDokumenStok::where('type_movement', 'Good Receive Penerimaan')->first();
         $typeDokumenST = TypeDokumenStok::where('type_movement', 'Stok Taking Good Receive Penerimaan')->first();
         $typeReveivePenyesuaian = TypeDokumenStok::select('type_dokumen_stok_id')->where('type_movement', 'Stok Taking Good Receive Penyesuaian')->first();
-
-        $stokAktual = 0;
+        $jenisLosses = JenisLosses::where('jenis_loss', 'Good Issue Penerimaan')->first();
+        $selisihStok = 0;
         $dokumenStokForGRP = null;
+
         for ($i = 0; $i < count($request->volume_sebelumnya); $i++) {
             if (!is_null($request->tinggi_dombak_sebelumnya[$i])) {
                 $dombak = Dombak::where('dombak_id', $request->dombak_id[$i])->first();
                 $stokSebelumnya = $dombak->konversi()->where('tinggi', $request->tinggi_dombak_sebelumnya[$i])->first()->volume;
                 $stokPenerimaan = $dombak->konversi()->where('tinggi', $request->tinggi_dombak_setelahnya[$i])->first()->volume;
-                $stokAktual += $stokPenerimaan - $stokSebelumnya;
+                $selisihStok = $stokPenerimaan - $stokSebelumnya;
                 $selisihAwal = $dombak->stok_inventory_dombak()->first()->stok - $stokSebelumnya;
-                $selisihPnLGR = $stokAktual - $fileLo->jumlah;
-                $stokPenyesuaian = ($stokPenerimaan + $selisihAwal) - $selisihPnLGR;
+                $jumlahAktual = $request->alokasi_dombak[$i];
+                $selisihPnLGR = $selisihStok - $jumlahAktual;
+                $stokPenerimaan = $stokPenerimaan - $selisihPnLGR;
+                $stokPenyesuaian = ($stokPenerimaan + $selisihAwal);
 
                 // Sesuaikan Stok Taking Ke Penerimaan
                 $dokumenStokForStokTaking = $dombak->stok_inventory_dombak()->first()->stok_inventory()->first()->dokumen_stok()->where('stok_inventory_id', $dombak->stok_inventory_dombak()->first()->stok_inventory()->first()->stok_inventory_id)->where('member_id', Auth::user()->member()->first()->member_id)->where('jam_kerja_id', $request->jam_kerja_id)->where('type_dokumen_stok_id', $typeDokumenST->type_dokumen_stok_id)->where('dombak_id', $request->dombak_id[$i])->where('tanggal', $request->tanggal)->where('stok_awal', $dombak->stok_inventory_dombak()->first()->stok)->where('stok_akhir', $stokSebelumnya)->where('is_confirmation', 0)->first();
@@ -221,6 +224,18 @@ class PenerimaanController extends Controller
                         'is_confirmation' => 0,
                         'waktu' => $request->jam_penerimaan
                     ]);
+                }
+
+                // Profit / Loss
+                $dokumenStokForGRP->losses()->create([
+                    'jenis_losses_id' => $jenisLosses->jenis_losses_id,
+                    'tanggal' => $request->tanggal,
+                    'simbol' => $selisihPnLGR > 0 ? 'lebih' : 'kurang',
+                    'jumlah' => abs($selisihPnLGR)
+                ]);
+
+                if ($dokumenStokForGRP->losses()->count() > 1) {
+                    $dokumenStokForGRP->losses()->first()->delete();
                 }
                 // End Penerimaan
 
@@ -279,22 +294,6 @@ class PenerimaanController extends Controller
                     }
                 }
                 // End Penerimaan
-            }
-        }
-
-        $stokPL = $stokAktual - $fileLo->jumlah;
-
-        $jenisLosses = JenisLosses::where('jenis_loss', 'Good Issue Penerimaan')->first();
-
-        if (!is_null($dokumenStokForGRP)) {
-            $losses = $dokumenStokForGRP->losses()->where('jenis_losses_id', $jenisLosses->jenis_losses_id)->where('tanggal', $request->tanggal)->where('simbol', $stokPL > 0 ? 'lebih' : 'kurang')->where('jumlah', abs($stokPL))->first();
-            if (is_null($losses)) {
-                $losses = $dokumenStokForGRP->losses()->create([
-                    'jenis_losses_id' => $jenisLosses->jenis_losses_id,
-                    'tanggal' => $request->tanggal,
-                    'simbol' => $stokPL > 0 ? 'lebih' : 'kurang',
-                    'jumlah' => abs($stokPL)
-                ]);
             }
         }
 

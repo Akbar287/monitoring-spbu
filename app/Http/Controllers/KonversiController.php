@@ -155,13 +155,16 @@ class KonversiController extends Controller
         unset($rows[0][0]);
 
         foreach ($rows[0] as $row) {
-            $konversi = new Konversi();
-            $konversi->satuan_ukur_tinggi_id = $request->satuan_ukur_tinggi_id;
-            $konversi->satuan_ukur_volume_id = $request->satuan_ukur_volume_id;
-            $konversi->dombak_id = $dombak->dombak_id;
-            $konversi->tinggi = $row[0];
-            $konversi->volume = $row[1];
-            $konversi->save();
+            $dombak->konversi()->create([
+                'satuan_ukur_tinggi_id' => $request->satuan_ukur_tinggi_id,
+                'satuan_ukur_volume_id' => $request->satuan_ukur_volume_id,
+                'tinggi' => $row[0],
+                'volume' => $row[1],
+            ]);
+
+            if ($dombak->konversi()->where('satuan_ukur_tinggi_id', $request->satuan_ukur_tinggi_id)->where('satuan_ukur_volume_id', $request->satuan_ukur_volume_id)->where('tinggi', $row[0])->where('volume', $row[1])->count() > 1) {
+                $dombak->konversi()->where('satuan_ukur_tinggi_id', $request->satuan_ukur_tinggi_id)->where('satuan_ukur_volume_id', $request->satuan_ukur_volume_id)->where('tinggi', $row[0])->where('volume', $row[1])->first()->delete();
+            }
         }
 
         Storage::delete('temp/' . $name);

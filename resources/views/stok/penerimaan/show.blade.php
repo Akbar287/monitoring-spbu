@@ -332,6 +332,22 @@
                                                             </div>
                                                         </div>
 
+                                                        <div class="row mb-3 justify-content-center alokasi_dombak-row">
+                                                            <label for="alokasi_dombak-{{ $d->dombak_id }}" class="col-md-4 col-form-label text-md-end">{{ __('Alokasi Dombak (liter)')
+                                                                }}</label>
+
+                                                            <div class="col-md-6">
+                                                                <input id="alokasi_dombak-{{ $d->dombak_id }}" type="number" step=".1" data-dombak="{{ $d->dombak_id }}" class="form-control alokasi_dombak  @error('alokasi_dombak') is-invalid @enderror" name="alokasi_dombak[]" value="{{ old("alokasi_dombak") }}" />
+                                                                <span class="text-muted">Alokasi ini adalah liter yang dimasukan ke tangki secara aktual. Cth (8000 Liter) Dombak A 3500 Dombak B 4500.</span>
+
+                                                                @error('alokasi_dombak')
+                                                                <span class="invalid-feedback" role="alert">
+                                                                    <strong>{{ $message }}</strong>
+                                                                </span>
+                                                                @enderror
+                                                            </div>
+                                                        </div>
+
                                                         <div class="row mb-3 justify-content-center volume_sebelumnya-row">
                                                             <label for="volume_sebelumnya-{{ $d->dombak_id }}" class="col-md-4 col-form-label text-md-end">{{ __('Volume (liter) Sebelumnya')
                                                                 }}</label>

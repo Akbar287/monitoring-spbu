@@ -284,16 +284,18 @@ class MonitoringController extends Controller
 
         if ($request->ajax()) {
             $data = $dombakSelected == 'all' ? $stok->dokumen_stok()
-                ->select('stok_inventory.stok_inventory_id')
-                ->addSelect('dokumen_stok.dokumen_stok_id')
-                ->addSelect('dokumen_stok.tanggal')
-                ->addSelect('dokumen_stok.stok_awal')
-                ->addSelect('dokumen_stok.stok_akhir')
-                ->addSelect('type_dokumen_stok.type_movement')
-                ->addSelect('dombak.nama_dombak')
-                ->addSelect('losses.simbol')
-                ->addSelect('losses.jumlah')
-                ->addSelect('jam_kerja.nama_jam_kerja')
+                ->select([
+                    'stok_inventory.stok_inventory_id',
+                    'dokumen_stok.dokumen_stok_id',
+                    'dokumen_stok.tanggal',
+                    'dokumen_stok.stok_awal',
+                    'dokumen_stok.stok_akhir',
+                    'type_dokumen_stok.type_movement',
+                    'dombak.nama_dombak',
+                    'jam_kerja.nama_jam_kerja',
+                    DB::raw('GROUP_CONCAT(losses.simbol) as loss_symbols'),
+                    DB::raw('SUM(losses.jumlah) as total_loss')
+                ])
                 ->join('stok_inventory', 'stok_inventory.stok_inventory_id', 'dokumen_stok.stok_inventory_id')
                 ->join('type_dokumen_stok', 'type_dokumen_stok.type_dokumen_stok_id', 'dokumen_stok.type_dokumen_stok_id')
                 ->join('dombak', 'dombak.dombak_id', 'dokumen_stok.dombak_id')
@@ -301,30 +303,55 @@ class MonitoringController extends Controller
                 ->leftJoin('losses', 'losses.dokumen_stok_id', 'dokumen_stok.dokumen_stok_id')
                 ->where('dokumen_stok.is_confirmation', 1)
                 ->whereBetween('dokumen_stok.tanggal', [$waktuMulai, $waktuSelesai])
+                ->groupBy([
+                    'dokumen_stok.dokumen_stok_id',
+                    'stok_inventory.stok_inventory_id',
+                    'dokumen_stok.tanggal',
+                    'dokumen_stok.stok_awal',
+                    'dokumen_stok.stok_akhir',
+                    'type_dokumen_stok.type_movement',
+                    'dombak.nama_dombak',
+                    'jam_kerja.nama_jam_kerja'
+                ])
                 ->orderBy('tanggal', 'desc')
                 ->orderBy('jam_datang_in', 'desc')
                 ->get() : $stok->dokumen_stok()
-                ->select('stok_inventory.stok_inventory_id')
-                ->addSelect('dokumen_stok.dokumen_stok_id')
-                ->addSelect('dokumen_stok.tanggal')
-                ->addSelect('dokumen_stok.stok_awal')
-                ->addSelect('dokumen_stok.stok_akhir')
-                ->addSelect('type_dokumen_stok.type_movement')
-                ->addSelect('dombak.nama_dombak')
-                ->addSelect('losses.simbol')
-                ->addSelect('losses.jumlah')
-                ->addSelect('jam_kerja.nama_jam_kerja')
+                ->select([
+                    'stok_inventory.stok_inventory_id',
+                    'dokumen_stok.dokumen_stok_id',
+                    'dokumen_stok.tanggal',
+                    'dokumen_stok.stok_awal',
+                    'dokumen_stok.stok_akhir',
+                    'type_dokumen_stok.type_movement',
+                    'dombak.nama_dombak',
+                    'jam_kerja.nama_jam_kerja',
+                    DB::raw('GROUP_CONCAT(losses.simbol) as loss_symbols'),
+                    DB::raw('SUM(losses.jumlah) as total_loss')
+                ])
                 ->join('stok_inventory', 'stok_inventory.stok_inventory_id', 'dokumen_stok.stok_inventory_id')
                 ->join('type_dokumen_stok', 'type_dokumen_stok.type_dokumen_stok_id', 'dokumen_stok.type_dokumen_stok_id')
                 ->join('dombak', 'dombak.dombak_id', 'dokumen_stok.dombak_id')
                 ->join('jam_kerja', 'jam_kerja.jam_kerja_id', 'dokumen_stok.jam_kerja_id')
                 ->leftJoin('losses', 'losses.dokumen_stok_id', 'dokumen_stok.dokumen_stok_id')
                 ->where('dokumen_stok.is_confirmation', 1)
-                ->where('dokumen_stok.dombak_id', $dombakSelected)
                 ->whereBetween('dokumen_stok.tanggal', [$waktuMulai, $waktuSelesai])
+                ->when($dombakSelected, function ($query) use ($dombakSelected) {
+                    return $query->where('dokumen_stok.dombak_id', $dombakSelected);
+                })
+                ->groupBy([
+                    'dokumen_stok.dokumen_stok_id',
+                    'stok_inventory.stok_inventory_id',
+                    'dokumen_stok.tanggal',
+                    'dokumen_stok.stok_awal',
+                    'dokumen_stok.stok_akhir',
+                    'type_dokumen_stok.type_movement',
+                    'dombak.nama_dombak',
+                    'jam_kerja.nama_jam_kerja'
+                ])
                 ->orderBy('tanggal', 'desc')
                 ->orderBy('jam_datang_in', 'desc')
                 ->get();
+
             return DataTables::of($data)
                 ->addIndexColumn()
                 ->addColumn('tanggal', function ($row) {
