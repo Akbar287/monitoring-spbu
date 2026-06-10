@@ -393,6 +393,16 @@ class StandMeterController extends Controller
             $stokTakingFirstInSameShift = $standMeter->dombak()->first()->stok_inventory_dombak()->first()->stok_inventory()->first()->dokumen_stok()->where('tanggal', Carbon::createFromFormat('Y-m-d', $standMeter->tanggal)->toDateTime())->where('type_dokumen_stok_id', $type_dokumen_stock_penjualan->type_dokumen_stok_id)->where('jam_kerja_id', $standMeter->jam_kerja_id)->get();
             // End Instansiasi
 
+            // instansiasi untuk stok transfer
+            $typeDokumenStokTransferTaking = TypeDokumenStok::where('type_movement', 'Stok Taking Good Transfer')->first();
+            $typeDokumenStokTransferSend = TypeDokumenStok::where('type_movement', 'Good Transfer Send')->first();
+            $typeDokumenStokTransferReceive = TypeDokumenStok::where('type_movement', 'Good Transfer Receive')->first();
+            $receive = $standMeter->dombak()->first()->stok_inventory_dombak()->first()->stok_inventory()->first()->dokumen_stok()->where('tanggal', Carbon::createFromFormat('Y-m-d', $standMeter->tanggal)->toDateTime())->where('type_dokumen_stok_id', $typeReveive->type_dokumen_stok_id)->where('jam_kerja_id', $standMeter->jam_kerja_id)->get();
+            $goodReceive = $standMeter->dombak()->first()->stok_inventory_dombak()->first()->stok_inventory()->first()->dokumen_stok()->where('tanggal', Carbon::createFromFormat('Y-m-d', $standMeter->tanggal)->toDateTime())->where('type_dokumen_stok_id', $typeGoodReveive->type_dokumen_stok_id)->where('jam_kerja_id', $standMeter->jam_kerja_id)->get();
+            $stokTakingFirstInSameShift = $standMeter->dombak()->first()->stok_inventory_dombak()->first()->stok_inventory()->first()->dokumen_stok()->where('tanggal', Carbon::createFromFormat('Y-m-d', $standMeter->tanggal)->toDateTime())->where('type_dokumen_stok_id', $type_dokumen_stock_penjualan->type_dokumen_stok_id)->where('jam_kerja_id', $standMeter->jam_kerja_id)->get();
+            // End Instansiasi
+
+
             $stokInventory = $standMeter->dombak()->first()->stok_inventory_dombak()->first()->stok_inventory()->first()->stok;
             $stok = $standMeter->dombak()->first()->stok_inventory_dombak()->first()->stok;
             $selisih = $standMeter->stand_meter_akhir - $standMeter->stand_meter_awal;
