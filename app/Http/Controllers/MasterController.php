@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class MasterController extends Controller
 {
@@ -73,6 +74,53 @@ class MasterController extends Controller
                 "color" => "info"
             ],
         ];
-        return view('master/index', compact('allMenu'));
+
+        // Ringkasan jumlah entitas master
+        $ringkasan = [
+            'Produk' => DB::table('produk')->where('is_aktif', 1)->count(),
+            'Pegawai' => DB::table('member')->whereNull('deleted_at')->count(),
+            'Dombak' => DB::table('dombak')->count(),
+            'Payung' => DB::table('payung')->count(),
+            'Dispenser' => DB::table('dispenser')->count(),
+            'Nozzle' => DB::table('nozzle')->count(),
+            'Aset' => DB::table('aset')->count(),
+            'Fasilitas' => DB::table('fasilitas')->count(),
+        ];
+
+        // Komposisi stok per produk
+        $stok = DB::table('produk')
+            ->leftJoin('stok_inventory', 'stok_inventory.produk_id', 'produk.produk_id')
+            ->where('produk.is_aktif', 1)
+            ->select('produk.nama_produk', DB::raw('COALESCE(SUM(stok_inventory.stok), 0) as total'))
+            ->groupBy('produk.nama_produk')
+            ->orderBy('produk.nama_produk')
+            ->get();
+
+        // Harga jual default per produk
+        $harga = DB::table('produk')
+            ->join('harga', 'harga.produk_id', 'produk.produk_id')
+            ->where('produk.is_aktif', 1)
+            ->where('harga.is_default', 1)
+            ->select('produk.nama_produk', DB::raw('MAX(harga.harga_jual) as harga'))
+            ->groupBy('produk.nama_produk')
+            ->orderBy('produk.nama_produk')
+            ->get();
+
+        $charts = [
+            'ringkasan' => [
+                'labels' => array_keys($ringkasan),
+                'data' => array_values($ringkasan),
+            ],
+            'stok' => [
+                'labels' => $stok->pluck('nama_produk'),
+                'data' => $stok->pluck('total'),
+            ],
+            'harga' => [
+                'labels' => $harga->pluck('nama_produk'),
+                'data' => $harga->pluck('harga'),
+            ],
+        ];
+
+        return view('master/index', compact('allMenu', 'charts'));
     }
 }

@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Support\Charts;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class ArtikelController extends Controller
 {
@@ -31,6 +33,25 @@ class ArtikelController extends Controller
                 "color" => "success"
             ]
         ];
-        return view('article/index', compact('allMenu'));
+        $postAktif = DB::table('post')->whereNull('deleted_at')->where('active', 1)->count();
+        $postNonaktif = DB::table('post')->whereNull('deleted_at')->where('active', 0)->count();
+
+        $charts = [
+            'ringkasan' => [
+                'labels' => ['Post', 'Kategori', 'Tag'],
+                'data' => [
+                    DB::table('post')->whereNull('deleted_at')->count(),
+                    DB::table('kategori')->count(),
+                    DB::table('tag')->count(),
+                ],
+            ],
+            'status' => [
+                'labels' => ['Aktif', 'Nonaktif'],
+                'data' => [$postAktif, $postNonaktif],
+            ],
+            'bulanan' => Charts::monthly('post', 'created_at', 'COUNT(*)'),
+        ];
+
+        return view('article/index', compact('allMenu', 'charts'));
     }
 }

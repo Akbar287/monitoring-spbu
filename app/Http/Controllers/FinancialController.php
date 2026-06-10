@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Support\Charts;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class FinancialController extends Controller
 {
@@ -61,6 +63,22 @@ class FinancialController extends Controller
                 "color" => "info"
             ]
         ];
-        return view('financial/index', compact('allMenu'));
+        // Petty cash per jenis transaksi
+        $pettyJenis = DB::table('petty_cash')
+            ->whereNull('deleted_at')
+            ->select('jenis', DB::raw('SUM(jumlah) as total'))
+            ->groupBy('jenis')
+            ->get();
+
+        $charts = [
+            'penjualan' => Charts::monthly('penjualan', 'tanggal', 'SUM(total_penjualan)'),
+            'pettyArus' => Charts::monthly('petty_cash', 'tanggal', 'SUM(jumlah)'),
+            'pettyJenis' => [
+                'labels' => $pettyJenis->pluck('jenis')->map(fn ($j) => ucfirst($j ?? '-')),
+                'data' => $pettyJenis->pluck('total'),
+            ],
+        ];
+
+        return view('financial/index', compact('allMenu', 'charts'));
     }
 }

@@ -2,8 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Support\Charts;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class ProcurementController extends Controller
 {
@@ -45,6 +46,30 @@ class ProcurementController extends Controller
             ]
         ];
 
-        return view('procurement/index', compact('allMenu'));
+        // Rencana pembelian per status purchase
+        $status = DB::table('rencana_pembelian')
+            ->join('status_purchase', 'status_purchase.status_purchase_id', 'rencana_pembelian.status_purchase_id')
+            ->select('status_purchase.nama_status', DB::raw('COUNT(*) as total'))
+            ->groupBy('status_purchase.nama_status')
+            ->orderBy('status_purchase.nama_status')
+            ->get();
+
+        // Status pengiriman
+        $pengirimanSelesai = DB::table('pengiriman')->where('is_done', 1)->count();
+        $pengirimanProses = DB::table('pengiriman')->where('is_done', 0)->count();
+
+        $charts = [
+            'status' => [
+                'labels' => $status->pluck('nama_status'),
+                'data' => $status->pluck('total'),
+            ],
+            'pengiriman' => [
+                'labels' => ['Selesai', 'Dalam Proses'],
+                'data' => [$pengirimanSelesai, $pengirimanProses],
+            ],
+            'nilai' => Charts::monthly('rencana_pembelian', 'tanggal_pembelian', 'SUM(grand_total)'),
+        ];
+
+        return view('procurement/index', compact('allMenu', 'charts'));
     }
 }

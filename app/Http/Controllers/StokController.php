@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Support\Charts;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class StokController extends Controller
 {
@@ -61,6 +63,33 @@ class StokController extends Controller
                 ],
             ];
         }
-        return view('stok/index', compact('allMenu'));
+        // Komposisi stok per produk
+        $stok = DB::table('produk')
+            ->leftJoin('stok_inventory', 'stok_inventory.produk_id', 'produk.produk_id')
+            ->where('produk.is_aktif', 1)
+            ->select('produk.nama_produk', DB::raw('COALESCE(SUM(stok_inventory.stok), 0) as total'))
+            ->groupBy('produk.nama_produk')
+            ->orderBy('produk.nama_produk')
+            ->get();
+
+        // Losses: lebih (untung) vs kurang (rugi)
+        $losses = DB::table('losses')
+            ->select('simbol', DB::raw('SUM(jumlah) as total'))
+            ->groupBy('simbol')
+            ->get();
+
+        $charts = [
+            'stok' => [
+                'labels' => $stok->pluck('nama_produk'),
+                'data' => $stok->pluck('total'),
+            ],
+            'penerimaan' => Charts::monthly('penerimaan', 'tanggal', 'COUNT(*)'),
+            'losses' => [
+                'labels' => $losses->pluck('simbol')->map(fn ($s) => ucfirst($s)),
+                'data' => $losses->pluck('total'),
+            ],
+        ];
+
+        return view('stok/index', compact('allMenu', 'charts'));
     }
 }

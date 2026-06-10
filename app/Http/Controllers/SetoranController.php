@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Support\Charts;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class SetoranController extends Controller
 {
@@ -37,6 +39,33 @@ class SetoranController extends Controller
                 "color" => "primary"
             ]
         ];
-        return view('setoran/index', compact('allMenu'));
+        // Penjualan per status setoran
+        $status = DB::table('penjualan')
+            ->join('status_setoran', 'status_setoran.status_setoran_id', 'penjualan.status_setoran_id')
+            ->select('status_setoran.nama_status', DB::raw('COUNT(*) as total'))
+            ->groupBy('status_setoran.nama_status')
+            ->get();
+
+        // Total penjualan per jam kerja
+        $jamKerja = DB::table('penjualan')
+            ->join('jam_kerja', 'jam_kerja.jam_kerja_id', 'penjualan.jam_kerja_id')
+            ->select('jam_kerja.nama_jam_kerja', DB::raw('SUM(penjualan.total_penjualan) as total'))
+            ->groupBy('jam_kerja.nama_jam_kerja')
+            ->orderBy('jam_kerja.nama_jam_kerja')
+            ->get();
+
+        $charts = [
+            'bulanan' => Charts::monthly('penjualan', 'tanggal', 'SUM(total_penjualan)'),
+            'status' => [
+                'labels' => $status->pluck('nama_status'),
+                'data' => $status->pluck('total'),
+            ],
+            'jamKerja' => [
+                'labels' => $jamKerja->pluck('nama_jam_kerja'),
+                'data' => $jamKerja->pluck('total'),
+            ],
+        ];
+
+        return view('setoran/index', compact('allMenu', 'charts'));
     }
 }

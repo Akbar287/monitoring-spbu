@@ -97,9 +97,312 @@ var _require = __webpack_require__(/*! sweetalert2 */ "./node_modules/sweetalert
 
 
 
+
+// Expose Chart.js + a shared theme helper so per-page Blade views can render
+// dashboard charts inline (see resources/views/*/index.blade.php).
+window.Chart = chart_js_auto__WEBPACK_IMPORTED_MODULE_1__.Chart;
+window.spbuChartTheme = function () {
+  chart_js_auto__WEBPACK_IMPORTED_MODULE_1__.Chart.defaults.font.family = "'Nunito', 'Segoe UI', sans-serif";
+  chart_js_auto__WEBPACK_IMPORTED_MODULE_1__.Chart.defaults.font.size = 12;
+  chart_js_auto__WEBPACK_IMPORTED_MODULE_1__.Chart.defaults.color = '#6c757d';
+  chart_js_auto__WEBPACK_IMPORTED_MODULE_1__.Chart.defaults.plugins.legend.labels.usePointStyle = true;
+  chart_js_auto__WEBPACK_IMPORTED_MODULE_1__.Chart.defaults.plugins.legend.labels.pointStyle = 'circle';
+  chart_js_auto__WEBPACK_IMPORTED_MODULE_1__.Chart.defaults.plugins.legend.labels.boxWidth = 8;
+  chart_js_auto__WEBPACK_IMPORTED_MODULE_1__.Chart.defaults.plugins.legend.labels.padding = 16;
+  var idr = new Intl.NumberFormat('id-ID', {
+    maximumFractionDigits: 0
+  });
+  var fmtShort = function fmtShort(v) {
+    var n = Math.abs(v || 0);
+    if (n >= 1e9) return (v / 1e9).toFixed(1).replace('.0', '') + ' M';
+    if (n >= 1e6) return (v / 1e6).toFixed(1).replace('.0', '') + ' jt';
+    if (n >= 1e3) return (v / 1e3).toFixed(1).replace('.0', '') + ' rb';
+    return idr.format(v || 0);
+  };
+  return {
+    palette: ['#6777ef', '#fc544b', '#ffa426', '#47c363', '#3abaf4', '#9b59b6', '#fdb45c', '#34395e', '#00c9a7', '#f55376'],
+    fmtRupiah: function fmtRupiah(v) {
+      return 'Rp ' + idr.format(v !== null && v !== void 0 ? v : 0);
+    },
+    fmtLiter: function fmtLiter(v) {
+      return idr.format(v !== null && v !== void 0 ? v : 0) + ' L';
+    },
+    fmtShort: fmtShort,
+    tooltip: {
+      backgroundColor: 'rgba(33, 37, 41, 0.92)',
+      titleColor: '#ffffff',
+      bodyColor: '#e9ecef',
+      padding: 12,
+      cornerRadius: 8,
+      usePointStyle: true,
+      boxPadding: 6
+    },
+    gridY: {
+      border: {
+        display: false
+      },
+      grid: {
+        color: 'rgba(0,0,0,0.05)',
+        drawBorder: false
+      }
+    },
+    gridX: {
+      grid: {
+        display: false
+      },
+      border: {
+        display: false
+      }
+    }
+  };
+};
+
+// Reusable chart builders consumed by per-page Blade views. Each accepts a
+// canvas id and a { labels, data } (or { labels, datasets }) payload.
+window.spbuChart = function () {
+  function theme() {
+    return window.spbuChartTheme();
+  }
+  function emptyOut(id) {
+    var c = document.getElementById(id);
+    if (c) c.parentElement.innerHTML = '<div class="chart-empty">Belum ada data</div>';
+  }
+  function isEmpty(d) {
+    return !d || !d.labels || !d.labels.length || !(d.data || []).some(function (v) {
+      return Number(v) > 0;
+    });
+  }
+  function fmtVal(t, opt, v) {
+    return opt.money ? t.fmtRupiah(v) : t.fmtShort(v) + (opt.unit ? ' ' + opt.unit : '');
+  }
+  function tick(t, opt, v) {
+    return opt.money ? 'Rp ' + t.fmtShort(v) : t.fmtShort(v);
+  }
+  function hexToRgba(hex, a) {
+    var n = parseInt(hex.replace('#', ''), 16);
+    return 'rgba(' + (n >> 16 & 255) + ',' + (n >> 8 & 255) + ',' + (n & 255) + ',' + a + ')';
+  }
+  return {
+    doughnut: function doughnut(id, d) {
+      var opt = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
+      if (isEmpty(d)) return emptyOut(id);
+      var t = theme();
+      new chart_js_auto__WEBPACK_IMPORTED_MODULE_1__.Chart(document.getElementById(id), {
+        type: 'doughnut',
+        data: {
+          labels: d.labels,
+          datasets: [{
+            data: d.data,
+            backgroundColor: d.labels.map(function (_, i) {
+              return t.palette[i % t.palette.length];
+            }),
+            borderColor: '#ffffff',
+            borderWidth: 3,
+            hoverOffset: 10
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          cutout: '62%',
+          plugins: {
+            legend: {
+              position: 'bottom'
+            },
+            tooltip: Object.assign({}, t.tooltip, {
+              callbacks: {
+                label: function label(c) {
+                  var tot = c.dataset.data.reduce(function (a, b) {
+                    return a + (Number(b) || 0);
+                  }, 0) || 1;
+                  return '  ' + fmtVal(t, opt, c.parsed) + ' (' + (c.parsed / tot * 100).toFixed(1) + '%)';
+                }
+              }
+            })
+          }
+        }
+      });
+    },
+    bar: function bar(id, d) {
+      var opt = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
+      if (isEmpty(d)) return emptyOut(id);
+      var t = theme();
+      var horizontal = !!opt.horizontal;
+      var colorEach = opt.colorEach !== false;
+      new chart_js_auto__WEBPACK_IMPORTED_MODULE_1__.Chart(document.getElementById(id), {
+        type: 'bar',
+        data: {
+          labels: d.labels,
+          datasets: [{
+            label: opt.label || '',
+            data: d.data,
+            backgroundColor: colorEach ? d.labels.map(function (_, i) {
+              return t.palette[i % t.palette.length];
+            }) : t.palette[opt.colorIndex || 0],
+            borderRadius: 6,
+            borderSkipped: false,
+            maxBarThickness: 46
+          }]
+        },
+        options: {
+          indexAxis: horizontal ? 'y' : 'x',
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              display: false
+            },
+            tooltip: Object.assign({}, t.tooltip, {
+              callbacks: {
+                label: function label(c) {
+                  return '  ' + fmtVal(t, opt, horizontal ? c.parsed.x : c.parsed.y);
+                }
+              }
+            })
+          },
+          scales: horizontal ? {
+            x: Object.assign({
+              beginAtZero: true,
+              ticks: {
+                callback: function callback(v) {
+                  return tick(t, opt, v);
+                }
+              }
+            }, t.gridY),
+            y: t.gridX
+          } : {
+            x: t.gridX,
+            y: Object.assign({
+              beginAtZero: true,
+              ticks: {
+                callback: function callback(v) {
+                  return tick(t, opt, v);
+                }
+              }
+            }, t.gridY)
+          }
+        }
+      });
+    },
+    line: function line(id, d) {
+      var opt = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
+      var multi = d && d.datasets && d.datasets.length;
+      if (!multi && isEmpty(d)) return emptyOut(id);
+      if (multi && !d.labels.length) return emptyOut(id);
+      var t = theme();
+      var datasets = (d.datasets || [{
+        label: opt.label || '',
+        data: d.data
+      }]).map(function (ds, i) {
+        return Object.assign({
+          tension: 0.4,
+          fill: true,
+          borderWidth: 3,
+          pointRadius: 3,
+          pointHoverRadius: 5,
+          borderColor: t.palette[i % t.palette.length],
+          backgroundColor: hexToRgba(t.palette[i % t.palette.length], 0.12),
+          pointBackgroundColor: t.palette[i % t.palette.length]
+        }, ds);
+      });
+      new chart_js_auto__WEBPACK_IMPORTED_MODULE_1__.Chart(document.getElementById(id), {
+        type: 'line',
+        data: {
+          labels: d.labels,
+          datasets: datasets
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: {
+            intersect: false,
+            mode: 'index'
+          },
+          plugins: {
+            legend: {
+              display: !!multi,
+              position: 'bottom'
+            },
+            tooltip: Object.assign({}, t.tooltip, {
+              callbacks: {
+                label: function label(c) {
+                  return '  ' + (c.dataset.label ? c.dataset.label + ': ' : '') + fmtVal(t, opt, c.parsed.y);
+                }
+              }
+            })
+          },
+          scales: {
+            x: t.gridX,
+            y: Object.assign({
+              beginAtZero: true,
+              ticks: {
+                callback: function callback(v) {
+                  return tick(t, opt, v);
+                }
+              }
+            }, t.gridY)
+          }
+        }
+      });
+    },
+    stackedBar: function stackedBar(id, d) {
+      var opt = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
+      if (!d || !d.labels || !d.labels.length || !(d.datasets || []).length) return emptyOut(id);
+      var t = theme();
+      new chart_js_auto__WEBPACK_IMPORTED_MODULE_1__.Chart(document.getElementById(id), {
+        type: 'bar',
+        data: {
+          labels: d.labels,
+          datasets: d.datasets.map(function (ds, i) {
+            return Object.assign({
+              backgroundColor: t.palette[i % t.palette.length],
+              borderRadius: 6,
+              borderSkipped: false,
+              maxBarThickness: 46
+            }, ds);
+          })
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: {
+            intersect: false,
+            mode: 'index'
+          },
+          plugins: {
+            legend: {
+              position: 'bottom'
+            },
+            tooltip: Object.assign({}, t.tooltip, {
+              callbacks: {
+                label: function label(c) {
+                  return '  ' + c.dataset.label + ': ' + fmtVal(t, opt, c.parsed.y);
+                }
+              }
+            })
+          },
+          scales: {
+            x: Object.assign({
+              stacked: true
+            }, t.gridX),
+            y: Object.assign({
+              stacked: true,
+              beginAtZero: true,
+              ticks: {
+                callback: function callback(v) {
+                  return tick(t, opt, v);
+                }
+              }
+            }, t.gridY)
+          }
+        }
+      });
+    }
+  };
+}();
 $(function () {
   var routeName = $('meta[name=route]')[0].content;
-  var cdnDatatableIdn = 'https://cdn.datatables.net/plug-ins/1.10.24/i18n/Indonesian.json';
+  var cdnDatatableIdn = document.location.origin + '/Indonesian.json';
   console.log(routeName);
   if ($('.thousand-style').toArray().length > 0) {
     $('.thousand-style').toArray().forEach(function (e) {
@@ -866,81 +1169,232 @@ $(function () {
         });
       }
     });
+    // ===== Tema & helper chart dashboard =====
+    var palette = ['#6777ef', '#fc544b', '#ffa426', '#47c363', '#3abaf4', '#9b59b6', '#34395e'];
+    var shiftColors = {
+      'Shift 1': '#6777ef',
+      'Shift 2': '#ffa426',
+      'Shift 3': '#fc544b'
+    };
+    var fmtRupiah = function fmtRupiah(v) {
+      return 'Rp ' + new Intl.NumberFormat('id-ID', {
+        maximumFractionDigits: 0
+      }).format(v !== null && v !== void 0 ? v : 0);
+    };
+    var fmtLiter = function fmtLiter(v) {
+      return new Intl.NumberFormat('id-ID', {
+        maximumFractionDigits: 0
+      }).format(v !== null && v !== void 0 ? v : 0) + ' L';
+    };
+    var fmtShort = function fmtShort(v) {
+      var n = Math.abs(v);
+      if (n >= 1e9) return (v / 1e9).toFixed(1).replace('.0', '') + ' M';
+      if (n >= 1e6) return (v / 1e6).toFixed(1).replace('.0', '') + ' jt';
+      if (n >= 1e3) return (v / 1e3).toFixed(1).replace('.0', '') + ' rb';
+      return new Intl.NumberFormat('id-ID').format(v);
+    };
+    chart_js_auto__WEBPACK_IMPORTED_MODULE_1__.Chart.defaults.font.family = "'Nunito', 'Segoe UI', sans-serif";
+    chart_js_auto__WEBPACK_IMPORTED_MODULE_1__.Chart.defaults.font.size = 12;
+    chart_js_auto__WEBPACK_IMPORTED_MODULE_1__.Chart.defaults.color = '#6c757d';
+    chart_js_auto__WEBPACK_IMPORTED_MODULE_1__.Chart.defaults.plugins.legend.labels.usePointStyle = true;
+    chart_js_auto__WEBPACK_IMPORTED_MODULE_1__.Chart.defaults.plugins.legend.labels.pointStyle = 'circle';
+    chart_js_auto__WEBPACK_IMPORTED_MODULE_1__.Chart.defaults.plugins.legend.labels.boxWidth = 8;
+    chart_js_auto__WEBPACK_IMPORTED_MODULE_1__.Chart.defaults.plugins.legend.labels.padding = 16;
+    var tooltipStyle = {
+      backgroundColor: 'rgba(33, 37, 41, 0.92)',
+      titleColor: '#ffffff',
+      bodyColor: '#e9ecef',
+      padding: 12,
+      cornerRadius: 8,
+      usePointStyle: true,
+      boxPadding: 6
+    };
+    var gridY = {
+      border: {
+        display: false
+      },
+      grid: {
+        color: 'rgba(0,0,0,0.05)',
+        drawBorder: false
+      }
+    };
+    var gridXClean = {
+      grid: {
+        display: false
+      },
+      border: {
+        display: false
+      }
+    };
     $.ajax({
       url: document.location.origin + '/api/chart',
       method: 'get',
       dataType: 'json',
       success: function success(data) {
+        // ===== Komposisi Stok BBM (Doughnut) =====
+        var stok = data.data.chart_stok;
+        stok.datasets[0].backgroundColor = stok.labels.map(function (_, i) {
+          return palette[i % palette.length];
+        });
+        stok.datasets[0].borderColor = '#ffffff';
+        stok.datasets[0].borderWidth = 3;
+        stok.datasets[0].hoverOffset = 12;
         new chart_js_auto__WEBPACK_IMPORTED_MODULE_1__.Chart(document.getElementById('chart-stok'), {
-          type: 'bar',
-          label: 'Stok BBM',
-          data: data.data.chart_stok,
+          type: 'doughnut',
+          data: stok,
           options: {
             responsive: true,
-            scales: {
-              y: {
-                beginAtZero: true
-              }
+            maintainAspectRatio: false,
+            cutout: '64%',
+            plugins: {
+              legend: {
+                position: 'bottom'
+              },
+              tooltip: Object.assign({}, tooltipStyle, {
+                callbacks: {
+                  label: function label(c) {
+                    var total = c.dataset.data.reduce(function (a, b) {
+                      return a + (b || 0);
+                    }, 0) || 1;
+                    var pct = (c.parsed / total * 100).toFixed(1);
+                    return '  ' + fmtLiter(c.parsed) + ' (' + pct + '%)';
+                  }
+                }
+              })
             }
           }
+        });
+
+        // ===== Penjualan Stok per Shift (Stacked Bar, Liter) =====
+        var stokSplit = data.data.chart_stok_split;
+        stokSplit.datasets.forEach(function (ds) {
+          ds.backgroundColor = shiftColors[ds.label] || '#6777ef';
+          ds.borderRadius = 6;
+          ds.borderSkipped = false;
+          ds.maxBarThickness = 48;
         });
         new chart_js_auto__WEBPACK_IMPORTED_MODULE_1__.Chart(document.getElementById('chart-stok-split'), {
           type: 'bar',
-          label: 'Pengeluaran Stok Tanggal 12 Juli 2023',
-          data: data.data.chart_stok_split,
+          data: stokSplit,
           options: {
-            plugins: {
-              title: {
-                display: true,
-                text: 'Penjualan Per Shift (dalam Liter)'
-              }
-            },
-            interaction: {
-              intersect: false
-            },
             responsive: true,
+            maintainAspectRatio: false,
+            interaction: {
+              intersect: false,
+              mode: 'index'
+            },
+            plugins: {
+              legend: {
+                position: 'bottom'
+              },
+              tooltip: Object.assign({}, tooltipStyle, {
+                callbacks: {
+                  label: function label(c) {
+                    return '  ' + c.dataset.label + ': ' + fmtLiter(c.parsed.y);
+                  }
+                }
+              })
+            },
             scales: {
-              y: {
-                beginAtZero: true
-              }
+              x: Object.assign({
+                stacked: true
+              }, gridXClean),
+              y: Object.assign({
+                stacked: true,
+                beginAtZero: true,
+                ticks: {
+                  callback: function callback(v) {
+                    return fmtShort(v);
+                  }
+                }
+              }, gridY)
             }
           }
         });
+
+        // ===== Penjualan per Nozzle (Bar, Rupiah) =====
+        var penjualan = data.data.chart_penjualan;
+        penjualan.datasets[0].backgroundColor = penjualan.labels.map(function (_, i) {
+          return palette[i % palette.length];
+        });
+        penjualan.datasets[0].borderRadius = 6;
+        penjualan.datasets[0].borderSkipped = false;
+        penjualan.datasets[0].maxBarThickness = 42;
         new chart_js_auto__WEBPACK_IMPORTED_MODULE_1__.Chart(document.getElementById('chart-penjualan'), {
           type: 'bar',
-          label: 'Penjualan',
-          data: data.data.chart_penjualan,
+          data: penjualan,
           options: {
             responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: {
+                display: false
+              },
+              tooltip: Object.assign({}, tooltipStyle, {
+                callbacks: {
+                  label: function label(c) {
+                    return '  ' + fmtRupiah(c.parsed.y);
+                  }
+                }
+              })
+            },
             scales: {
-              y: {
-                beginAtZero: true
-              }
+              x: gridXClean,
+              y: Object.assign({
+                beginAtZero: true,
+                ticks: {
+                  callback: function callback(v) {
+                    return 'Rp ' + fmtShort(v);
+                  }
+                }
+              }, gridY)
             }
           }
+        });
+
+        // ===== Penjualan per Shift (Stacked Bar, Rupiah) =====
+        var penjualanSplit = data.data.chart_penjualan_split;
+        penjualanSplit.datasets.forEach(function (ds) {
+          ds.backgroundColor = shiftColors[ds.label] || '#6777ef';
+          ds.borderRadius = 6;
+          ds.borderSkipped = false;
+          ds.maxBarThickness = 48;
         });
         new chart_js_auto__WEBPACK_IMPORTED_MODULE_1__.Chart(document.getElementById('chart-penjualan-split'), {
           type: 'bar',
-          data: data.data.chart_penjualan_split,
+          data: penjualanSplit,
           options: {
-            plugins: {
-              title: {
-                display: true,
-                text: 'Penjualan Per Shift (dalam Rupiah)'
-              }
-            },
-            interaction: {
-              intersect: false
-            },
             responsive: true,
-            scales: {
-              x: {
-                stacked: true
+            maintainAspectRatio: false,
+            interaction: {
+              intersect: false,
+              mode: 'index'
+            },
+            plugins: {
+              legend: {
+                position: 'bottom'
               },
-              y: {
+              tooltip: Object.assign({}, tooltipStyle, {
+                callbacks: {
+                  label: function label(c) {
+                    return '  ' + c.dataset.label + ': ' + fmtRupiah(c.parsed.y);
+                  }
+                }
+              })
+            },
+            scales: {
+              x: Object.assign({
+                stacked: true
+              }, gridXClean),
+              y: Object.assign({
                 stacked: true,
-                beginAtZero: true
-              }
+                beginAtZero: true,
+                ticks: {
+                  callback: function callback(v) {
+                    return 'Rp ' + fmtShort(v);
+                  }
+                }
+              }, gridY)
             }
           }
         });

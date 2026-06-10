@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class KonfigurasiController extends Controller
 {
@@ -55,6 +56,40 @@ class KonfigurasiController extends Controller
                 "color" => "info"
             ]
         ];
-        return view('konfigurasi/index', compact('allMenu'));
+        // Jabatan per level
+        $jabatanLevel = DB::table('jabatan')
+            ->join('level', 'level.level_id', 'jabatan.level_id')
+            ->whereNull('jabatan.deleted_at')
+            ->select('level.nama_level', DB::raw('COUNT(*) as total'))
+            ->groupBy('level.nama_level')
+            ->orderBy('level.nama_level')
+            ->get();
+
+        $charts = [
+            'ringkasan' => [
+                'labels' => ['SPBU', 'Divisi', 'Level', 'Jabatan', 'Hari', 'Jam Kerja'],
+                'data' => [
+                    DB::table('spbu')->whereNull('deleted_at')->count(),
+                    DB::table('divisi')->whereNull('deleted_at')->count(),
+                    DB::table('level')->whereNull('deleted_at')->count(),
+                    DB::table('jabatan')->whereNull('deleted_at')->count(),
+                    DB::table('hari')->count(),
+                    DB::table('jam_kerja')->count(),
+                ],
+            ],
+            'jabatanLevel' => [
+                'labels' => $jabatanLevel->pluck('nama_level'),
+                'data' => $jabatanLevel->pluck('total'),
+            ],
+            'hari' => [
+                'labels' => ['Hari Kerja', 'Hari Libur'],
+                'data' => [
+                    DB::table('hari')->where('hari_kerja', 1)->count(),
+                    DB::table('hari')->where('hari_kerja', 0)->count(),
+                ],
+            ],
+        ];
+
+        return view('konfigurasi/index', compact('allMenu', 'charts'));
     }
 }

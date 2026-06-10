@@ -384,8 +384,8 @@ Route::middleware(['auth', 'cache.header'])->group(function ($route) {
 
     // Tera
     $route->get('/tera', App\Http\Controllers\TeraController::class)->name('menu.tera');
-    $route->get('/tera/stok-peminjaman', [App\Http\Controllers\StokPeminjamanController::class, 'index'])->name('stok-peminjaman.*');
-    $route->get('/tera/stok-pengembalian', [App\Http\Controllers\StokPengembalianController::class, 'index'])->name('stok-pengembalian.*');
+    $route->get('/tera/stok-peminjaman', [App\Http\Controllers\StokPeminjamanController::class, 'index'])->name('tera.peminjaman');
+    $route->get('/tera/stok-pengembalian', [App\Http\Controllers\StokPengembalianController::class, 'index'])->name('tera.pengembalian');
 
     //Setoran
     $route->get('/setoran', App\Http\Controllers\SetoranController::class)->name('menu.setoran');

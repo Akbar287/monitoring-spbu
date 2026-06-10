@@ -24,6 +24,88 @@
 
     <!-- Google Chart -->
     <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+
+    <!-- Dashboard / menu-tile shared styles -->
+    <style>
+        .menu-tile {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 18px 20px;
+            height: 100%;
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.05);
+            transition: transform .2s ease, box-shadow .2s ease;
+            color: inherit;
+            text-decoration: none;
+        }
+
+        .menu-tile:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 26px rgba(0, 0, 0, 0.12);
+            color: inherit;
+            text-decoration: none;
+        }
+
+        .menu-tile .menu-ico {
+            flex: 0 0 auto;
+            width: 56px;
+            height: 56px;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-size: 22px;
+            box-shadow: 0 6px 14px rgba(0, 0, 0, 0.18);
+        }
+
+        .menu-tile-body {
+            min-width: 0;
+        }
+
+        .menu-tile-body h4 {
+            font-size: 15px;
+            font-weight: 700;
+            margin: 0 0 2px;
+            color: #34395e;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .menu-tile-body span {
+            font-size: 12px;
+            color: #6c757d;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .menu-tile-body span i {
+            font-size: 10px;
+            transition: transform .2s ease;
+        }
+
+        .menu-tile:hover .menu-tile-body span i {
+            transform: translateX(4px);
+        }
+
+        .chart-shell {
+            position: relative;
+            height: 300px;
+        }
+
+        .chart-empty {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: #adb5bd;
+            font-size: 13px;
+        }
+    </style>
 </head>
 
 <body>
@@ -228,6 +310,7 @@
             </footer>
         </div>
     </div>
+    @stack('scripts')
 </body>
 
 </html>

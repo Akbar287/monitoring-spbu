@@ -6,12 +6,191 @@ import { Chart } from "chart.js/auto";
 import Typed from "typed.js";
 import QrScanner from 'qr-scanner';
 
+// Expose Chart.js + a shared theme helper so per-page Blade views can render
+// dashboard charts inline (see resources/views/*/index.blade.php).
+window.Chart = Chart;
+window.spbuChartTheme = function () {
+    Chart.defaults.font.family = "'Nunito', 'Segoe UI', sans-serif";
+    Chart.defaults.font.size = 12;
+    Chart.defaults.color = '#6c757d';
+    Chart.defaults.plugins.legend.labels.usePointStyle = true;
+    Chart.defaults.plugins.legend.labels.pointStyle = 'circle';
+    Chart.defaults.plugins.legend.labels.boxWidth = 8;
+    Chart.defaults.plugins.legend.labels.padding = 16;
+
+    const idr = new Intl.NumberFormat('id-ID', { maximumFractionDigits: 0 });
+    const fmtShort = (v) => {
+        const n = Math.abs(v || 0);
+        if (n >= 1e9) return (v / 1e9).toFixed(1).replace('.0', '') + ' M';
+        if (n >= 1e6) return (v / 1e6).toFixed(1).replace('.0', '') + ' jt';
+        if (n >= 1e3) return (v / 1e3).toFixed(1).replace('.0', '') + ' rb';
+        return idr.format(v || 0);
+    };
+
+    return {
+        palette: ['#6777ef', '#fc544b', '#ffa426', '#47c363', '#3abaf4', '#9b59b6', '#fdb45c', '#34395e', '#00c9a7', '#f55376'],
+        fmtRupiah: (v) => 'Rp ' + idr.format(v ?? 0),
+        fmtLiter: (v) => idr.format(v ?? 0) + ' L',
+        fmtShort,
+        tooltip: {
+            backgroundColor: 'rgba(33, 37, 41, 0.92)',
+            titleColor: '#ffffff',
+            bodyColor: '#e9ecef',
+            padding: 12,
+            cornerRadius: 8,
+            usePointStyle: true,
+            boxPadding: 6
+        },
+        gridY: { border: { display: false }, grid: { color: 'rgba(0,0,0,0.05)', drawBorder: false } },
+        gridX: { grid: { display: false }, border: { display: false } }
+    };
+};
+
+// Reusable chart builders consumed by per-page Blade views. Each accepts a
+// canvas id and a { labels, data } (or { labels, datasets }) payload.
+window.spbuChart = (function () {
+    function theme() { return window.spbuChartTheme(); }
+    function emptyOut(id) {
+        const c = document.getElementById(id);
+        if (c) c.parentElement.innerHTML = '<div class="chart-empty">Belum ada data</div>';
+    }
+    function isEmpty(d) {
+        return !d || !d.labels || !d.labels.length || !(d.data || []).some(v => Number(v) > 0);
+    }
+    function fmtVal(t, opt, v) { return opt.money ? t.fmtRupiah(v) : (t.fmtShort(v) + (opt.unit ? ' ' + opt.unit : '')); }
+    function tick(t, opt, v) { return opt.money ? 'Rp ' + t.fmtShort(v) : t.fmtShort(v); }
+    function hexToRgba(hex, a) {
+        const n = parseInt(hex.replace('#', ''), 16);
+        return 'rgba(' + ((n >> 16) & 255) + ',' + ((n >> 8) & 255) + ',' + (n & 255) + ',' + a + ')';
+    }
+
+    return {
+        doughnut(id, d, opt = {}) {
+            if (isEmpty(d)) return emptyOut(id);
+            const t = theme();
+            new Chart(document.getElementById(id), {
+                type: 'doughnut',
+                data: {
+                    labels: d.labels,
+                    datasets: [{
+                        data: d.data,
+                        backgroundColor: d.labels.map((_, i) => t.palette[i % t.palette.length]),
+                        borderColor: '#ffffff', borderWidth: 3, hoverOffset: 10
+                    }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false, cutout: '62%',
+                    plugins: {
+                        legend: { position: 'bottom' },
+                        tooltip: Object.assign({}, t.tooltip, {
+                            callbacks: {
+                                label(c) {
+                                    const tot = c.dataset.data.reduce((a, b) => a + (Number(b) || 0), 0) || 1;
+                                    return '  ' + fmtVal(t, opt, c.parsed) + ' (' + (c.parsed / tot * 100).toFixed(1) + '%)';
+                                }
+                            }
+                        })
+                    }
+                }
+            });
+        },
+        bar(id, d, opt = {}) {
+            if (isEmpty(d)) return emptyOut(id);
+            const t = theme();
+            const horizontal = !!opt.horizontal;
+            const colorEach = opt.colorEach !== false;
+            new Chart(document.getElementById(id), {
+                type: 'bar',
+                data: {
+                    labels: d.labels,
+                    datasets: [{
+                        label: opt.label || '',
+                        data: d.data,
+                        backgroundColor: colorEach
+                            ? d.labels.map((_, i) => t.palette[i % t.palette.length])
+                            : t.palette[opt.colorIndex || 0],
+                        borderRadius: 6, borderSkipped: false, maxBarThickness: 46
+                    }]
+                },
+                options: {
+                    indexAxis: horizontal ? 'y' : 'x',
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: Object.assign({}, t.tooltip, {
+                            callbacks: { label: (c) => '  ' + fmtVal(t, opt, horizontal ? c.parsed.x : c.parsed.y) }
+                        })
+                    },
+                    scales: horizontal
+                        ? { x: Object.assign({ beginAtZero: true, ticks: { callback: (v) => tick(t, opt, v) } }, t.gridY), y: t.gridX }
+                        : { x: t.gridX, y: Object.assign({ beginAtZero: true, ticks: { callback: (v) => tick(t, opt, v) } }, t.gridY) }
+                }
+            });
+        },
+        line(id, d, opt = {}) {
+            const multi = d && d.datasets && d.datasets.length;
+            if (!multi && isEmpty(d)) return emptyOut(id);
+            if (multi && !d.labels.length) return emptyOut(id);
+            const t = theme();
+            const datasets = (d.datasets || [{ label: opt.label || '', data: d.data }]).map((ds, i) => Object.assign({
+                tension: 0.4, fill: true, borderWidth: 3, pointRadius: 3, pointHoverRadius: 5,
+                borderColor: t.palette[i % t.palette.length],
+                backgroundColor: hexToRgba(t.palette[i % t.palette.length], 0.12),
+                pointBackgroundColor: t.palette[i % t.palette.length]
+            }, ds));
+            new Chart(document.getElementById(id), {
+                type: 'line',
+                data: { labels: d.labels, datasets },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    interaction: { intersect: false, mode: 'index' },
+                    plugins: {
+                        legend: { display: !!multi, position: 'bottom' },
+                        tooltip: Object.assign({}, t.tooltip, {
+                            callbacks: { label: (c) => '  ' + (c.dataset.label ? c.dataset.label + ': ' : '') + fmtVal(t, opt, c.parsed.y) }
+                        })
+                    },
+                    scales: { x: t.gridX, y: Object.assign({ beginAtZero: true, ticks: { callback: (v) => tick(t, opt, v) } }, t.gridY) }
+                }
+            });
+        },
+        stackedBar(id, d, opt = {}) {
+            if (!d || !d.labels || !d.labels.length || !(d.datasets || []).length) return emptyOut(id);
+            const t = theme();
+            new Chart(document.getElementById(id), {
+                type: 'bar',
+                data: {
+                    labels: d.labels,
+                    datasets: d.datasets.map((ds, i) => Object.assign({
+                        backgroundColor: t.palette[i % t.palette.length],
+                        borderRadius: 6, borderSkipped: false, maxBarThickness: 46
+                    }, ds))
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    interaction: { intersect: false, mode: 'index' },
+                    plugins: {
+                        legend: { position: 'bottom' },
+                        tooltip: Object.assign({}, t.tooltip, {
+                            callbacks: { label: (c) => '  ' + c.dataset.label + ': ' + fmtVal(t, opt, c.parsed.y) }
+                        })
+                    },
+                    scales: {
+                        x: Object.assign({ stacked: true }, t.gridX),
+                        y: Object.assign({ stacked: true, beginAtZero: true, ticks: { callback: (v) => tick(t, opt, v) } }, t.gridY)
+                    }
+                }
+            });
+        }
+    };
+})();
+
 $(function () {
     let routeName = ($('meta[name=route]')[0].content);
-    let cdnDatatableIdn = 'https://cdn.datatables.net/plug-ins/1.10.24/i18n/Indonesian.json';
+    let cdnDatatableIdn = document.location.origin + '/Indonesian.json';
 
     console.log(routeName)
-    if($('.thousand-style').toArray().length > 0) {
+    if ($('.thousand-style').toArray().length > 0) {
         $('.thousand-style').toArray().forEach(e => {
             new Cleave(e, {
                 numeral: true,
@@ -29,11 +208,11 @@ $(function () {
             serverSide: true,
             ajax: document.location.href,
             columns: [
-                {data: 'nama_spbu', name: 'nama_spbu'},
-                {data: 'nomor_spbu', name: 'nomor_spbu'},
-                {data: 'tanggal_pendirian', name: 'tanggal_pendirian'},
-                {data: 'alamat', name: 'alamat'},
-                {data: 'action', name: 'action', orderable: false, searchable: false},
+                { data: 'nama_spbu', name: 'nama_spbu' },
+                { data: 'nomor_spbu', name: 'nomor_spbu' },
+                { data: 'tanggal_pendirian', name: 'tanggal_pendirian' },
+                { data: 'alamat', name: 'alamat' },
+                { data: 'action', name: 'action', orderable: false, searchable: false },
             ]
         });
     }
@@ -46,10 +225,10 @@ $(function () {
             serverSide: true,
             ajax: document.location.href,
             columns: [
-                {data: 'nama_divisi', name: 'nama_divisi'},
-                {data: 'keterangan', name: 'keterangan'},
-                {data: 'is_aktif', name: 'is_aktif'},
-                {data: 'action', name: 'action', orderable: false, searchable: false},
+                { data: 'nama_divisi', name: 'nama_divisi' },
+                { data: 'keterangan', name: 'keterangan' },
+                { data: 'is_aktif', name: 'is_aktif' },
+                { data: 'action', name: 'action', orderable: false, searchable: false },
             ]
         });
     }
@@ -62,10 +241,10 @@ $(function () {
             serverSide: true,
             ajax: document.location.href,
             columns: [
-                {data: 'nama_hari', name: 'nama_hari'},
-                {data: 'hari_kerja', name: 'hari_kerja'},
-                {data: 'keterangan', name: 'keterangan'},
-                {data: 'action', name: 'action', orderable: false, searchable: false},
+                { data: 'nama_hari', name: 'nama_hari' },
+                { data: 'hari_kerja', name: 'hari_kerja' },
+                { data: 'keterangan', name: 'keterangan' },
+                { data: 'action', name: 'action', orderable: false, searchable: false },
             ]
         });
     }
@@ -78,10 +257,10 @@ $(function () {
             serverSide: true,
             ajax: document.location.href,
             columns: [
-                {data: 'nama_jam_kerja', name: 'nama_jam_kerja'},
-                {data: 'jam_datang_in', name: 'jam_datang_in'},
-                {data: 'jam_pulang_out', name: 'jam_pulang_out'},
-                {data: 'action', name: 'action', orderable: false, searchable: false},
+                { data: 'nama_jam_kerja', name: 'nama_jam_kerja' },
+                { data: 'jam_datang_in', name: 'jam_datang_in' },
+                { data: 'jam_pulang_out', name: 'jam_pulang_out' },
+                { data: 'action', name: 'action', orderable: false, searchable: false },
             ]
         });
     }
@@ -94,10 +273,10 @@ $(function () {
             serverSide: true,
             ajax: document.location.href,
             columns: [
-                {data: 'nama_aset', name: 'nama_aset'},
-                {data: 'jumlah', name: 'jumlah'},
-                {data: 'keterangan', name: 'keterangan'},
-                {data: 'action', name: 'action', orderable: false, searchable: false},
+                { data: 'nama_aset', name: 'nama_aset' },
+                { data: 'jumlah', name: 'jumlah' },
+                { data: 'keterangan', name: 'keterangan' },
+                { data: 'action', name: 'action', orderable: false, searchable: false },
             ]
         });
     }
@@ -110,11 +289,11 @@ $(function () {
             serverSide: true,
             ajax: document.location.href,
             columns: [
-                {data: 'nama_fasilitas', name: 'nama_fasilitas'},
-                {data: 'jumlah', name: 'jumlah'},
-                {data: 'tanggal_digunakan', name: 'tanggal_digunakan'},
-                {data: 'keterangan', name: 'keterangan'},
-                {data: 'action', name: 'action', orderable: false, searchable: false},
+                { data: 'nama_fasilitas', name: 'nama_fasilitas' },
+                { data: 'jumlah', name: 'jumlah' },
+                { data: 'tanggal_digunakan', name: 'tanggal_digunakan' },
+                { data: 'keterangan', name: 'keterangan' },
+                { data: 'action', name: 'action', orderable: false, searchable: false },
             ]
         });
 
@@ -128,11 +307,11 @@ $(function () {
             serverSide: true,
             ajax: document.location.href,
             columns: [
-                {data: 'nama_produk', name: 'nama_produk'},
-                {data: 'nama_jenis', name: 'nama_jenis'},
-                {data: 'oktan', name: 'oktan'},
-                {data: 'is_aktif', name: 'keterangan'},
-                {data: 'action', name: 'action', orderable: false, searchable: false},
+                { data: 'nama_produk', name: 'nama_produk' },
+                { data: 'nama_jenis', name: 'nama_jenis' },
+                { data: 'oktan', name: 'oktan' },
+                { data: 'is_aktif', name: 'keterangan' },
+                { data: 'action', name: 'action', orderable: false, searchable: false },
             ]
         });
     }
@@ -145,10 +324,10 @@ $(function () {
             serverSide: true,
             ajax: document.location.href,
             columns: [
-                {data: 'nama_dombak', name: 'nama_dombak'},
-                {data: 'is_aktif', name: 'is_aktif'},
-                {data: 'keterangan', name: 'keterangan'},
-                {data: 'action', name: 'action', orderable: false, searchable: false},
+                { data: 'nama_dombak', name: 'nama_dombak' },
+                { data: 'is_aktif', name: 'is_aktif' },
+                { data: 'keterangan', name: 'keterangan' },
+                { data: 'action', name: 'action', orderable: false, searchable: false },
             ]
         });
     }
@@ -161,10 +340,10 @@ $(function () {
             serverSide: true,
             ajax: document.location.href,
             columns: [
-                {data: 'nama_payung', name: 'nama_payung'},
-                {data: 'is_aktif', name: 'is_aktif'},
-                {data: 'keterangan', name: 'keterangan'},
-                {data: 'action', name: 'action', orderable: false, searchable: false},
+                { data: 'nama_payung', name: 'nama_payung' },
+                { data: 'is_aktif', name: 'is_aktif' },
+                { data: 'keterangan', name: 'keterangan' },
+                { data: 'action', name: 'action', orderable: false, searchable: false },
             ]
         });
     }
@@ -177,11 +356,11 @@ $(function () {
             serverSide: true,
             ajax: document.location.href,
             columns: [
-                {data: 'nama_dispenser', name: 'nama_dispenser'},
-                {data: 'nama_payung', name: 'nama_payung'},
-                {data: 'is_aktif', name: 'is_aktif'},
-                {data: 'keterangan', name: 'keterangan'},
-                {data: 'action', name: 'action', orderable: false, searchable: false},
+                { data: 'nama_dispenser', name: 'nama_dispenser' },
+                { data: 'nama_payung', name: 'nama_payung' },
+                { data: 'is_aktif', name: 'is_aktif' },
+                { data: 'keterangan', name: 'keterangan' },
+                { data: 'action', name: 'action', orderable: false, searchable: false },
             ]
         });
     }
@@ -194,13 +373,13 @@ $(function () {
             serverSide: true,
             ajax: document.location.href,
             columns: [
-                {data: 'nama_payung', name: 'nama_payung'},
-                {data: 'nama_dispenser', name: 'nama_dispenser'},
-                {data: 'nama_produk', name: 'nama_payung'},
-                {data: 'nama_nozzle', name: 'nama_nozzle'},
-                {data: 'is_aktif', name: 'is_aktif'},
-                {data: 'keterangan', name: 'keterangan'},
-                {data: 'action', name: 'action', orderable: false, searchable: false},
+                { data: 'nama_payung', name: 'nama_payung' },
+                { data: 'nama_dispenser', name: 'nama_dispenser' },
+                { data: 'nama_produk', name: 'nama_payung' },
+                { data: 'nama_nozzle', name: 'nama_nozzle' },
+                { data: 'is_aktif', name: 'is_aktif' },
+                { data: 'keterangan', name: 'keterangan' },
+                { data: 'action', name: 'action', orderable: false, searchable: false },
             ]
         });
     }
@@ -213,12 +392,12 @@ $(function () {
             serverSide: true,
             ajax: document.location.href,
             columns: [
-                {data: 'produk', name: 'produk'},
-                {data: 'tanggal', name: 'tanggal'},
-                {data: 'jam_kerja', name: 'jam_kerja'},
-                {data: 'harga_jual', name: 'harga_jual'},
-                {data: 'harga_beli', name: 'harga_beli'},
-                {data: 'action', name: 'action', orderable: false, searchable: false},
+                { data: 'produk', name: 'produk' },
+                { data: 'tanggal', name: 'tanggal' },
+                { data: 'jam_kerja', name: 'jam_kerja' },
+                { data: 'harga_jual', name: 'harga_jual' },
+                { data: 'harga_beli', name: 'harga_beli' },
+                { data: 'action', name: 'action', orderable: false, searchable: false },
             ]
         });
     }
@@ -231,9 +410,9 @@ $(function () {
             serverSide: true,
             ajax: document.location.href,
             columns: [
-                {data: 'nama_payung', name: 'nama_payung'},
-                {data: 'nama_dombak', name: 'nama_dombak'},
-                {data: 'action', name: 'action', orderable: false, searchable: false},
+                { data: 'nama_payung', name: 'nama_payung' },
+                { data: 'nama_dombak', name: 'nama_dombak' },
+                { data: 'action', name: 'action', orderable: false, searchable: false },
             ]
         });
     }
@@ -246,10 +425,10 @@ $(function () {
             serverSide: true,
             ajax: document.location.href,
             columns: [
-                {data: 'dombak_id', name: 'dombak_id'},
-                {data: 'nama_dombak', name: 'nama_dombak'},
-                {data: 'is_aktif', name: 'is_aktif'},
-                {data: 'action', name: 'action', orderable: false, searchable: false},
+                { data: 'dombak_id', name: 'dombak_id' },
+                { data: 'nama_dombak', name: 'nama_dombak' },
+                { data: 'is_aktif', name: 'is_aktif' },
+                { data: 'action', name: 'action', orderable: false, searchable: false },
             ]
         });
     }
@@ -262,9 +441,9 @@ $(function () {
             serverSide: true,
             ajax: document.location.href,
             columns: [
-                {data: 'tinggi', name: 'tinggi'},
-                {data: 'volume', name: 'volume'},
-                {data: 'action', name: 'action', orderable: false, searchable: false},
+                { data: 'tinggi', name: 'tinggi' },
+                { data: 'volume', name: 'volume' },
+                { data: 'action', name: 'action', orderable: false, searchable: false },
             ]
         });
     }
@@ -277,11 +456,11 @@ $(function () {
             serverSide: true,
             ajax: document.location.href,
             columns: [
-                {data: 'avatar', name: 'avatar'},
-                {data: 'nama', name: 'nama'},
-                {data: 'username', name: 'username'},
-                {data: 'verified', name: 'verified'},
-                {data: 'action', name: 'action', orderable: false, searchable: false},
+                { data: 'avatar', name: 'avatar' },
+                { data: 'nama', name: 'nama' },
+                { data: 'username', name: 'username' },
+                { data: 'verified', name: 'verified' },
+                { data: 'action', name: 'action', orderable: false, searchable: false },
             ]
         });
     }
@@ -294,11 +473,11 @@ $(function () {
             serverSide: true,
             ajax: document.location.href,
             columns: [
-                {data: 'nama_level', name: 'nama_level'},
-                {data: 'nama_divisi', name: 'nama_divisi'},
-                {data: 'keterangan', name: 'keterangan'},
-                {data: 'is_aktif', name: 'is_aktif'},
-                {data: 'action', name: 'action', orderable: false, searchable: false},
+                { data: 'nama_level', name: 'nama_level' },
+                { data: 'nama_divisi', name: 'nama_divisi' },
+                { data: 'keterangan', name: 'keterangan' },
+                { data: 'is_aktif', name: 'is_aktif' },
+                { data: 'action', name: 'action', orderable: false, searchable: false },
             ]
         });
     }
@@ -311,11 +490,11 @@ $(function () {
             serverSide: true,
             ajax: document.location.href,
             columns: [
-                {data: 'nama_jabatan', name: 'nama_jabatan'},
-                {data: 'nama_level', name: 'nama_level'},
-                {data: 'keterangan', name: 'keterangan'},
-                {data: 'is_aktif', name: 'is_aktif'},
-                {data: 'action', name: 'action', orderable: false, searchable: false},
+                { data: 'nama_jabatan', name: 'nama_jabatan' },
+                { data: 'nama_level', name: 'nama_level' },
+                { data: 'keterangan', name: 'keterangan' },
+                { data: 'is_aktif', name: 'is_aktif' },
+                { data: 'action', name: 'action', orderable: false, searchable: false },
             ]
         });
     }
@@ -328,11 +507,11 @@ $(function () {
             serverSide: true,
             ajax: document.location.href,
             columns: [
-                {data: 'jabatan_id', name: 'jabatan_id'},
-                {data: 'nama_divisi', name: 'nama_divisi'},
-                {data: 'nama_level', name: 'nama_level'},
-                {data: 'nama_jabatan', name: 'nama_jabatan'},
-                {data: 'action', name: 'action', orderable: false, searchable: false},
+                { data: 'jabatan_id', name: 'jabatan_id' },
+                { data: 'nama_divisi', name: 'nama_divisi' },
+                { data: 'nama_level', name: 'nama_level' },
+                { data: 'nama_jabatan', name: 'nama_jabatan' },
+                { data: 'action', name: 'action', orderable: false, searchable: false },
             ]
         });
     }
@@ -345,10 +524,10 @@ $(function () {
             serverSide: true,
             ajax: document.location.href,
             columns: [
-                {data: 'nama_divisi', name: 'nama_divisi'},
-                {data: 'nama_level', name: 'nama_level'},
-                {data: 'nama_jabatan', name: 'nama_jabatan'},
-                {data: 'action', name: 'action', orderable: false, searchable: false},
+                { data: 'nama_divisi', name: 'nama_divisi' },
+                { data: 'nama_level', name: 'nama_level' },
+                { data: 'nama_jabatan', name: 'nama_jabatan' },
+                { data: 'action', name: 'action', orderable: false, searchable: false },
             ]
         });
     }
@@ -361,13 +540,13 @@ $(function () {
             serverSide: true,
             ajax: document.location.href,
             columns: [
-                {data: 'nama_produk', name: 'nama_produk'},
-                {data: 'stok', name: 'stok'},
-                {data: 'action', name: 'action', orderable: false, searchable: false},
+                { data: 'nama_produk', name: 'nama_produk' },
+                { data: 'stok', name: 'stok' },
+                { data: 'action', name: 'action', orderable: false, searchable: false },
             ]
         });
     }
-    if(routeName == 'monitoring.show_riwayat') {
+    if (routeName == 'monitoring.show_riwayat') {
         $('.table-riwayat-monitoring').DataTable({
             language: {
                 url: cdnDatatableIdn,
@@ -376,13 +555,13 @@ $(function () {
             serverSide: true,
             ajax: document.location.href,
             columns: [
-                {data: 'tanggal', name: 'tanggal'},
-                {data: 'type_movement', name: 'type_movement'},
-                {data: 'nama_dombak', name: 'nama_dombak'},
-                {data: 'stok_awal', name: 'stok_awal'},
-                {data: 'stok_akhir', name: 'stok_akhir'},
-                {data: 'total_loss', name: 'total_loss'},
-                {data: 'action', name: 'action', orderable: false, searchable: false},
+                { data: 'tanggal', name: 'tanggal' },
+                { data: 'type_movement', name: 'type_movement' },
+                { data: 'nama_dombak', name: 'nama_dombak' },
+                { data: 'stok_awal', name: 'stok_awal' },
+                { data: 'stok_akhir', name: 'stok_akhir' },
+                { data: 'total_loss', name: 'total_loss' },
+                { data: 'action', name: 'action', orderable: false, searchable: false },
             ]
         });
     }
@@ -395,10 +574,10 @@ $(function () {
             serverSide: true,
             ajax: document.location.href,
             columns: [
-                {data: 'dombak_id', name: 'dombak_id'},
-                {data: 'nama_dombak', name: 'nama_dombak'},
-                {data: 'stok', name: 'stok'},
-                {data: 'action', name: 'action', orderable: false, searchable: false},
+                { data: 'dombak_id', name: 'dombak_id' },
+                { data: 'nama_dombak', name: 'nama_dombak' },
+                { data: 'stok', name: 'stok' },
+                { data: 'action', name: 'action', orderable: false, searchable: false },
             ]
         });
     }
@@ -411,26 +590,26 @@ $(function () {
             serverSide: true,
             ajax: document.location.href,
             columns: [
-                {data: 'dombak_id', name: 'dombak_id'},
-                {data: 'nama_dombak', name: 'nama_dombak'},
-                {data: 'action', name: 'action', orderable: false, searchable: false},
+                { data: 'dombak_id', name: 'dombak_id' },
+                { data: 'nama_dombak', name: 'nama_dombak' },
+                { data: 'action', name: 'action', orderable: false, searchable: false },
             ]
         });
     }
     function addDigitMonth(month) {
         return (month.length == 1) ? '0' + month : month;
     }
-    if(routeName == 'home') {
-        $('select#doing').on('change', function(e) {
+    if (routeName == 'home') {
+        $('select#doing').on('change', function (e) {
             if (e.target.value == '0') {
                 $('.value_ai').children().remove();
                 $('.value_ai').addClass('d-none')
-            } else if(e.target.value == 'download_margin') {
+            } else if (e.target.value == 'download_margin') {
                 $('.value_ai').removeClass('d-none');
                 $('.value_ai').children().remove();
                 $('.value_ai').append('<div class="ai text-justify"></div>');
 
-                new Typed('.ai', {strings: ['Tentu saja, anda dapat klik link <a href="'+location.origin+'/financial/margin">disini</a> dan pilih jenis laporan yang diinginkan, bulan, dan produk. semoga informasi ini membantu. 😄'], typeSpeed: 10})
+                new Typed('.ai', { strings: ['Tentu saja, anda dapat klik link <a href="' + location.origin + '/financial/margin">disini</a> dan pilih jenis laporan yang diinginkan, bulan, dan produk. semoga informasi ini membantu. 😄'], typeSpeed: 10 })
             } else {
                 $.ajax({
                     url: document.location.origin + '/api/home',
@@ -440,14 +619,14 @@ $(function () {
                         type: e.target.value
                     },
                     dataType: 'json',
-                    beforeSend: function(waiting) {
+                    beforeSend: function (waiting) {
                         $('.value_ai').removeClass('d-none');
                         $('.value_ai').children().remove();
                         $('.value_ai').append('<div class="ai text-justify"></div>');
 
-                        new Typed('.ai', {strings: ['Mohon Tunggu ⏱️, Saya sedang mendapatkan data dari server 🌐'], typeSpeed: 10})
+                        new Typed('.ai', { strings: ['Mohon Tunggu ⏱️, Saya sedang mendapatkan data dari server 🌐'], typeSpeed: 10 })
                     },
-                    success: function(data) {
+                    success: function (data) {
                         if (e.target.value == 'how_many_stok_in_dombak') {
                             $('.value_ai').removeClass('d-none');
                             $('.value_ai').children().remove();
@@ -457,9 +636,9 @@ $(function () {
 
                             data.data.forEach(x => temp += 'Produk <b>' + x.nama_produk + '</b> dengan banyaknya stok sebesar <b>' + new Intl.NumberFormat("id-ID", { style: "decimal", maximumFractionDigits: 6 }).format(x.stok) + '</b> liter. ')
 
-                            new Typed('.ai', {strings: ['Hari ini, stok di Dombak terdiri dari beberapa produk utama yang dimiliki. '+ temp +' untuk informasi lebih lanjut silahkan klik link <a href="'+location.origin+'/stok/monitoring">disini</a>. semoga informasi ini membantu. 😄'], typeSpeed: 10})
+                            new Typed('.ai', { strings: ['Hari ini, stok di Dombak terdiri dari beberapa produk utama yang dimiliki. ' + temp + ' untuk informasi lebih lanjut silahkan klik link <a href="' + location.origin + '/stok/monitoring">disini</a>. semoga informasi ini membantu. 😄'], typeSpeed: 10 })
                         }
-                        if(e.target.value == 'how_many_stok_in_pertamina') {
+                        if (e.target.value == 'how_many_stok_in_pertamina') {
                             $('.value_ai').removeClass('d-none');
                             $('.value_ai').children().remove();
                             $('.value_ai').append('<div class="ai text-justify"></div>');
@@ -468,9 +647,9 @@ $(function () {
 
                             data.data.forEach(x => temp += 'Produk <b>' + x.nama_produk + '</b> dengan banyaknya stok sebesar <b>' + new Intl.NumberFormat("id-ID", { style: "decimal", maximumFractionDigits: 6 }).format(x.stok / 8000) + '</b> Kl. ')
 
-                            new Typed('.ai', {strings: ['Hari ini, tercatat terdapat beberapa produk stok yang di Pertamina . '+ temp +' untuk informasi lebih lanjut silahkan klik link <a href="'+ location.origin + '/procurement/ms2' +'">disini</a>. semoga informasi ini membantu. 😄'], typeSpeed: 10})
+                            new Typed('.ai', { strings: ['Hari ini, tercatat terdapat beberapa produk stok yang di Pertamina . ' + temp + ' untuk informasi lebih lanjut silahkan klik link <a href="' + location.origin + '/procurement/ms2' + '">disini</a>. semoga informasi ini membantu. 😄'], typeSpeed: 10 })
                         }
-                        if(e.target.value == 'how_many_sales_today') {
+                        if (e.target.value == 'how_many_sales_today') {
                             $('.value_ai').removeClass('d-none');
                             $('.value_ai').children().remove();
                             $('.value_ai').append('<div class="ai text-justify"></div>');
@@ -478,118 +657,185 @@ $(function () {
                             const date = new Date();
                             let now = date.getFullYear() + '-' + addDigitMonth(date.getMonth()) + '-' + date.getDate()
 
-                            let temp = '';let detail = '';
+                            let temp = ''; let detail = '';
                             data.data.summary.forEach(x => temp += ' Untuk Jam kerja <b>' + x.nama_jam_kerja + "</b> menjual sebesar <b>Rp. " + x.total_penjualan + '</b>.')
 
                             data.data.details.forEach(x => detail += 'Untuk Produk <b>' + x.produk + '</b> di jam kerja <b>' + x.nama_jam_kerja + '</b> memiliki penjualan sebesar <b>Rp. ' + x.penjualan + '</b>.')
 
-                            new Typed('.ai', {strings: ['secara ringkas Hari ini, total penjualan 💰 minyak cukup signifikan. di ' + temp + '<br><br>Secara Detail, Penjualan per jam kerja dan per produk yang dijual yaitu ' + detail + '.Untuk mengetahui informasi lebih lanjut, Silakan klik link <a href="'+ location.origin + '/stok/totalisator/riwayat?_token=' + $('meta[name="csrf-token"]').attr('content') + '&waktu_mulai='+now+'&waktu_selesai='+ now +'&produk_id=all">disini</a>. semoga informasi ini membantu anda 😄.'], typeSpeed: 10})
+                            new Typed('.ai', { strings: ['secara ringkas Hari ini, total penjualan 💰 minyak cukup signifikan. di ' + temp + '<br><br>Secara Detail, Penjualan per jam kerja dan per produk yang dijual yaitu ' + detail + '.Untuk mengetahui informasi lebih lanjut, Silakan klik link <a href="' + location.origin + '/stok/totalisator/riwayat?_token=' + $('meta[name="csrf-token"]').attr('content') + '&waktu_mulai=' + now + '&waktu_selesai=' + now + '&produk_id=all">disini</a>. semoga informasi ini membantu anda 😄.'], typeSpeed: 10 })
                         }
-                        if(e.target.value == 'how_many_profit_or_loss_today') {
+                        if (e.target.value == 'how_many_profit_or_loss_today') {
                             $('.value_ai').removeClass('d-none');
                             $('.value_ai').children().remove();
                             $('.value_ai').append('<div class="ai text-justify"></div>');
 
-                            if(data.data.summary > 0) {
-                                new Typed('.ai', {strings: ['Akumulasi profit atau kerugian 💸 untuk hari ini dihitung berdasarkan Stok Taking dan Penerimaan BBM 📈. Dari Profit or Loss produk-produk minyak tersebut, sistem mencatatkan keuntungan sebesar <b>'+ data.data.summary +'</b> liter.'], typeSpeed: 10})
+                            if (data.data.summary > 0) {
+                                new Typed('.ai', { strings: ['Akumulasi profit atau kerugian 💸 untuk hari ini dihitung berdasarkan Stok Taking dan Penerimaan BBM 📈. Dari Profit or Loss produk-produk minyak tersebut, sistem mencatatkan keuntungan sebesar <b>' + data.data.summary + '</b> liter.'], typeSpeed: 10 })
                             } else if (data.data.summary < 0) {
-                                new Typed('.ai', {strings: ['Akumulasi profit atau kerugian 💸 untuk hari ini dihitung berdasarkan Stok Taking dan Penerimaan BBM 📈. Dari Profit or Loss produk-produk minyak tersebut, sistem mencatatkan kerugian sebesar <b>'+ data.data.summary +'</b> liter.'], typeSpeed: 10})
+                                new Typed('.ai', { strings: ['Akumulasi profit atau kerugian 💸 untuk hari ini dihitung berdasarkan Stok Taking dan Penerimaan BBM 📈. Dari Profit or Loss produk-produk minyak tersebut, sistem mencatatkan kerugian sebesar <b>' + data.data.summary + '</b> liter.'], typeSpeed: 10 })
                             } else {
-                                new Typed('.ai', {strings: ['Akumulasi profit atau kerugian 💸 untuk hari ini dihitung berdasarkan Stok Taking dan Penerimaan BBM 📈. Saat ini belum ada kerugian ataupun keuntungan dari akumulasi losses.'], typeSpeed: 10})
+                                new Typed('.ai', { strings: ['Akumulasi profit atau kerugian 💸 untuk hari ini dihitung berdasarkan Stok Taking dan Penerimaan BBM 📈. Saat ini belum ada kerugian ataupun keuntungan dari akumulasi losses.'], typeSpeed: 10 })
                             }
                         }
                     },
-                    error: function(err) {
+                    error: function (err) {
                         $('.value_ai').removeClass('d-none');
                         $('.value_ai').children().remove();
                         $('.value_ai').append('<div class="ai text-justify"></div>');
 
-                        new Typed('.ai', {strings: ['Terjadi Kesalahan ❗️, Coba Periksa kembali koneksi internet 🌐 anda.'], typeSpeed: 10})
+                        new Typed('.ai', { strings: ['Terjadi Kesalahan ❗️, Coba Periksa kembali koneksi internet 🌐 anda.'], typeSpeed: 10 })
                     }
                 })
             }
         })
+        // ===== Tema & helper chart dashboard =====
+        const palette = ['#6777ef', '#fc544b', '#ffa426', '#47c363', '#3abaf4', '#9b59b6', '#34395e'];
+        const shiftColors = { 'Shift 1': '#6777ef', 'Shift 2': '#ffa426', 'Shift 3': '#fc544b' };
+        const fmtRupiah = (v) => 'Rp ' + new Intl.NumberFormat('id-ID', { maximumFractionDigits: 0 }).format(v ?? 0);
+        const fmtLiter = (v) => new Intl.NumberFormat('id-ID', { maximumFractionDigits: 0 }).format(v ?? 0) + ' L';
+        const fmtShort = (v) => {
+            const n = Math.abs(v);
+            if (n >= 1e9) return (v / 1e9).toFixed(1).replace('.0', '') + ' M';
+            if (n >= 1e6) return (v / 1e6).toFixed(1).replace('.0', '') + ' jt';
+            if (n >= 1e3) return (v / 1e3).toFixed(1).replace('.0', '') + ' rb';
+            return new Intl.NumberFormat('id-ID').format(v);
+        };
+
+        Chart.defaults.font.family = "'Nunito', 'Segoe UI', sans-serif";
+        Chart.defaults.font.size = 12;
+        Chart.defaults.color = '#6c757d';
+        Chart.defaults.plugins.legend.labels.usePointStyle = true;
+        Chart.defaults.plugins.legend.labels.pointStyle = 'circle';
+        Chart.defaults.plugins.legend.labels.boxWidth = 8;
+        Chart.defaults.plugins.legend.labels.padding = 16;
+
+        const tooltipStyle = {
+            backgroundColor: 'rgba(33, 37, 41, 0.92)',
+            titleColor: '#ffffff',
+            bodyColor: '#e9ecef',
+            padding: 12,
+            cornerRadius: 8,
+            usePointStyle: true,
+            boxPadding: 6
+        };
+        const gridY = { border: { display: false }, grid: { color: 'rgba(0,0,0,0.05)', drawBorder: false } };
+        const gridXClean = { grid: { display: false }, border: { display: false } };
+
         $.ajax({
             url: document.location.origin + '/api/chart',
             method: 'get',
             dataType: 'json',
-            success: function(data) {
+            success: function (data) {
+                // ===== Komposisi Stok BBM (Doughnut) =====
+                const stok = data.data.chart_stok;
+                stok.datasets[0].backgroundColor = stok.labels.map((_, i) => palette[i % palette.length]);
+                stok.datasets[0].borderColor = '#ffffff';
+                stok.datasets[0].borderWidth = 3;
+                stok.datasets[0].hoverOffset = 12;
                 new Chart(document.getElementById('chart-stok'), {
-                    type: 'bar',
-                    label: 'Stok BBM',
-                    data: data.data.chart_stok,
+                    type: 'doughnut',
+                    data: stok,
                     options: {
                         responsive: true,
-                        scales: {
-                            y: {
-                                beginAtZero: true
-                            }
-                        }
-                    }
-                });
-                new Chart(document.getElementById('chart-stok-split'), {
-                    type: 'bar',
-                    label: 'Pengeluaran Stok Tanggal 12 Juli 2023',
-                    data: data.data.chart_stok_split,
-                    options: {
+                        maintainAspectRatio: false,
+                        cutout: '64%',
                         plugins: {
-                            title: {
-                                display: true,
-                                text: 'Penjualan Per Shift (dalam Liter)'
-                            },
-                        },
-                        interaction: {
-                            intersect: false,
-                        },
-                        responsive: true,
-                        scales: {
-                            y: {
-                                beginAtZero: true
-                            }
+                            legend: { position: 'bottom' },
+                            tooltip: Object.assign({}, tooltipStyle, {
+                                callbacks: {
+                                    label: function (c) {
+                                        const total = c.dataset.data.reduce((a, b) => a + (b || 0), 0) || 1;
+                                        const pct = (c.parsed / total * 100).toFixed(1);
+                                        return '  ' + fmtLiter(c.parsed) + ' (' + pct + '%)';
+                                    }
+                                }
+                            })
                         }
                     }
                 });
 
-                new Chart(document.getElementById('chart-penjualan'), {
+                // ===== Penjualan Stok per Shift (Stacked Bar, Liter) =====
+                const stokSplit = data.data.chart_stok_split;
+                stokSplit.datasets.forEach(ds => {
+                    ds.backgroundColor = shiftColors[ds.label] || '#6777ef';
+                    ds.borderRadius = 6;
+                    ds.borderSkipped = false;
+                    ds.maxBarThickness = 48;
+                });
+                new Chart(document.getElementById('chart-stok-split'), {
                     type: 'bar',
-                    label: 'Penjualan',
-                    data: data.data.chart_penjualan,
+                    data: stokSplit,
                     options: {
                         responsive: true,
+                        maintainAspectRatio: false,
+                        interaction: { intersect: false, mode: 'index' },
+                        plugins: {
+                            legend: { position: 'bottom' },
+                            tooltip: Object.assign({}, tooltipStyle, {
+                                callbacks: { label: (c) => '  ' + c.dataset.label + ': ' + fmtLiter(c.parsed.y) }
+                            })
+                        },
                         scales: {
-                            y: {
-                                beginAtZero: true
-                            }
+                            x: Object.assign({ stacked: true }, gridXClean),
+                            y: Object.assign({ stacked: true, beginAtZero: true, ticks: { callback: (v) => fmtShort(v) } }, gridY)
                         }
                     }
                 });
+
+                // ===== Penjualan per Nozzle (Bar, Rupiah) =====
+                const penjualan = data.data.chart_penjualan;
+                penjualan.datasets[0].backgroundColor = penjualan.labels.map((_, i) => palette[i % palette.length]);
+                penjualan.datasets[0].borderRadius = 6;
+                penjualan.datasets[0].borderSkipped = false;
+                penjualan.datasets[0].maxBarThickness = 42;
+                new Chart(document.getElementById('chart-penjualan'), {
+                    type: 'bar',
+                    data: penjualan,
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: Object.assign({}, tooltipStyle, {
+                                callbacks: { label: (c) => '  ' + fmtRupiah(c.parsed.y) }
+                            })
+                        },
+                        scales: {
+                            x: gridXClean,
+                            y: Object.assign({ beginAtZero: true, ticks: { callback: (v) => 'Rp ' + fmtShort(v) } }, gridY)
+                        }
+                    }
+                });
+
+                // ===== Penjualan per Shift (Stacked Bar, Rupiah) =====
+                const penjualanSplit = data.data.chart_penjualan_split;
+                penjualanSplit.datasets.forEach(ds => {
+                    ds.backgroundColor = shiftColors[ds.label] || '#6777ef';
+                    ds.borderRadius = 6;
+                    ds.borderSkipped = false;
+                    ds.maxBarThickness = 48;
+                });
                 new Chart(document.getElementById('chart-penjualan-split'), {
                     type: 'bar',
-                    data: data.data.chart_penjualan_split,
+                    data: penjualanSplit,
                     options: {
-                        plugins: {
-                            title: {
-                                display: true,
-                                text: 'Penjualan Per Shift (dalam Rupiah)'
-                            },
-                        },
-                        interaction: {
-                            intersect: false,
-                        },
                         responsive: true,
+                        maintainAspectRatio: false,
+                        interaction: { intersect: false, mode: 'index' },
+                        plugins: {
+                            legend: { position: 'bottom' },
+                            tooltip: Object.assign({}, tooltipStyle, {
+                                callbacks: { label: (c) => '  ' + c.dataset.label + ': ' + fmtRupiah(c.parsed.y) }
+                            })
+                        },
                         scales: {
-                            x: {
-                                stacked: true
-                            },
-                            y: {
-                                stacked: true,
-                                beginAtZero: true
-                            }
+                            x: Object.assign({ stacked: true }, gridXClean),
+                            y: Object.assign({ stacked: true, beginAtZero: true, ticks: { callback: (v) => 'Rp ' + fmtShort(v) } }, gridY)
                         }
                     }
                 });
             },
-            error: function(err) {console.error(err)}
+            error: function (err) { console.error(err) }
         })
     }
     if (routeName == 'absensi.index') {
@@ -601,26 +847,26 @@ $(function () {
             serverSide: true,
             ajax: document.location.href,
             columns: [
-                {data: 'status_kehadiran', name: 'status_kehadiran'},
-                {data: 'tanggal', name: 'tanggal'},
-                {data: 'jam_kerja', name: 'jam_kerja'},
-                {data: 'jabatan', name: 'jabatan'},
-                {data: 'is_attended', name: 'is_attended'},
-                {data: 'is_confirm', name: 'is_confirm'},
-                {data: 'action', name: 'action', orderable: false, searchable: false},
+                { data: 'status_kehadiran', name: 'status_kehadiran' },
+                { data: 'tanggal', name: 'tanggal' },
+                { data: 'jam_kerja', name: 'jam_kerja' },
+                { data: 'jabatan', name: 'jabatan' },
+                { data: 'is_attended', name: 'is_attended' },
+                { data: 'is_confirm', name: 'is_confirm' },
+                { data: 'action', name: 'action', orderable: false, searchable: false },
             ]
         });
     }
-    if(routeName == 'profil.edit_password') {
-        $('button.see_password').on('click', function() {
-            if($(this).parent().siblings().attr('type') == 'password') {
+    if (routeName == 'profil.edit_password') {
+        $('button.see_password').on('click', function () {
+            if ($(this).parent().siblings().attr('type') == 'password') {
                 $(this).parent().siblings().attr('type', 'text');
             } else {
                 $(this).parent().siblings().attr('type', 'password');
             }
         });
     }
-    if(routeName == 'notifikasi') {
+    if (routeName == 'notifikasi') {
         $('.table-notifikasi').DataTable({
             language: {
                 url: cdnDatatableIdn,
@@ -629,14 +875,14 @@ $(function () {
             serverSide: true,
             ajax: document.location.href,
             columns: [
-                {data: 'created_at', name: 'created_at'},
-                {data: 'judul', name: 'judul'},
-                {data: 'status', name: 'status'},
-                {data: 'action', name: 'action', orderable: false, searchable: false},
+                { data: 'created_at', name: 'created_at' },
+                { data: 'judul', name: 'judul' },
+                { data: 'status', name: 'status' },
+                { data: 'action', name: 'action', orderable: false, searchable: false },
             ]
         });
     }
-    if (routeName == 'perencanaan.index' || routeName == 'perencanaan.ditolak' ) {
+    if (routeName == 'perencanaan.index' || routeName == 'perencanaan.ditolak') {
         $('.table-perencanaan').DataTable({
             language: {
                 url: cdnDatatableIdn,
@@ -645,12 +891,12 @@ $(function () {
             serverSide: true,
             ajax: document.location.href,
             columns: [
-                {data: 'kode_pembelian', name: 'kode_pembelian'},
-                {data: 'created_at', name: 'created_at'},
-                {data: 'member_id', name: 'member_id'},
-                {data: 'produk_id', name: 'produk_id'},
-                {data: 'is_confirmation', name: 'is_confirmation'},
-                {data: 'action', name: 'action', orderable: false, searchable: false},
+                { data: 'kode_pembelian', name: 'kode_pembelian' },
+                { data: 'created_at', name: 'created_at' },
+                { data: 'member_id', name: 'member_id' },
+                { data: 'produk_id', name: 'produk_id' },
+                { data: 'is_confirmation', name: 'is_confirmation' },
+                { data: 'action', name: 'action', orderable: false, searchable: false },
             ]
         });
     }
@@ -663,11 +909,11 @@ $(function () {
             serverSide: true,
             ajax: document.location.href,
             columns: [
-                {data: 'detail_rencana_pembelian_id', name: 'detail_rencana_pembelian_id'},
-                {data: 'nama_produk', name: 'nama_produk'},
-                {data: 'jumlah', name: 'jumlah'},
-                {data: 'satuan_jumlah', name: 'satuan_jumlah'},
-                {data: 'action', name: 'action', orderable: false, searchable: false},
+                { data: 'detail_rencana_pembelian_id', name: 'detail_rencana_pembelian_id' },
+                { data: 'nama_produk', name: 'nama_produk' },
+                { data: 'jumlah', name: 'jumlah' },
+                { data: 'satuan_jumlah', name: 'satuan_jumlah' },
+                { data: 'action', name: 'action', orderable: false, searchable: false },
             ]
         });
     }
@@ -680,11 +926,11 @@ $(function () {
             serverSide: true,
             ajax: document.location.href,
             columns: [
-                {data: 'kode_pembelian', name: 'kode_pembelian'},
-                {data: 'created_at', name: 'created_at'},
-                {data: 'member_id', name: 'member_id'},
-                {data: 'produk_id', name: 'produk_id'},
-                {data: 'action', name: 'action', orderable: false, searchable: false},
+                { data: 'kode_pembelian', name: 'kode_pembelian' },
+                { data: 'created_at', name: 'created_at' },
+                { data: 'member_id', name: 'member_id' },
+                { data: 'produk_id', name: 'produk_id' },
+                { data: 'action', name: 'action', orderable: false, searchable: false },
             ]
         });
     }
@@ -697,19 +943,19 @@ $(function () {
             serverSide: true,
             ajax: document.location.href,
             columns: [
-                {data: 'nama_produk', name: 'nama_produk'},
-                {data: 'rit', name: 'rit'},
-                {data: 'jumlah', name: 'jumlah'},
-                {data: 'satuan_jumlah', name: 'satuan_jumlah'},
-                {data: 'harga', name: 'harga'},
-                {data: 'total_harga', name: 'total_harga'},
-                {data: 'action', name: 'action', orderable: false, searchable: false},
+                { data: 'nama_produk', name: 'nama_produk' },
+                { data: 'rit', name: 'rit' },
+                { data: 'jumlah', name: 'jumlah' },
+                { data: 'satuan_jumlah', name: 'satuan_jumlah' },
+                { data: 'harga', name: 'harga' },
+                { data: 'total_harga', name: 'total_harga' },
+                { data: 'action', name: 'action', orderable: false, searchable: false },
             ]
         });
     }
-    if(routeName == 'pembelian.detail.edit') {
+    if (routeName == 'pembelian.detail.edit') {
 
-        $('input#harga').on('keyup', function() {
+        $('input#harga').on('keyup', function () {
             let harga = $('input#harga').val().replaceAll(',', '')
             let jml = ((($('input#jumlah').val()).split('.')[0]).replace(',', ''))
 
@@ -725,11 +971,11 @@ $(function () {
             serverSide: true,
             ajax: document.location.href,
             columns: [
-                {data: 'kode_pembelian', name: 'kode_pembelian'},
-                {data: 'created_at', name: 'created_at'},
-                {data: 'grand_total', name: 'grand_total'},
-                {data: 'produk_id', name: 'produk_id'},
-                {data: 'action', name: 'action', orderable: false, searchable: false},
+                { data: 'kode_pembelian', name: 'kode_pembelian' },
+                { data: 'created_at', name: 'created_at' },
+                { data: 'grand_total', name: 'grand_total' },
+                { data: 'produk_id', name: 'produk_id' },
+                { data: 'action', name: 'action', orderable: false, searchable: false },
             ]
         });
     }
@@ -742,12 +988,12 @@ $(function () {
             serverSide: true,
             ajax: document.location.href,
             columns: [
-                {data: 'tanggal', name: 'tanggal'},
-                {data: 'no_rekening', name: 'no_rekening'},
-                {data: 'nama_rekening', name: 'nama_rekening'},
-                {data: 'total_setoran', name: 'total_setoran'},
-                {data: 'is_confirmation', name: 'is_confirmation'},
-                {data: 'action', name: 'action', orderable: false, searchable: false},
+                { data: 'tanggal', name: 'tanggal' },
+                { data: 'no_rekening', name: 'no_rekening' },
+                { data: 'nama_rekening', name: 'nama_rekening' },
+                { data: 'total_setoran', name: 'total_setoran' },
+                { data: 'is_confirmation', name: 'is_confirmation' },
+                { data: 'action', name: 'action', orderable: false, searchable: false },
             ]
         });
     }
@@ -760,14 +1006,14 @@ $(function () {
             serverSide: true,
             ajax: document.location.href,
             columns: [
-                {data: 'tanggal_upload', name: 'tanggal_upload'},
-                {data: 'nama_file', name: 'nama_file'},
-                {data: 'nama_dokumen', name: 'nama_dokumen'},
-                {data: 'action', name: 'action', orderable: false, searchable: false},
+                { data: 'tanggal_upload', name: 'tanggal_upload' },
+                { data: 'nama_file', name: 'nama_file' },
+                { data: 'nama_dokumen', name: 'nama_dokumen' },
+                { data: 'action', name: 'action', orderable: false, searchable: false },
             ]
         });
     }
-    if(routeName == 'pembayaran.file.create') {
+    if (routeName == 'pembayaran.file.create') {
         $(".custom-file-input").on("change", function (e) {
             $(this).siblings().text(e.target.value.split("fakepath")[1]);
             var input = $(e.currentTarget);
@@ -789,15 +1035,15 @@ $(function () {
             serverSide: true,
             ajax: document.location.href,
             columns: [
-                {data: 'tanggal', name: 'tanggal'},
-                {data: 'no_pol', name: 'no_pol'},
-                {data: 'no_do', name: 'no_do'},
-                {data: 'is_done', name: 'is_done'},
-                {data: 'action', name: 'action', orderable: false, searchable: false},
+                { data: 'tanggal', name: 'tanggal' },
+                { data: 'no_pol', name: 'no_pol' },
+                { data: 'no_do', name: 'no_do' },
+                { data: 'is_done', name: 'is_done' },
+                { data: 'action', name: 'action', orderable: false, searchable: false },
             ]
         });
     }
-    if(routeName == 'pengiriman.show') {
+    if (routeName == 'pengiriman.show') {
         $('.table-pengiriman-lo').DataTable({
             language: {
                 url: cdnDatatableIdn,
@@ -806,11 +1052,11 @@ $(function () {
             serverSide: true,
             ajax: document.location.href,
             columns: [
-                {data: 'no_faktur', name: 'no_faktur'},
-                {data: 'no_lo', name: 'no_lo'},
-                {data: 'nama_produk', name: 'nama_produk'},
-                {data: 'jumlah', name: 'jumlah'},
-                {data: 'action', name: 'action', orderable: false, searchable: false},
+                { data: 'no_faktur', name: 'no_faktur' },
+                { data: 'no_lo', name: 'no_lo' },
+                { data: 'nama_produk', name: 'nama_produk' },
+                { data: 'jumlah', name: 'jumlah' },
+                { data: 'action', name: 'action', orderable: false, searchable: false },
             ]
         });
     }
@@ -823,12 +1069,12 @@ $(function () {
             serverSide: true,
             ajax: document.location.href,
             columns: [
-                {data: 'no_lo', name: 'no_lo'},
-                {data: 'produk_id', name: 'produk_id'},
-                {data: 'jumlah', name: 'jumlah'},
-                {data: 'no_faktur', name: 'no_faktur'},
-                {data: 'tanggal_upload', name: 'tanggal_upload'},
-                {data: 'action', name: 'action', orderable: false, searchable: false},
+                { data: 'no_lo', name: 'no_lo' },
+                { data: 'produk_id', name: 'produk_id' },
+                { data: 'jumlah', name: 'jumlah' },
+                { data: 'no_faktur', name: 'no_faktur' },
+                { data: 'tanggal_upload', name: 'tanggal_upload' },
+                { data: 'action', name: 'action', orderable: false, searchable: false },
             ]
         });
     }
@@ -841,10 +1087,10 @@ $(function () {
             serverSide: true,
             ajax: document.location.href,
             columns: [
-                {data: 'nama_file', name: 'nama_file'},
-                {data: 'nama_dokumen', name: 'nama_dokumen'},
-                {data: 'tanggal_upload', name: 'tanggal_upload'},
-                {data: 'action', name: 'action', orderable: false, searchable: false},
+                { data: 'nama_file', name: 'nama_file' },
+                { data: 'nama_dokumen', name: 'nama_dokumen' },
+                { data: 'tanggal_upload', name: 'tanggal_upload' },
+                { data: 'action', name: 'action', orderable: false, searchable: false },
             ]
         });
     }
@@ -854,10 +1100,10 @@ $(function () {
                 url: cdnDatatableIdn,
             },
             columns: [
-                {data: 'nama_file', name: 'nama_file'},
-                {data: 'nama_dokumen', name: 'nama_dokumen'},
-                {data: 'tanggal_upload', name: 'tanggal_upload'},
-                {data: 'action', name: 'action', orderable: false, searchable: false},
+                { data: 'nama_file', name: 'nama_file' },
+                { data: 'nama_dokumen', name: 'nama_dokumen' },
+                { data: 'tanggal_upload', name: 'tanggal_upload' },
+                { data: 'action', name: 'action', orderable: false, searchable: false },
             ]
         });
     }
@@ -870,10 +1116,10 @@ $(function () {
             serverSide: true,
             ajax: document.location.href,
             columns: [
-                {data: 'file_penerimaan_id', name: 'file_penerimaan_id'},
-                {data: 'nama_dokumen', name: 'nama_dokumen'},
-                {data: 'tanggal_upload', name: 'tanggal_upload'},
-                {data: 'action', name: 'action', orderable: false, searchable: false},
+                { data: 'file_penerimaan_id', name: 'file_penerimaan_id' },
+                { data: 'nama_dokumen', name: 'nama_dokumen' },
+                { data: 'tanggal_upload', name: 'tanggal_upload' },
+                { data: 'action', name: 'action', orderable: false, searchable: false },
             ]
         });
     }
@@ -886,10 +1132,10 @@ $(function () {
             serverSide: true,
             ajax: document.location.href,
             columns: [
-                {data: 'file_penerimaan_id', name: 'file_penerimaan_id'},
-                {data: 'nama_dokumen', name: 'nama_dokumen'},
-                {data: 'tanggal_upload', name: 'tanggal_upload'},
-                {data: 'action', name: 'action', orderable: false, searchable: false},
+                { data: 'file_penerimaan_id', name: 'file_penerimaan_id' },
+                { data: 'nama_dokumen', name: 'nama_dokumen' },
+                { data: 'tanggal_upload', name: 'tanggal_upload' },
+                { data: 'action', name: 'action', orderable: false, searchable: false },
             ]
         });
     }
@@ -902,16 +1148,16 @@ $(function () {
             serverSide: true,
             ajax: document.location.href,
             columns: [
-                {data: 'tanggal', name: 'tanggal'},
-                {data: 'type_dokumen', name: 'type_dokumen'},
-                {data: 'nama_produk', name: 'nama_produk'},
-                {data: 'jam_kerja', name: 'jam_kerja'},
-                {data: 'action', name: 'action', orderable: false, searchable: false},
+                { data: 'tanggal', name: 'tanggal' },
+                { data: 'type_dokumen', name: 'type_dokumen' },
+                { data: 'nama_produk', name: 'nama_produk' },
+                { data: 'jam_kerja', name: 'jam_kerja' },
+                { data: 'action', name: 'action', orderable: false, searchable: false },
             ]
         });
     }
     if (routeName == 'stok-summary.show') {
-        $('.see-more-window').on('click', function(e) {
+        $('.see-more-window').on('click', function (e) {
             e.preventDefault();
             const temp = JSON.parse($(this).parent().parent().parent().siblings('.temp-depth')[0].textContent);
 
@@ -922,7 +1168,7 @@ $(function () {
                 body: wrap,
             });
         })
-        $('.edit-more-window').on('click', function() {
+        $('.edit-more-window').on('click', function () {
             console.log($(this).data('id'));
         })
     }
@@ -935,10 +1181,10 @@ $(function () {
             serverSide: true,
             ajax: document.location.href,
             columns: [
-                {data: 'file_dokumen_stok_id', name: 'file_dokumen_stok_id'},
-                {data: 'nama_dokumen', name: 'nama_dokumen'},
-                {data: 'tanggal_upload', name: 'tanggal_upload'},
-                {data: 'action', name: 'action', orderable: false, searchable: false},
+                { data: 'file_dokumen_stok_id', name: 'file_dokumen_stok_id' },
+                { data: 'nama_dokumen', name: 'nama_dokumen' },
+                { data: 'tanggal_upload', name: 'tanggal_upload' },
+                { data: 'action', name: 'action', orderable: false, searchable: false },
             ]
         });
     }
@@ -951,13 +1197,13 @@ $(function () {
             serverSide: true,
             ajax: document.location.href,
             columns: [
-                {data: 'tanggal', name: 'tanggal'},
-                {data: 'jam_kerja', name: 'jam_kerja'},
-                {data: 'dombak_sebelum', name: 'dombak_sebelum'},
-                {data: 'dombak_setelah', name: 'dombak_setelah'},
-                {data: 'nama_produk', name: 'nama_produk'},
-                {data: 'stok_berpindah', name: 'stok_berpindah'},
-                {data: 'action', name: 'action', orderable: false, searchable: false},
+                { data: 'tanggal', name: 'tanggal' },
+                { data: 'jam_kerja', name: 'jam_kerja' },
+                { data: 'dombak_sebelum', name: 'dombak_sebelum' },
+                { data: 'dombak_setelah', name: 'dombak_setelah' },
+                { data: 'nama_produk', name: 'nama_produk' },
+                { data: 'stok_berpindah', name: 'stok_berpindah' },
+                { data: 'action', name: 'action', orderable: false, searchable: false },
             ]
         });
     }
@@ -970,27 +1216,27 @@ $(function () {
             serverSide: true,
             ajax: document.location.href,
             columns: [
-                {data: 'nama_dokumen', name: 'nama_dokumen'},
-                {data: 'tanggal_upload', name: 'tanggal_upload'},
-                {data: 'action', name: 'action', orderable: false, searchable: false},
+                { data: 'nama_dokumen', name: 'nama_dokumen' },
+                { data: 'tanggal_upload', name: 'tanggal_upload' },
+                { data: 'action', name: 'action', orderable: false, searchable: false },
             ]
         });
     }
     if (routeName == 'stok-transfer.create') {
-        $('select#dombak_id').on('change', function(e) {
+        $('select#dombak_id').on('change', function (e) {
             checkKonversiDombakPertama('sebelumnya');
             checkKonversiDombakPertama('setelahnya');
             checkVolumeDombakPertama();
         });
-        $('input#tinggi_dombak').on('change', function(e) {
+        $('input#tinggi_dombak').on('change', function (e) {
             checkKonversiDombakPertama('sebelumnya');
         });
-        $('input#tinggi_dombak_setelahnya').on('change', function(e) {
+        $('input#tinggi_dombak_setelahnya').on('change', function (e) {
             checkKonversiDombakPertama('setelahnya');
         });
 
         function checkVolumeDombakPertama() {
-            if($('select#dombak_id').val() != '') {
+            if ($('select#dombak_id').val() != '') {
                 $.ajax({
                     url: document.location.origin + '/master/dombak/api',
                     method: 'get',
@@ -999,18 +1245,18 @@ $(function () {
                         type: 'transfer'
                     },
                     dataType: 'json',
-                    success: function(data) {
-                        if(data.status == 200){
-                            if(data.data != null){
+                    success: function (data) {
+                        if (data.status == 200) {
+                            if (data.data != null) {
                                 $('input#volume_tercatat').val(data.data.stok)
                                 $('#tinggi_dombak').removeAttr('readonly');
                                 $('#tinggi_dombak_setelahnya').removeAttr('readonly');
 
-                                if(data.dombak.length > 0) {
+                                if (data.dombak.length > 0) {
                                     $('select#dombak_kedua_id').children().remove();
                                     let wrap = '<option value="">Silahkan Pilih Dombak Kedua</option>'
                                     data.dombak.forEach(e => {
-                                        wrap += '<option value="'+ e.dombak_id +'">'+ e.nama_dombak +' ('+ e.nama_produk + ': ' +e.stok +'Liter)</option>'
+                                        wrap += '<option value="' + e.dombak_id + '">' + e.nama_dombak + ' (' + e.nama_produk + ': ' + e.stok + 'Liter)</option>'
                                     });
                                     $('select#dombak_kedua_id').append(wrap);
                                     $('select#dombak_kedua_id').removeAttr('disabled');
@@ -1027,14 +1273,14 @@ $(function () {
                             }
                         }
                     },
-                    error: function(err) {console.error(err)}
+                    error: function (err) { console.error(err) }
                 });
             }
         }
 
-        function checkKonversiDombakPertama (type) {
-            if(type == 'sebelumnya') {
-                if($('select#dombak_id').val() != '' && $('input#tinggi_dombak').val() != '') {
+        function checkKonversiDombakPertama(type) {
+            if (type == 'sebelumnya') {
+                if ($('select#dombak_id').val() != '' && $('input#tinggi_dombak').val() != '') {
                     $.ajax({
                         url: document.location.origin + '/master/dombak/konversi/api',
                         method: 'get',
@@ -1043,12 +1289,12 @@ $(function () {
                             tinggi: $('input#tinggi_dombak').val(),
                         },
                         dataType: 'json',
-                        success: function(data) {
-                            if(data.status == 200){
-                                if(data.data != null){
+                        success: function (data) {
+                            if (data.status == 200) {
+                                if (data.data != null) {
                                     let calc = parseFloat($('input#volume_setelah').val().replace(',', '')) - parseFloat(data.data.volume.replace(',', ''))
                                     $('input#volume_sebelumnya').val(data.data.volume)
-                                    $('input#volume').val(Intl.NumberFormat('id-ID', {style: 'decimal', maximumFractionDigits: 6 }).format(calc).replaceAll('.', ',').replace(/,(?=\d$)/, '.'))
+                                    $('input#volume').val(Intl.NumberFormat('id-ID', { style: 'decimal', maximumFractionDigits: 6 }).format(calc).replaceAll('.', ',').replace(/,(?=\d$)/, '.'))
                                 }
                                 else {
                                     $('input#volume_sebelumnya').val("Tidak ada Data")
@@ -1056,13 +1302,13 @@ $(function () {
                                 }
                             }
                         },
-                        error: function(err) {console.error(err)}
+                        error: function (err) { console.error(err) }
                     });
                 } else {
                     $('input#volume_sebelumnya').val("0")
                 }
-            } else if(type == 'setelahnya') {
-                if($('select#dombak_id').val() != '' && $('input#tinggi_dombak_setelahnya').val() != '') {
+            } else if (type == 'setelahnya') {
+                if ($('select#dombak_id').val() != '' && $('input#tinggi_dombak_setelahnya').val() != '') {
                     $.ajax({
                         url: document.location.origin + '/master/dombak/konversi/api',
                         method: 'get',
@@ -1071,12 +1317,12 @@ $(function () {
                             tinggi: $('input#tinggi_dombak_setelahnya').val(),
                         },
                         dataType: 'json',
-                        success: function(data) {
-                            if(data.status == 200){
-                                if(data.data != null){
+                        success: function (data) {
+                            if (data.status == 200) {
+                                if (data.data != null) {
                                     let calc = parseFloat(data.data.volume.replace(',', '')) - parseFloat($('input#volume_sebelumnya').val().replace(',', ''))
                                     $('input#volume_setelah').val(data.data.volume)
-                                    $('input#volume').val(Intl.NumberFormat('id-ID', {style: 'decimal', maximumFractionDigits: 6 }).format(calc).replaceAll('.', ',').replace(/,(?=\d$)/, '.'))
+                                    $('input#volume').val(Intl.NumberFormat('id-ID', { style: 'decimal', maximumFractionDigits: 6 }).format(calc).replaceAll('.', ',').replace(/,(?=\d$)/, '.'))
                                 }
                                 else {
                                     $('input#volume_setelah').val("Tidak ada Data")
@@ -1084,7 +1330,7 @@ $(function () {
                                 }
                             }
                         },
-                        error: function(err) {console.error(err)}
+                        error: function (err) { console.error(err) }
                     });
                 } else {
                     $('input#volume_setelah').val("0")
@@ -1094,20 +1340,20 @@ $(function () {
             }
         }
 
-        $('select#dombak_kedua_id').on('change', function(e) {
+        $('select#dombak_kedua_id').on('change', function (e) {
             checkKonversiDombakKedua('sebelumnya');
             checkKonversiDombakKedua('setelahnya');
             checkVolumeDombakKedua();
         });
-        $('input#tinggi_dombak_kedua').on('change', function(e) {
+        $('input#tinggi_dombak_kedua').on('change', function (e) {
             checkKonversiDombakKedua('sebelumnya');
         });
-        $('input#tinggi_dombak_kedua_setelah').on('change', function(e) {
+        $('input#tinggi_dombak_kedua_setelah').on('change', function (e) {
             checkKonversiDombakKedua('setelahnya');
         });
 
         function checkVolumeDombakKedua() {
-            if($('select#dombak_kedua_id').val() != '') {
+            if ($('select#dombak_kedua_id').val() != '') {
                 $.ajax({
                     url: document.location.origin + '/master/dombak/api',
                     method: 'get',
@@ -1115,9 +1361,9 @@ $(function () {
                         dombak_id: $('select#dombak_kedua_id').val(),
                     },
                     dataType: 'json',
-                    success: function(data) {
-                        if(data.status == 200){
-                            if(data.data != null){
+                    success: function (data) {
+                        if (data.status == 200) {
+                            if (data.data != null) {
                                 $('input#volume_sebelumnya_kedua_terakhir').val(data.data.stok)
                                 $('#tinggi_dombak_kedua').removeAttr('readonly');
                                 $('#tinggi_dombak_kedua_setelah').removeAttr('readonly');
@@ -1129,14 +1375,14 @@ $(function () {
                             }
                         }
                     },
-                    error: function(err) {console.error(err)}
+                    error: function (err) { console.error(err) }
                 });
             }
         }
 
-        function checkKonversiDombakKedua (type) {
-            if(type == 'sebelumnya') {
-                if($('select#dombak_kedua_id').val() != '' && $('input#tinggi_dombak_kedua').val() != '') {
+        function checkKonversiDombakKedua(type) {
+            if (type == 'sebelumnya') {
+                if ($('select#dombak_kedua_id').val() != '' && $('input#tinggi_dombak_kedua').val() != '') {
                     $.ajax({
                         url: document.location.origin + '/master/dombak/konversi/api',
                         method: 'get',
@@ -1145,14 +1391,14 @@ $(function () {
                             tinggi: $('input#tinggi_dombak_kedua').val(),
                         },
                         dataType: 'json',
-                        success: function(data) {
-                            if(data.status == 200){
-                                if(data.data != null){
+                        success: function (data) {
+                            if (data.status == 200) {
+                                if (data.data != null) {
                                     let calc = parseFloat($('input#volume_sebelumnya_kedua').val().replace(',', '')) - parseFloat(data.data.volume.replace(',', ''))
                                     let calc_ = (parseFloat(data.data.volume.replace(',', '')) - parseFloat($('input#volume_sebelumnya_kedua').val().replace(',', ''))) - (parseFloat($('input#volume').val().replace(',', '')) * -1);
                                     $('input#volume_sebelumnya_kedua').val(data.data.volume)
-                                    $('input#volume_kedua').val(Intl.NumberFormat('id-ID', {style: 'decimal', maximumFractionDigits: 6 }).format(calc).replaceAll('.', ','));
-                                    $('input#volume_selisih_kedua').val(Intl.NumberFormat('id-ID', {style: 'decimal', maximumFractionDigits: 6 }).format(calc_).replaceAll('.', ','));
+                                    $('input#volume_kedua').val(Intl.NumberFormat('id-ID', { style: 'decimal', maximumFractionDigits: 6 }).format(calc).replaceAll('.', ','));
+                                    $('input#volume_selisih_kedua').val(Intl.NumberFormat('id-ID', { style: 'decimal', maximumFractionDigits: 6 }).format(calc_).replaceAll('.', ','));
                                 }
                                 else {
                                     $('input#volume_sebelumnya_kedua').val("Tidak ada Data")
@@ -1160,14 +1406,14 @@ $(function () {
                                 }
                             }
                         },
-                        error: function(err) {console.error(err)}
+                        error: function (err) { console.error(err) }
                     });
                 } else {
                     $('input#volume_sebelumnya_kedua').val("0")
 
                 }
-            } else if(type == 'setelahnya') {
-                if($('select#dombak_kedua_id').val() != '' && $('input#tinggi_dombak_kedua_setelah').val() != '') {
+            } else if (type == 'setelahnya') {
+                if ($('select#dombak_kedua_id').val() != '' && $('input#tinggi_dombak_kedua_setelah').val() != '') {
                     $.ajax({
                         url: document.location.origin + '/master/dombak/konversi/api',
                         method: 'get',
@@ -1176,9 +1422,9 @@ $(function () {
                             tinggi: $('input#tinggi_dombak_kedua_setelah').val(),
                         },
                         dataType: 'json',
-                        success: function(data) {
-                            if(data.status == 200){
-                                if(data.data != null){
+                        success: function (data) {
+                            if (data.status == 200) {
+                                if (data.data != null) {
                                     let calc = parseFloat(data.data.volume.replace(',', '')) - parseFloat($('input#volume_sebelumnya_kedua').val().replace(',', ''));
                                     let calc_ = (parseFloat(data.data.volume.replace(',', '')) - parseFloat($('input#volume_sebelumnya_kedua').val().replace(',', ''))) - (parseFloat($('input#volume').val().replace(',', '')) * -1);
 
@@ -1186,8 +1432,8 @@ $(function () {
 
 
                                     $('input#volume_sebelumnya_kedua_setelah').val(data.data.volume)
-                                    $('input#volume_kedua').val(Intl.NumberFormat('id-ID', {style: 'decimal', maximumFractionDigits: 6 }).format(calc).replaceAll('.', ','));
-                                    $('input#volume_selisih_kedua').val(Intl.NumberFormat('id-ID', {style: 'decimal', maximumFractionDigits: 6 }).format(calc_).replaceAll('.', ','));
+                                    $('input#volume_kedua').val(Intl.NumberFormat('id-ID', { style: 'decimal', maximumFractionDigits: 6 }).format(calc).replaceAll('.', ','));
+                                    $('input#volume_selisih_kedua').val(Intl.NumberFormat('id-ID', { style: 'decimal', maximumFractionDigits: 6 }).format(calc_).replaceAll('.', ','));
                                     $('button[type=submit]').removeAttr('disabled');
                                 }
                                 else {
@@ -1197,13 +1443,13 @@ $(function () {
                                 }
                             }
                         },
-                        error: function(err) {console.error(err)}
+                        error: function (err) { console.error(err) }
                     });
                 } else {
                     $('input#volume_sebelumnya_kedua_setelah').val("0")
 
                 }
-            } else {return;}
+            } else { return; }
         }
     }
     if (routeName == 'totalisator.index' || routeName == 'totalisator.riwayat') {
@@ -1215,20 +1461,20 @@ $(function () {
             serverSide: true,
             ajax: document.location.href,
             columns: [
-                {data: 'nozzle', name: 'nozzle'},
-                {data: 'nama_produk', name: 'nama_produk'},
-                {data: 'tanggal', name: 'tanggal'},
-                {data: 'jam_kerja', name: 'jam_kerja'},
-                {data: 'stand_meter_awal', name: 'stand_meter_awal'},
-                {data: 'stand_meter_akhir', name: 'stand_meter_akhir'},
-                {data: 'selisih', name: 'selisih'},
-                {data: 'status', name: 'status'},
-                {data: 'action', name: 'action', orderable: false, searchable: false},
+                { data: 'nozzle', name: 'nozzle' },
+                { data: 'nama_produk', name: 'nama_produk' },
+                { data: 'tanggal', name: 'tanggal' },
+                { data: 'jam_kerja', name: 'jam_kerja' },
+                { data: 'stand_meter_awal', name: 'stand_meter_awal' },
+                { data: 'stand_meter_akhir', name: 'stand_meter_akhir' },
+                { data: 'selisih', name: 'selisih' },
+                { data: 'status', name: 'status' },
+                { data: 'action', name: 'action', orderable: false, searchable: false },
             ]
         });
     }
     if (routeName == 'totalisator.create') {
-        $('select#dombak_id').on('change', function(e) {
+        $('select#dombak_id').on('change', function (e) {
             $.ajax({
                 url: document.location.origin + '/stok/totalisator/create/api',
                 method: 'get',
@@ -1236,20 +1482,20 @@ $(function () {
                     dombak_id: $('select#dombak_id').val(),
                 },
                 dataType: 'json',
-                beforeSend: function() {
+                beforeSend: function () {
                     $('select#nozzle_id').children().remove();
                     $('select#nozzle_id').attr('disabled', '');
                     $('input#jam_kerja_id').attr('readonly', '');
                     $('input#tanggal').attr('readonly', '');
                 },
-                success: function(data) {
-                    if(data.status == 'success'){
-                        if(data.data != null){
+                success: function (data) {
+                    if (data.status == 'success') {
+                        if (data.data != null) {
                             $('button[type=submit]').attr('disabled', '');
                             $('select#nozzle_id').removeAttr('disabled');
                             $('select#nozzle_id').append('<option value="0">Silakan Pilih Nozzle</option>')
                             data.data.forEach(e => {
-                                $('select#nozzle_id').append('<option value="'+ e.nozzle_id +'">'+ e.nama_nozzle + " - " + e.nama_produk +'</option>');
+                                $('select#nozzle_id').append('<option value="' + e.nozzle_id + '">' + e.nama_nozzle + " - " + e.nama_produk + '</option>');
                             })
                             $('input#tanggal').attr('type', 'text');
                             $('input#tanggal').val('');
@@ -1259,12 +1505,12 @@ $(function () {
                         }
                     }
                 },
-                error: function(err) {console.error(err)}
+                error: function (err) { console.error(err) }
             });
         });
 
 
-        $('select#nozzle_id').on('change', function(e) {
+        $('select#nozzle_id').on('change', function (e) {
             $.ajax({
                 url: document.location.origin + '/stok/totalisator/create/api',
                 method: 'get',
@@ -1272,36 +1518,36 @@ $(function () {
                     nozzle_id: $('select#nozzle_id').val()
                 },
                 dataType: 'json',
-                beforeSend: function() {
+                beforeSend: function () {
                     $('button[type=submit]').attr('disabled');
                 },
-                success: function(data) {
-                    if(data.status == 'success'){
-                        if(data.data != null){
+                success: function (data) {
+                    if (data.status == 'success') {
+                        if (data.data != null) {
                             if ($('select#nozzle_id').children().first()[0].textContent == 'Silakan Pilih Nozzle') {
                                 $('select#nozzle_id').children().first().remove();
                             }
                             $('button[type=submit]').removeAttr('disabled');
                             $('input#tanggal').attr('type', 'date');
                             $('input#tanggal').val(data.data.tanggal);
-                            if(data.data.receive) {
+                            if (data.data.receive) {
                                 $('input#tanggal').removeAttr('readonly');
                                 $('.information').children().remove();
                                 $('.information').append('<div class="alert alert-info">Sistem mendeteksi ada Penerimaan BBM. Silakan isi tanggal dan jam kerja sesuai dengan keadaan.</div>');
                                 $('.jam_kerja_dynamic').children().remove();
                                 let loop = '';
                                 data.data.jam_kerja_id.forEach(x => {
-                                    loop += '<option value="'+ x.jam_kerja_id +'" >'+ x.nama_jam_kerja +'</option>'
+                                    loop += '<option value="' + x.jam_kerja_id + '" >' + x.nama_jam_kerja + '</option>'
                                 })
-                                $('.jam_kerja_dynamic').append('<select class="custom-select" name="jam_kerja_id" id="jam_kerja_id">'+ loop +'</select>');
+                                $('.jam_kerja_dynamic').append('<select class="custom-select" name="jam_kerja_id" id="jam_kerja_id">' + loop + '</select>');
                             } else {
                                 $('.information').children().remove();
                                 $('.jam_kerja_dynamic').children().remove();
-                                $('.jam_kerja_dynamic').append('<input id="jam_kerja_id" type="text" class="form-control" name="jam_kerja_id" readonly value="'+ data.data.jam_kerja +'" />');
+                                $('.jam_kerja_dynamic').append('<input id="jam_kerja_id" type="text" class="form-control" name="jam_kerja_id" readonly value="' + data.data.jam_kerja + '" />');
                                 $('input#tanggal').attr('readonly', '');
                             }
                             $('input#jam_kerja_id').val('Shift ' + (data.data.jam_kerja ?? 1));
-                            if(data.data.stand_meter_akhir == 0) {
+                            if (data.data.stand_meter_akhir == 0) {
                                 $('input#stand_meter_awal').removeAttr('readonly');
                                 $('input#stand_meter_awal').val(0);
                             } else {
@@ -1314,21 +1560,21 @@ $(function () {
                         }
                     }
                 },
-                error: function(err) {console.error(err)}
+                error: function (err) { console.error(err) }
             });
         })
 
 
     }
-    if(routeName == 'totalisator.edit' || routeName == 'totalisator.final') {
-        $('input#stand_meter_akhir').on('change', function(e) {
+    if (routeName == 'totalisator.edit' || routeName == 'totalisator.final') {
+        $('input#stand_meter_akhir').on('change', function (e) {
             let awal = removeComma(clearDot($('input#stand_meter_awal').val())), akhir = removeComma(clearDot($(this).val()));
             $('input#selisih').val(Intl.NumberFormat(["ban", "id"]).format(akhir - awal));
         });
 
         function clearDot(number) {
             const reDot = /[.]/;
-            if(number.search(reDot)) {
+            if (number.search(reDot)) {
                 return number.split('.')['0'];
             } else {
                 return number;
@@ -1348,25 +1594,25 @@ $(function () {
             serverSide: true,
             ajax: document.location.href,
             columns: [
-                {data: 'file_stand_meter_id', name: 'file_stand_meter_id'},
-                {data: 'nama_dokumen', name: 'nama_dokumen'},
-                {data: 'tanggal_upload', name: 'tanggal_upload'},
-                {data: 'action', name: 'action', orderable: false, searchable: false},
+                { data: 'file_stand_meter_id', name: 'file_stand_meter_id' },
+                { data: 'nama_dokumen', name: 'nama_dokumen' },
+                { data: 'tanggal_upload', name: 'tanggal_upload' },
+                { data: 'action', name: 'action', orderable: false, searchable: false },
             ]
         });
     }
-    if(routeName == 'stok-taking.create') {
-        $('input#tinggi_dombak').on('change', function(e) {
+    if (routeName == 'stok-taking.create') {
+        $('input#tinggi_dombak').on('change', function (e) {
             checkKonversiDombak();
         });
 
-        $('select#dombak_id').on('change', function(e) {
+        $('select#dombak_id').on('change', function (e) {
             checkKonversiDombak();
             checkVolumeDombak();
         });
 
         function checkVolumeDombak() {
-            if($('select#dombak_id').val() != '') {
+            if ($('select#dombak_id').val() != '') {
                 $.ajax({
                     url: document.location.origin + '/master/dombak/api',
                     method: 'get',
@@ -1374,9 +1620,9 @@ $(function () {
                         dombak_id: $('select#dombak_id').val(),
                     },
                     dataType: 'json',
-                    success: function(data) {
-                        if(data.status == 200){
-                            if(data.data != null){
+                    success: function (data) {
+                        if (data.status == 200) {
+                            if (data.data != null) {
                                 $('input#volume_sebelumnya').val(data.data.stok)
                                 $('input#volume_selisih').val(data.data.stok - $('input#volume').val());
                                 $('button[type=submit]').removeAttr('disabled');
@@ -1388,13 +1634,13 @@ $(function () {
                             }
                         }
                     },
-                    error: function(err) {console.error(err)}
+                    error: function (err) { console.error(err) }
                 });
             }
         }
 
-        function checkKonversiDombak () {
-            if($('select#dombak_id').val() != '' && $('input#tinggi_dombak').val() != '') {
+        function checkKonversiDombak() {
+            if ($('select#dombak_id').val() != '' && $('input#tinggi_dombak').val() != '') {
                 $.ajax({
                     url: document.location.origin + '/master/dombak/konversi/api',
                     method: 'get',
@@ -1403,12 +1649,12 @@ $(function () {
                         tinggi: $('input#tinggi_dombak').val(),
                     },
                     dataType: 'json',
-                    success: function(data) {
-                        if(data.status == 200){
+                    success: function (data) {
+                        if (data.status == 200) {
                             let calc = data.data.volume.replace(',', '') - $('input#volume_sebelumnya').val().replace(',', '');
-                            if(data.data != null){
+                            if (data.data != null) {
                                 $('input#volume').val(data.data.volume)
-                                $('input#volume_selisih').val(Intl.NumberFormat('id-ID', {style: 'decimal', maximumFractionDigits: 6 }).format(calc).replaceAll('.', ','));
+                                $('input#volume_selisih').val(Intl.NumberFormat('id-ID', { style: 'decimal', maximumFractionDigits: 6 }).format(calc).replaceAll('.', ','));
                                 $('button[type=submit]').removeAttr('disabled');
                             }
                             else {
@@ -1418,7 +1664,7 @@ $(function () {
                             }
                         }
                     },
-                    error: function(err) {console.error(err)}
+                    error: function (err) { console.error(err) }
                 });
             } else {
                 $('input#volume').val("0")
@@ -1435,11 +1681,11 @@ $(function () {
             serverSide: true,
             ajax: document.location.href,
             columns: [
-                {data: 'tanggal', name: 'tanggal'},
-                {data: 'no_kode', name: 'no_kode'},
-                {data: 'jenis', name: 'jenis'},
-                {data: 'jumlah', name: 'jumlah'},
-                {data: 'action', name: 'action', orderable: false, searchable: false},
+                { data: 'tanggal', name: 'tanggal' },
+                { data: 'no_kode', name: 'no_kode' },
+                { data: 'jenis', name: 'jenis' },
+                { data: 'jumlah', name: 'jumlah' },
+                { data: 'action', name: 'action', orderable: false, searchable: false },
             ]
         });
     }
@@ -1452,9 +1698,9 @@ $(function () {
             serverSide: true,
             ajax: document.location.href,
             columns: [
-                {data: 'tanggal', name: 'tanggal'},
-                {data: 'nama_dokumen', name: 'nama_dokumen'},
-                {data: 'action', name: 'action', orderable: false, searchable: false},
+                { data: 'tanggal', name: 'tanggal' },
+                { data: 'nama_dokumen', name: 'nama_dokumen' },
+                { data: 'action', name: 'action', orderable: false, searchable: false },
             ]
         });
     }
@@ -1467,12 +1713,12 @@ $(function () {
             serverSide: true,
             ajax: document.location.href,
             columns: [
-                {data: 'tanggal', name: 'tanggal'},
-                {data: 'no_faktur', name: 'no_faktur'},
-                {data: 'no_lo', name: 'no_lo'},
-                {data: 'nama_produk', name: 'nama_produk'},
-                {data: 'jumlah', name: 'jumlah'},
-                {data: 'action', name: 'action', orderable: false, searchable: false},
+                { data: 'tanggal', name: 'tanggal' },
+                { data: 'no_faktur', name: 'no_faktur' },
+                { data: 'no_lo', name: 'no_lo' },
+                { data: 'nama_produk', name: 'nama_produk' },
+                { data: 'jumlah', name: 'jumlah' },
+                { data: 'action', name: 'action', orderable: false, searchable: false },
             ]
         });
     }
@@ -1485,13 +1731,13 @@ $(function () {
             serverSide: true,
             ajax: document.location.href,
             columns: [
-                {data: 'tanggal', name: 'tanggal'},
-                {data: 'dombak', name: 'dombak'},
-                {data: 'no_faktur', name: 'no_faktur'},
-                {data: 'no_lo', name: 'no_lo'},
-                {data: 'nama_produk', name: 'nama_produk'},
-                {data: 'jumlah', name: 'jumlah'},
-                {data: 'action', name: 'action', orderable: false, searchable: false},
+                { data: 'tanggal', name: 'tanggal' },
+                { data: 'dombak', name: 'dombak' },
+                { data: 'no_faktur', name: 'no_faktur' },
+                { data: 'no_lo', name: 'no_lo' },
+                { data: 'nama_produk', name: 'nama_produk' },
+                { data: 'jumlah', name: 'jumlah' },
+                { data: 'action', name: 'action', orderable: false, searchable: false },
             ]
         });
     }
@@ -1504,13 +1750,13 @@ $(function () {
             serverSide: true,
             ajax: document.location.href,
             columns: [
-                {data: 'tanggal', name: 'tanggal'},
-                {data: 'dombak', name: 'dombak'},
-                {data: 'no_faktur', name: 'no_faktur'},
-                {data: 'no_lo', name: 'no_lo'},
-                {data: 'nama_produk', name: 'nama_produk'},
-                {data: 'jumlah', name: 'jumlah'},
-                {data: 'action', name: 'action', orderable: false, searchable: false},
+                { data: 'tanggal', name: 'tanggal' },
+                { data: 'dombak', name: 'dombak' },
+                { data: 'no_faktur', name: 'no_faktur' },
+                { data: 'no_lo', name: 'no_lo' },
+                { data: 'nama_produk', name: 'nama_produk' },
+                { data: 'jumlah', name: 'jumlah' },
+                { data: 'action', name: 'action', orderable: false, searchable: false },
             ]
         });
     }
@@ -1529,9 +1775,9 @@ $(function () {
         });
 
         function volume_terisi() {
-            if($('input#volume_sebelumnya').val() != '' && $('input#volume_penerimaan').val() != ' ') {
-                let i=0, total = 0;
-                for(i=0; i < $('.volume_sebelumnya').length; i++) {
+            if ($('input#volume_sebelumnya').val() != '' && $('input#volume_penerimaan').val() != ' ') {
+                let i = 0, total = 0;
+                for (i = 0; i < $('.volume_sebelumnya').length; i++) {
                     total += $('.volume_penerimaan')[i].value.replace(',', '') - $('.volume_sebelumnya')[i].value.replace(',', '');
                 }
 
@@ -1543,8 +1789,8 @@ $(function () {
             }
         }
 
-        async function checkKonversiDombak (tinggi, dombak) {
-            if($('select#dombak_id').val() != '' && $('input#tinggi_dombak').val() != '') {
+        async function checkKonversiDombak(tinggi, dombak) {
+            if ($('select#dombak_id').val() != '' && $('input#tinggi_dombak').val() != '') {
                 return await $.ajax({
                     url: document.location.origin + '/master/dombak/konversi/api',
                     method: 'get',
@@ -1553,12 +1799,12 @@ $(function () {
                         tinggi: tinggi,
                     },
                     dataType: 'json',
-                    success: function(data) {
-                        if(data.status == 200){
+                    success: function (data) {
+                        if (data.status == 200) {
                             return data;
                         }
                     },
-                    error: function(err) {console.error(err)}
+                    error: function (err) { console.error(err) }
                 });
             } else {
                 console.error('Pilih dombak dan tinggi')
@@ -1607,16 +1853,16 @@ $(function () {
             serverSide: true,
             ajax: document.location.href,
             columns: [
-                {data: 'tanggal', name: 'tanggal'},
-                {data: 'jam_kerja', name: 'jam_kerja'},
-                {data: 'total_stand_meter', name: 'total_stand_meter'},
-                {data: 'action', name: 'action', orderable: false, searchable: false},
+                { data: 'tanggal', name: 'tanggal' },
+                { data: 'jam_kerja', name: 'jam_kerja' },
+                { data: 'total_stand_meter', name: 'total_stand_meter' },
+                { data: 'action', name: 'action', orderable: false, searchable: false },
             ]
         });
     }
     if (routeName == 'setoran.open.create') {
-        $(document).on('change', 'select.nozzle_id', function(e) {
-            if($(this).children().first().attr('value') == '0') {
+        $(document).on('change', 'select.nozzle_id', function (e) {
+            if ($(this).children().first().attr('value') == '0') {
                 $(this).children().first().remove();
             }
 
@@ -1631,47 +1877,47 @@ $(function () {
                     '_token': $('meta[name="csrf-token"]').attr('content'),
                 },
                 dataType: 'json',
-                success: function(data) {
+                success: function (data) {
                     $(this).removeAttr('disabled')
                     let que = $(e)[0].currentTarget.dataset.que;
-                        if(data.status == 'success'){
+                    if (data.status == 'success') {
+                        $('.alert-success.alert-sm-1.que' + que).addClass('d-none');
+                        $('.alert-danger.alert-sm-2.que-' + que).addClass('d-none');
+                        $('.alert-danger.alert-sm-1.que-' + que).addClass('d-none');
+                        $('.stand_meter_awal.que-' + que).val(data.data.stand_meter_awal ?? '0')
+                        $('.stand_meter_akhir.que-' + que).val(data.data.stand_meter_akhir ?? '0')
+                    } else {
+                        $('.stand_meter_awal.que-' + que).val('0')
+                        $('.stand_meter_akhir.que-' + que).val('0')
+                        if (data.message == 'Stand Meter not found') {
                             $('.alert-success.alert-sm-1.que' + que).addClass('d-none');
                             $('.alert-danger.alert-sm-2.que-' + que).addClass('d-none');
-                            $('.alert-danger.alert-sm-1.que-' + que).addClass('d-none');
-                            $('.stand_meter_awal.que-' + que).val(data.data.stand_meter_awal ?? '0')
-                            $('.stand_meter_akhir.que-' + que).val(data.data.stand_meter_akhir ?? '0')
-                        } else {
-                            $('.stand_meter_awal.que-' + que).val('0')
-                            $('.stand_meter_akhir.que-' + que).val('0')
-                            if(data.message == 'Stand Meter not found') {
-                                $('.alert-success.alert-sm-1.que' + que).addClass('d-none');
-                                $('.alert-danger.alert-sm-2.que-' + que).addClass('d-none');
-                                $('.alert-danger.alert-sm-1.que-' + que).removeClass('d-none');
-                            }
-                            if(data.message == 'Nozzle not found') {
-                                $('.alert-success.alert-sm-1.que' + que).addClass('d-none');
-                                $('.alert-danger.alert-sm-1.que-' + que).addClass('d-none');
-                                $('.alert-danger.alert-sm-2.que-' + que).removeClass('d-none');
-                            }
+                            $('.alert-danger.alert-sm-1.que-' + que).removeClass('d-none');
                         }
+                        if (data.message == 'Nozzle not found') {
+                            $('.alert-success.alert-sm-1.que' + que).addClass('d-none');
+                            $('.alert-danger.alert-sm-1.que-' + que).addClass('d-none');
+                            $('.alert-danger.alert-sm-2.que-' + que).removeClass('d-none');
+                        }
+                    }
                 },
-                error: function(err) {$(this).removeAttr('disabled');console.error(err)}
+                error: function (err) { $(this).removeAttr('disabled'); console.error(err) }
             });
         });
 
-        $('.sm-plus').on('click', function() {
+        $('.sm-plus').on('click', function () {
             let que = $('.que-main').children().length + 1;
 
-            let nozzle = $('input[name=nozzle]').val().split('||').map(x =>  x.split('|').map(y => y.trim()));
-            let nozzleWrapper = '<select class="custom-select nozzle_id" name="nozzle_id[]" id="nozzle_id" data-que="'+ que +'"><option value="0">Silakan Pilih Nozzle</option>';
+            let nozzle = $('input[name=nozzle]').val().split('||').map(x => x.split('|').map(y => y.trim()));
+            let nozzleWrapper = '<select class="custom-select nozzle_id" name="nozzle_id[]" id="nozzle_id" data-que="' + que + '"><option value="0">Silakan Pilih Nozzle</option>';
             nozzle.pop();
             nozzle.forEach(x => {
-                nozzleWrapper += '<option value="'+ x[0] +'">'+ x[1] +'</option>';
+                nozzleWrapper += '<option value="' + x[0] + '">' + x[1] + '</option>';
             })
             nozzleWrapper += '</select>';
-            $('.que-main').append('<div class="card que-'+ que +'"><div class="card-header"><h4>Stand Meter #'+ que +'</h4><div class="card-header-action"><button class="btn btn-danger btn-erase-sm" data-que="'+ que +'" type="button" title="Hapus"><i class="fas fa-minus"></i></button></div></div><div class="card-body"><div class="row"><div class="col-12"><div class="alert alert-success alert-sm-1 que-'+ que +' d-none"> Stand Meter Sudah Dicatat </div><div class="alert alert-danger alert-sm-1 que-'+ que +' d-none"> Stand Meter Belum Dicatat. Silakan anda buat dan konfirmasi di menu Totalisator</div><div class="alert alert-danger alert-sm-2 que-'+ que +' d-none"> Nozzle Tidak ditemukan.</div></div></div><div class="row mb-3 justify-content-center"><label for="nozzle_id" class="col-md-4 col-form-label text-md-end">Nozzle</label><div class="col-md-6">'+ nozzleWrapper +'</div></div><div class="row mb-3 justify-content-center sm-1"><label for="stand_meter_awal" class="col-md-4 col-form-label text-md-end">Stand Meter Awal</label><div class="col-md-6"><div class="input-group"><input id="stand_meter_awal" type="text" readonly class="form-control stand_meter_awal thousand-style que-'+ que +'" name="stand_meter_awal" value="0" /></div></div></div><div class="row mb-3 justify-content-center sm-2"><label for="stand_meter_akhir" class="col-md-4 col-form-label text-md-end">Stand Meter Akhir</label><div class="col-md-6"><div class="input-group"><input id="stand_meter_akhir" type="text" readonly class="form-control stand_meter_akhir thousand-style que-'+ que +'" name="stand_meter_akhir" value="0" /></div></div></div></div></div>');
+            $('.que-main').append('<div class="card que-' + que + '"><div class="card-header"><h4>Stand Meter #' + que + '</h4><div class="card-header-action"><button class="btn btn-danger btn-erase-sm" data-que="' + que + '" type="button" title="Hapus"><i class="fas fa-minus"></i></button></div></div><div class="card-body"><div class="row"><div class="col-12"><div class="alert alert-success alert-sm-1 que-' + que + ' d-none"> Stand Meter Sudah Dicatat </div><div class="alert alert-danger alert-sm-1 que-' + que + ' d-none"> Stand Meter Belum Dicatat. Silakan anda buat dan konfirmasi di menu Totalisator</div><div class="alert alert-danger alert-sm-2 que-' + que + ' d-none"> Nozzle Tidak ditemukan.</div></div></div><div class="row mb-3 justify-content-center"><label for="nozzle_id" class="col-md-4 col-form-label text-md-end">Nozzle</label><div class="col-md-6">' + nozzleWrapper + '</div></div><div class="row mb-3 justify-content-center sm-1"><label for="stand_meter_awal" class="col-md-4 col-form-label text-md-end">Stand Meter Awal</label><div class="col-md-6"><div class="input-group"><input id="stand_meter_awal" type="text" readonly class="form-control stand_meter_awal thousand-style que-' + que + '" name="stand_meter_awal" value="0" /></div></div></div><div class="row mb-3 justify-content-center sm-2"><label for="stand_meter_akhir" class="col-md-4 col-form-label text-md-end">Stand Meter Akhir</label><div class="col-md-6"><div class="input-group"><input id="stand_meter_akhir" type="text" readonly class="form-control stand_meter_akhir thousand-style que-' + que + '" name="stand_meter_akhir" value="0" /></div></div></div></div></div>');
         });
-        $(document).on('click', '.btn-erase-sm', function() {
+        $(document).on('click', '.btn-erase-sm', function () {
             console.log($(this).parent().parent().parent().remove())
         })
     }
@@ -1684,19 +1930,19 @@ $(function () {
             serverSide: true,
             ajax: document.location.href,
             columns: [
-                {data: 'nama_nozzle', name: 'nama_nozzle'},
-                {data: 'stand_meter_awal', name: 'stand_meter_awal'},
-                {data: 'stand_meter_akhir', name: 'stand_meter_akhir'},
-                {data: 'harga', name: 'harga'},
-                {data: 'liter', name: 'liter'},
-                {data: 'total_detail_jual', name: 'total_detail_jual'},
-                {data: 'action', name: 'action', orderable: false, searchable: false},
+                { data: 'nama_nozzle', name: 'nama_nozzle' },
+                { data: 'stand_meter_awal', name: 'stand_meter_awal' },
+                { data: 'stand_meter_akhir', name: 'stand_meter_akhir' },
+                { data: 'harga', name: 'harga' },
+                { data: 'liter', name: 'liter' },
+                { data: 'total_detail_jual', name: 'total_detail_jual' },
+                { data: 'action', name: 'action', orderable: false, searchable: false },
             ]
         });
     }
-    if(routeName == 'setoran.open.detail.create') {
-        $('select[id=nozzle_id]').on('change', function(e) {
-            if($(this).children()[0].value == '0') {
+    if (routeName == 'setoran.open.detail.create') {
+        $('select[id=nozzle_id]').on('change', function (e) {
+            if ($(this).children()[0].value == '0') {
                 $(this).children().first().remove();
             }
             let r = $(this).children().filter((index, el) => el.value == e.target.value);
@@ -1707,26 +1953,26 @@ $(function () {
             $('input[name=total_detail_jual]').val(r[0].dataset.thj)
         });
     }
-    if(routeName == 'pembayaran.pajak_edit') {
+    if (routeName == 'pembayaran.pajak_edit') {
         let gross_cleansing = $('input[data-type=gross_price_check]').val().replaceAll(',', '');
 
-        $('input[name=ppn]').on('change', function(e) {
-            let calc = gross_cleansing - $('input[name=ppn]').val().replaceAll(',', '') -  $('input[name=pph]').val().replaceAll(',', '') -  $('input[name=ppbkb]').val().replaceAll(',', '');
+        $('input[name=ppn]').on('change', function (e) {
+            let calc = gross_cleansing - $('input[name=ppn]').val().replaceAll(',', '') - $('input[name=pph]').val().replaceAll(',', '') - $('input[name=ppbkb]').val().replaceAll(',', '');
 
-            $('input[name=net_price]').val(Intl.NumberFormat('id-ID', {style: 'decimal', maximumFractionDigits: 6 }).format(calc).replaceAll('.', ','))
+            $('input[name=net_price]').val(Intl.NumberFormat('id-ID', { style: 'decimal', maximumFractionDigits: 6 }).format(calc).replaceAll('.', ','))
         })
-        $('input[name=pph]').on('change', function(e) {
-            let calc = gross_cleansing - $('input[name=ppn]').val().replaceAll(',', '') -  $('input[name=pph]').val().replaceAll(',', '') -  $('input[name=ppbkb]').val().replaceAll(',', '');
+        $('input[name=pph]').on('change', function (e) {
+            let calc = gross_cleansing - $('input[name=ppn]').val().replaceAll(',', '') - $('input[name=pph]').val().replaceAll(',', '') - $('input[name=ppbkb]').val().replaceAll(',', '');
 
-            $('input[name=net_price]').val(Intl.NumberFormat('id-ID', {style: 'decimal', maximumFractionDigits: 6 }).format(calc).replaceAll('.', ','))
+            $('input[name=net_price]').val(Intl.NumberFormat('id-ID', { style: 'decimal', maximumFractionDigits: 6 }).format(calc).replaceAll('.', ','))
         })
-        $('input[name=ppbkb]').on('change', function(e) {
-            let calc = gross_cleansing - $('input[name=ppn]').val().replaceAll(',', '') -  $('input[name=pph]').val().replaceAll(',', '') -  $('input[name=ppbkb]').val().replaceAll(',', '');
+        $('input[name=ppbkb]').on('change', function (e) {
+            let calc = gross_cleansing - $('input[name=ppn]').val().replaceAll(',', '') - $('input[name=pph]').val().replaceAll(',', '') - $('input[name=ppbkb]').val().replaceAll(',', '');
 
-            $('input[name=net_price]').val(Intl.NumberFormat('id-ID', {style: 'decimal', maximumFractionDigits: 6 }).format(calc).replaceAll('.', ','))
+            $('input[name=net_price]').val(Intl.NumberFormat('id-ID', { style: 'decimal', maximumFractionDigits: 6 }).format(calc).replaceAll('.', ','))
         })
     }
-    if(routeName == 'setoran.penitipan') {
+    if (routeName == 'setoran.penitipan') {
         $('.table-penitipan-setoran').DataTable({
             language: {
                 url: cdnDatatableIdn,
@@ -1735,14 +1981,14 @@ $(function () {
             serverSide: true,
             ajax: document.location.href,
             columns: [
-                {data: 'tanggal', name: 'tanggal'},
-                {data: 'jam_kerja', name: 'jam_kerja'},
-                {data: 'stand_meter', name: 'stand_meter'},
-                {data: 'action', name: 'action', orderable: false, searchable: false},
+                { data: 'tanggal', name: 'tanggal' },
+                { data: 'jam_kerja', name: 'jam_kerja' },
+                { data: 'stand_meter', name: 'stand_meter' },
+                { data: 'action', name: 'action', orderable: false, searchable: false },
             ]
         });
     }
-    if(routeName == 'setoran.setoran_bank.index_setoran_bank_penjualan') {
+    if (routeName == 'setoran.setoran_bank.index_setoran_bank_penjualan') {
         $('.table-setoran-bank').DataTable({
             language: {
                 url: cdnDatatableIdn,
@@ -1751,16 +1997,16 @@ $(function () {
             serverSide: true,
             ajax: document.location.href,
             columns: [
-                {data: 'status', name: 'status'},
-                {data: 'tanggal', name: 'tanggal'},
-                {data: 'jam_kerja', name: 'jam_kerja'},
-                {data: 'stand_meter', name: 'stand_meter'},
-                {data: 'total_uang_penjualan', name: 'total_uang_penjualan'},
-                {data: 'action', name: 'action', orderable: false, searchable: false},
+                { data: 'status', name: 'status' },
+                { data: 'tanggal', name: 'tanggal' },
+                { data: 'jam_kerja', name: 'jam_kerja' },
+                { data: 'stand_meter', name: 'stand_meter' },
+                { data: 'total_uang_penjualan', name: 'total_uang_penjualan' },
+                { data: 'action', name: 'action', orderable: false, searchable: false },
             ]
         });
     }
-    if(routeName == 'setoran.setoran_bank.bank.index') {
+    if (routeName == 'setoran.setoran_bank.bank.index') {
         $('.table-bank-setoran-list').DataTable({
             language: {
                 url: cdnDatatableIdn,
@@ -1769,17 +2015,17 @@ $(function () {
             serverSide: true,
             ajax: document.location.href,
             columns: [
-                {data: 'tanggal', name: 'tanggal'},
-                {data: 'nama_bank', name: 'nama_bank'},
-                {data: 'no_ref', name: 'no_ref'},
-                {data: 'metode_transfer', name: 'metode_transfer'},
-                {data: 'total_uang', name: 'total_uang'},
-                {data: 'status', name: 'status'},
-                {data: 'action', name: 'action', orderable: false, searchable: false},
+                { data: 'tanggal', name: 'tanggal' },
+                { data: 'nama_bank', name: 'nama_bank' },
+                { data: 'no_ref', name: 'no_ref' },
+                { data: 'metode_transfer', name: 'metode_transfer' },
+                { data: 'total_uang', name: 'total_uang' },
+                { data: 'status', name: 'status' },
+                { data: 'action', name: 'action', orderable: false, searchable: false },
             ]
         });
     }
-    if(routeName == 'setoran.closing') {
+    if (routeName == 'setoran.closing') {
         $('.table-closing-setoran').DataTable({
             language: {
                 url: cdnDatatableIdn,
@@ -1788,15 +2034,15 @@ $(function () {
             serverSide: true,
             ajax: document.location.href,
             columns: [
-                {data: 'tanggal', name: 'tanggal'},
-                {data: 'jam_kerja', name: 'jam_kerja'},
-                {data: 'stand_meter', name: 'stand_meter'},
-                {data: 'total_uang_penjualan', name: 'total_uang_penjualan'},
-                {data: 'action', name: 'action', orderable: false, searchable: false},
+                { data: 'tanggal', name: 'tanggal' },
+                { data: 'jam_kerja', name: 'jam_kerja' },
+                { data: 'stand_meter', name: 'stand_meter' },
+                { data: 'total_uang_penjualan', name: 'total_uang_penjualan' },
+                { data: 'action', name: 'action', orderable: false, searchable: false },
             ]
         });
     }
-    if(routeName == 'setoran.setoran_bank.file.index') {
+    if (routeName == 'setoran.setoran_bank.file.index') {
         $('.table-file-penarikan').DataTable({
             language: {
                 url: cdnDatatableIdn,
@@ -1805,14 +2051,14 @@ $(function () {
             serverSide: true,
             ajax: document.location.href,
             columns: [
-                {data: 'tanggal', name: 'tanggal'},
-                {data: 'gambar', name: 'gambar'},
-                {data: 'nama_file', name: 'nama_file'},
-                {data: 'action', name: 'action', orderable: false, searchable: false},
+                { data: 'tanggal', name: 'tanggal' },
+                { data: 'gambar', name: 'gambar' },
+                { data: 'nama_file', name: 'nama_file' },
+                { data: 'action', name: 'action', orderable: false, searchable: false },
             ]
         });
     }
-    if(routeName == 'ms2.produk.index') {
+    if (routeName == 'ms2.produk.index') {
         $('.table-ms2').DataTable({
             language: {
                 url: cdnDatatableIdn,
@@ -1821,14 +2067,14 @@ $(function () {
             serverSide: true,
             ajax: document.location.href,
             columns: [
-                {data: 'nama_produk', name: 'nama_produk'},
-                {data: 'stok_kl', name: 'stok_kl'},
-                {data: 'total_pembelian', name: 'total_pembelian'},
-                {data: 'action', name: 'action', orderable: false, searchable: false},
+                { data: 'nama_produk', name: 'nama_produk' },
+                { data: 'stok_kl', name: 'stok_kl' },
+                { data: 'total_pembelian', name: 'total_pembelian' },
+                { data: 'action', name: 'action', orderable: false, searchable: false },
             ]
         });
     }
-    if(routeName == 'ms2.produk.show') {
+    if (routeName == 'ms2.produk.show') {
         $('.table-detail-produk').DataTable({
             language: {
                 url: cdnDatatableIdn,
@@ -1837,14 +2083,14 @@ $(function () {
             serverSide: true,
             ajax: document.location.href,
             columns: [
-                {data: 'tanggal_pembelian', name: 'tanggal_pembelian'},
-                {data: 'kode_pembelian', name: 'kode_pembelian'},
-                {data: 'jumlah', name: 'jumlah'},
-                {data: 'action', name: 'action', orderable: false, searchable: false},
+                { data: 'tanggal_pembelian', name: 'tanggal_pembelian' },
+                { data: 'kode_pembelian', name: 'kode_pembelian' },
+                { data: 'jumlah', name: 'jumlah' },
+                { data: 'action', name: 'action', orderable: false, searchable: false },
             ]
         });
     }
-    if(routeName == 'ms2.pengiriman') {
+    if (routeName == 'ms2.pengiriman') {
         $('.table-pengiriman').DataTable({
             language: {
                 url: cdnDatatableIdn,
@@ -1853,14 +2099,14 @@ $(function () {
             serverSide: true,
             ajax: document.location.href,
             columns: [
-                {data: 'tanggal', name: 'tanggal'},
-                {data: 'produk', name: 'produk'},
-                {data: 'action', name: 'action', orderable: false, searchable: false},
+                { data: 'tanggal', name: 'tanggal' },
+                { data: 'produk', name: 'produk' },
+                { data: 'action', name: 'action', orderable: false, searchable: false },
             ]
         });
     }
-    if(routeName == 'ms2.pengiriman.create') {
-        $('.checkbox-drp').on('click', function() {
+    if (routeName == 'ms2.pengiriman.create') {
+        $('.checkbox-drp').on('click', function () {
             if ($(this)[0].checked) {
                 $(this).parent().siblings('.select-' + $(this).attr('id')).removeClass('d-none')
                 $(this).parent().siblings('.select-' + $(this).attr('id')).attr('name', 'detail_rencana_pembelian_id_shift[]')
@@ -1870,21 +2116,21 @@ $(function () {
             }
         });
     }
-    if(routeName == 'ms2.pengiriman.konfirm_pengiriman') {
-        $('.btn-minus-produk').on('click', function() {
+    if (routeName == 'ms2.pengiriman.konfirm_pengiriman') {
+        $('.btn-minus-produk').on('click', function () {
             $(this).parent().parent().addClass('bg-danger');
             $(this).addClass('d-none');
             $(this).siblings().removeClass('d-none');
             $(this).parent().siblings('input').remove();
         });
-        $('.btn-plus-produk').on('click', function() {
+        $('.btn-plus-produk').on('click', function () {
             $(this).parent().parent().removeClass('bg-danger');
             $(this).addClass('d-none');
             $(this).siblings().removeClass('d-none');
-            $(this).parent().parent().append('<input type="hidden" name="detail_rencana_pembelian_id[]" value="'+ $(this).data('id') +'">')
+            $(this).parent().parent().append('<input type="hidden" name="detail_rencana_pembelian_id[]" value="' + $(this).data('id') + '">')
         });
     }
-    if(routeName == 'pajak_pembelian_lib.index') {
+    if (routeName == 'pajak_pembelian_lib.index') {
         $('.table-pajak-lib').DataTable({
             language: {
                 url: cdnDatatableIdn,
@@ -1893,28 +2139,28 @@ $(function () {
             serverSide: true,
             ajax: document.location.href,
             columns: [
-                {data: 'tanggal', name: 'tanggal'},
-                {data: 'ppn', name: 'ppn'},
-                {data: 'pph', name: 'pph'},
-                {data: 'ppbkb', name: 'ppbkb'},
-                {data: 'is_aktif', name: 'is_aktif'},
-                {data: 'action', name: 'action', orderable: false, searchable: false},
+                { data: 'tanggal', name: 'tanggal' },
+                { data: 'ppn', name: 'ppn' },
+                { data: 'pph', name: 'pph' },
+                { data: 'ppbkb', name: 'ppbkb' },
+                { data: 'is_aktif', name: 'is_aktif' },
+                { data: 'action', name: 'action', orderable: false, searchable: false },
             ]
         });
     }
-    if(routeName == 'pembelian.detail.edit_pajak') {
-        $('#ppn').on('keyup', function(e) {
+    if (routeName == 'pembelian.detail.edit_pajak') {
+        $('#ppn').on('keyup', function (e) {
             $('#total_amount').val(new Intl.NumberFormat("id-ID", { style: "decimal", maximumFractionDigits: 6 }).format(parseInt($('#net_price').val().replaceAll(',', '')) + parseInt(e.target.value.replaceAll(',', '')) + parseInt($('#pph').val().replaceAll(',', '')) + parseInt($('#ppbkb').val().replaceAll(',', ''))));
         });
-        $('#pph').on('keyup', function(e) {
+        $('#pph').on('keyup', function (e) {
             $('#total_amount').val(new Intl.NumberFormat("id-ID", { style: "decimal", maximumFractionDigits: 6 }).format(parseInt($('#net_price').val().replaceAll(',', '')) + parseInt($('#ppn').val().replaceAll(',', '')) + parseInt(e.target.value.replaceAll(',', '')) + parseInt($('#ppbkb').val().replaceAll(',', ''))));
         });
-        $('#ppbkb').on('keyup', function(e) {
+        $('#ppbkb').on('keyup', function (e) {
             $('#total_amount').val(new Intl.NumberFormat("id-ID", { style: "decimal", maximumFractionDigits: 6 }).format(parseInt($('#net_price').val().replaceAll(',', '')) + parseInt($('#ppn').val().replaceAll(',', '')) + parseInt($('#pph').val().replaceAll(',', '')) + parseInt(e.target.value.replaceAll(',', ''))));
         });
 
     }
-    if(routeName == 'kategori.index') {
+    if (routeName == 'kategori.index') {
         $('.table-kategori').DataTable({
             language: {
                 url: cdnDatatableIdn,
@@ -1923,12 +2169,12 @@ $(function () {
             serverSide: true,
             ajax: document.location.href,
             columns: [
-                {data: 'nama_kategori', name: 'nama_kategori'},
-                {data: 'action', name: 'action', orderable: false, searchable: false},
+                { data: 'nama_kategori', name: 'nama_kategori' },
+                { data: 'action', name: 'action', orderable: false, searchable: false },
             ]
         });
     }
-    if(routeName == 'tag.index') {
+    if (routeName == 'tag.index') {
         $('.table-tag').DataTable({
             language: {
                 url: cdnDatatableIdn,
@@ -1937,12 +2183,12 @@ $(function () {
             serverSide: true,
             ajax: document.location.href,
             columns: [
-                {data: 'nama_tag', name: 'nama_tag'},
-                {data: 'action', name: 'action', orderable: false, searchable: false},
+                { data: 'nama_tag', name: 'nama_tag' },
+                { data: 'action', name: 'action', orderable: false, searchable: false },
             ]
         });
     }
-    if(routeName == 'post.index') {
+    if (routeName == 'post.index') {
         $('.table-post').DataTable({
             language: {
                 url: cdnDatatableIdn,
@@ -1951,18 +2197,18 @@ $(function () {
             serverSide: true,
             ajax: document.location.href,
             columns: [
-                {data: 'tanggal', name: 'tanggal'},
-                {data: 'title', name: 'title'},
-                {data: 'status', name: 'status'},
-                {data: 'action', name: 'action', orderable: false, searchable: false},
+                { data: 'tanggal', name: 'tanggal' },
+                { data: 'title', name: 'title' },
+                { data: 'status', name: 'status' },
+                { data: 'action', name: 'action', orderable: false, searchable: false },
             ]
         });
     }
-    if(routeName == 'post.create') {
+    if (routeName == 'post.create') {
         $('select#tag').select2();
         $('select#kategori').select2();
     }
-    if(routeName == 'rekap-pajak.index') {
+    if (routeName == 'rekap-pajak.index') {
         $('.table-rekap-pajak').DataTable({
             language: {
                 url: cdnDatatableIdn,
@@ -1971,17 +2217,17 @@ $(function () {
             serverSide: true,
             ajax: document.location.href,
             columns: [
-                {data: 'tanggal', name: 'tanggal'},
-                {data: 'kode_pembelian', name: 'kode_pembelian'},
-                {data: 'ppn', name: 'ppn'},
-                {data: 'pph', name: 'pph'},
-                {data: 'ppbkb', name: 'ppbkb'},
-                {data: 'total_pajak', name: 'total_pajak'},
-                {data: 'action', name: 'action', orderable: false, searchable: false},
+                { data: 'tanggal', name: 'tanggal' },
+                { data: 'kode_pembelian', name: 'kode_pembelian' },
+                { data: 'ppn', name: 'ppn' },
+                { data: 'pph', name: 'pph' },
+                { data: 'ppbkb', name: 'ppbkb' },
+                { data: 'total_pajak', name: 'total_pajak' },
+                { data: 'action', name: 'action', orderable: false, searchable: false },
             ]
         });
     }
-    if(routeName == 'file.post.index') {
+    if (routeName == 'file.post.index') {
         $('.table-file-post').DataTable({
             language: {
                 url: cdnDatatableIdn,
@@ -1990,12 +2236,12 @@ $(function () {
             serverSide: true,
             ajax: document.location.href,
             columns: [
-                {data: 'nama_dokumen', name: 'nama_dokumen'},
-                {data: 'action', name: 'action', orderable: false, searchable: false},
+                { data: 'nama_dokumen', name: 'nama_dokumen' },
+                { data: 'action', name: 'action', orderable: false, searchable: false },
             ]
         });
     }
-    if(routeName == 'ms2.pengiriman.show') {
+    if (routeName == 'ms2.pengiriman.show') {
         $('.table-produk-detail-ms2').DataTable({
             language: {
                 url: cdnDatatableIdn,
@@ -2004,16 +2250,16 @@ $(function () {
             serverSide: true,
             ajax: document.location.href,
             columns: [
-                {data: 'no_lo', name: 'no_lo'},
-                {data: 'tanggal', name: 'tanggal'},
-                {data: 'kode', name: 'kode'},
-                {data: 'nama_produk', name: 'nama_produk'},
-                {data: 'stok', name: 'stok'},
-                {data: 'action', name: 'action', orderable: false, searchable: false},
+                { data: 'no_lo', name: 'no_lo' },
+                { data: 'tanggal', name: 'tanggal' },
+                { data: 'kode', name: 'kode' },
+                { data: 'nama_produk', name: 'nama_produk' },
+                { data: 'stok', name: 'stok' },
+                { data: 'action', name: 'action', orderable: false, searchable: false },
             ]
         });
     }
-    if(routeName == 'stok-summary.index') {
+    if (routeName == 'stok-summary.index') {
         $("#calendar").fullCalendar({
             defaultView: 'month',
             height: 750,
@@ -2030,7 +2276,7 @@ $(function () {
             dayMaxEvents: true,
             editable: false,
             droppable: false,
-            viewRender: function(view, element) {
+            viewRender: function (view, element) {
                 var currentMonth = view.start.month() + 1; // Bulan dimulai dari 0, tambahkan 1
                 var currentYear = view.start.year();
 
@@ -2059,21 +2305,21 @@ $(function () {
 
                 console.log('yeayy');
             },
-            dayClick: function(date, jsEvent, view) {
+            dayClick: function (date, jsEvent, view) {
                 // Mendapatkan tanggal, bulan, dan tahun dari objek date
                 var day = date.date();      // Tanggal
                 var month = date.month() + 1; // Bulan (di FullCalendar, bulan dimulai dari 0)
                 var year = date.year();     // Tahun
 
                 // Menampilkan alert
-                if(window.confirm("Apakah anda ingin menambah/Mengubah Data Tanggal " + day + " " + convertMonthToString(month) + " " + year)) {
+                if (window.confirm("Apakah anda ingin menambah/Mengubah Data Tanggal " + day + " " + convertMonthToString(month) + " " + year)) {
                     let url = window.location.href.endsWith('/') ? window.location.href.slice(0, -1) : window.location.href;
                     window.location.href = url + '/' + year + '-' + (month < 10 ? '0' + month : month) + '-' + (day < 10 ? '0' + day : day);
                 }
             },
-            select: function(arg) {
+            select: function (arg) {
                 return false;
-            },eventClick: function(arg) {
+            }, eventClick: function (arg) {
                 console.log(arg);
             },
             events: [
@@ -2083,28 +2329,28 @@ $(function () {
                     end: '2024-10-20T22:00:00',
                 }
             ],
-            drop: function() {
+            drop: function () {
             },
         });
         $('#calendar').fullCalendar('render');
     }
     function convertMonthToString(month) {
-        if(month == 1) return 'Januari';
-        if(month == 2) return 'Februari';
-        if(month == 3) return 'Maret';
-        if(month == 4) return 'April';
-        if(month == 5) return 'Mei';
-        if(month == 6) return 'Juni';
-        if(month == 7) return 'Juli';
-        if(month == 8) return 'Agustus';
-        if(month == 9) return 'September';
-        if(month == 10) return 'Oktober';
-        if(month == 11) return 'November';
-        if(month == 12) return 'Desember';
+        if (month == 1) return 'Januari';
+        if (month == 2) return 'Februari';
+        if (month == 3) return 'Maret';
+        if (month == 4) return 'April';
+        if (month == 5) return 'Mei';
+        if (month == 6) return 'Juni';
+        if (month == 7) return 'Juli';
+        if (month == 8) return 'Agustus';
+        if (month == 9) return 'September';
+        if (month == 10) return 'Oktober';
+        if (month == 11) return 'November';
+        if (month == 12) return 'Desember';
         return '';
     }
-    if(routeName == 'jadwal-kerja.index') {
-        $(function() {
+    if (routeName == 'jadwal-kerja.index') {
+        $(function () {
             let numberWrapper = 1;
             let temp_jam_kerja = '';
             let temp_nozzle = '';
@@ -2112,13 +2358,13 @@ $(function () {
             let now = [date.getFullYear(), (date.getMonth() + 1), date.getDate()];
 
             $('input#temp_jam_kerja').val().split('||').map((jk, i) => {
-                if(jk.trim() == '') return;
-                temp_jam_kerja += '<option '+ (i == 0 ? 'selected' : '') + ' value="'+ jk.trim().split('|')[0] +'">'+ jk.trim().split('|')[1] +'</option>';
+                if (jk.trim() == '') return;
+                temp_jam_kerja += '<option ' + (i == 0 ? 'selected' : '') + ' value="' + jk.trim().split('|')[0] + '">' + jk.trim().split('|')[1] + '</option>';
             });
 
             $('input#temp_nozzle').val().split('||').map((n, i) => {
-                if(n.trim() == '') return;
-                temp_nozzle += '<option '+ (i == 0 ? 'selected' : '') +' value="'+ n.trim().split('|')[0] +'">'+ n.trim().split('|')[1] +'</option>'
+                if (n.trim() == '') return;
+                temp_nozzle += '<option ' + (i == 0 ? 'selected' : '') + ' value="' + n.trim().split('|')[0] + '">' + n.trim().split('|')[1] + '</option>'
             });
 
             $("#add-schedule").fireModal({
@@ -2126,7 +2372,7 @@ $(function () {
                 body: $("#modal-create-schedule"),
                 footerClass: 'bg-whitesmoke',
                 autoFocus: false,
-                onFormSubmit: function(modal, e, form) {
+                onFormSubmit: function (modal, e, form) {
                     modal.find('.modal-body').children('.alert').remove()
                     const member_id = $('.input-employee-sch-id').val();
                     const jabatan = $('.input-jabatan-sch').val();
@@ -2138,22 +2384,22 @@ $(function () {
                     let nozzle = [];
 
                     // Tanggal
-                    for(let i = 0; i < tanggal_raw.length; i++) {
+                    for (let i = 0; i < tanggal_raw.length; i++) {
                         tanggal.push(tanggal_raw[i].value);
                     }
                     // End Tanggal
                     // Jam Kerja
-                    for(let i = 0; i < jam_kerja_raw.length; i++) {
+                    for (let i = 0; i < jam_kerja_raw.length; i++) {
                         jam_kerja.push(jam_kerja_raw[i].value);
                     }
                     // End Jam Kerja
                     // Nozzle
-                    for(let i = 0; i < nozzle_raw.length; i++) {
+                    for (let i = 0; i < nozzle_raw.length; i++) {
                         nozzle.push(nozzle_raw[i].value);
                     }
                     // End Nozzle
 
-                    if($('.input-date-sch').val() == ""){
+                    if ($('.input-date-sch').val() == "") {
                         form.stopProgress();
                         modal.find('.modal-body').children('.alert').remove()
                         modal.find('.modal-body').prepend('<div class="alert alert-danger">Tanggal Wajib Diisi!</div>')
@@ -2163,7 +2409,7 @@ $(function () {
                         modal.find('.modal-body').prepend('<div class="alert alert-danger">Pegawai Tidak Memiliki Jabatan!</div>')
                     } else {
                         $.ajax({
-                            url : document.location.origin + '/api'  + document.location.pathname,
+                            url: document.location.origin + '/api' + document.location.pathname,
                             type: 'post',
                             data: {
                                 '_token': $('meta[name="csrf-token"]').attr('content'),
@@ -2173,11 +2419,11 @@ $(function () {
                                 jam_kerja,
                                 nozzle
                             },
-                            success: async function(data) {
+                            success: async function (data) {
                                 form.stopProgress();
                                 modal.find('.modal-body').children('.alert').remove()
                                 modal.find('.modal-body').prepend('<div class="alert alert-success">Pegawai Telah Terjadwal</div>')
-                                $('.input-date-sch').val(now[0]+'-'+(now[1] < 10 ? '0'+now[1] : now[1]) + '-' + (now[2] < 10 ? '0'+now[2] : now[2]))
+                                $('.input-date-sch').val(now[0] + '-' + (now[1] < 10 ? '0' + now[1] : now[1]) + '-' + (now[2] < 10 ? '0' + now[2] : now[2]))
                                 $('#calendar').fullCalendar('destroy');
                                 await $("#calendar").fullCalendar({
                                     defaultView: 'month',
@@ -2190,23 +2436,23 @@ $(function () {
                                         right: 'month'
                                     },
                                     selectMirror: true,
-                                    select: function(arg) {
+                                    select: function (arg) {
                                         return false;
-                                    },eventClick: function(arg) {
-                                        if(window.confirm('Ingin Menghapus Jadwal Kerja Terpilih?')) {
+                                    }, eventClick: function (arg) {
+                                        if (window.confirm('Ingin Menghapus Jadwal Kerja Terpilih?')) {
                                             deleteSchedule(arg)
                                         }
                                     },
                                     dayMaxEvents: true,
                                     editable: false,
                                     droppable: false,
-                                    drop: function() {
+                                    drop: function () {
                                     },
                                     events: data.schedule
                                 });
                                 $('#calendar').fullCalendar('render');
 
-                            }, error: function() {
+                            }, error: function () {
                                 form.stopProgress();
                                 modal.find('.modal-body').children('.alert').remove()
                                 modal.find('.modal-body').prepend('<div class="alert alert-danger">Mohon Cek Internet Anda.</div>')
@@ -2215,33 +2461,33 @@ $(function () {
                     }
                     e.preventDefault();
                 },
-                shown: function(modal, form) {},
+                shown: function (modal, form) { },
                 buttons: [
                     {
                         text: 'Jadwalkan',
                         submit: true,
                         class: 'btn btn-primary btn-shadow',
-                        handler: function(modal) {
+                        handler: function (modal) {
                         }
                     }
                 ]
             });
 
-            $('#add_setting').on('click', function() {
+            $('#add_setting').on('click', function () {
                 numberWrapper += 1;
-                $('.setting-calendar').append('<div class="card card-primary wrapper" data-wrapper="'+ numberWrapper +'"><div class="card-header"><h4>Kalendar #'+numberWrapper+'</h4></div><div class="card-body"><div class="form-group"><label>Tanggal Kerja</label><div class="input-group"><div class="input-group-prepend"><div class="input-group-text"><i class="fas fa-calendar"></i></div></div><input type="date" value="'+ now[0] + '-' + (now[1] < 10 ? '0'+now[1] : now[1]) + '-' + (now[2] < 10 ? '0'+now[2] : now[2]) +'" class="form-control input-date-sch"></div></div><div class="form-group"><label>Jam Kerja</label><div class="input-group"><div class="input-group-prepend"><div class="input-group-text"><i class="fas fa-clock"></i></div></div><select name="jenis_kerja" class="custom-select input-jam_kerja-sch">'+ temp_jam_kerja +'</select></div></div><div class="form-group"><label>Nozzle</label><div class="input-group"><div class="input-group-prepend"><div class="input-group-text"><i class="fas fa-thermometer-full"></i></div></div><select name="nozzle_id" id="nozzle_id" class="custom-select input-nozzle-sch"><option value="all">Semua Nozzle</option>'+ temp_nozzle +'</select></div></div></div></div>');
+                $('.setting-calendar').append('<div class="card card-primary wrapper" data-wrapper="' + numberWrapper + '"><div class="card-header"><h4>Kalendar #' + numberWrapper + '</h4></div><div class="card-body"><div class="form-group"><label>Tanggal Kerja</label><div class="input-group"><div class="input-group-prepend"><div class="input-group-text"><i class="fas fa-calendar"></i></div></div><input type="date" value="' + now[0] + '-' + (now[1] < 10 ? '0' + now[1] : now[1]) + '-' + (now[2] < 10 ? '0' + now[2] : now[2]) + '" class="form-control input-date-sch"></div></div><div class="form-group"><label>Jam Kerja</label><div class="input-group"><div class="input-group-prepend"><div class="input-group-text"><i class="fas fa-clock"></i></div></div><select name="jenis_kerja" class="custom-select input-jam_kerja-sch">' + temp_jam_kerja + '</select></div></div><div class="form-group"><label>Nozzle</label><div class="input-group"><div class="input-group-prepend"><div class="input-group-text"><i class="fas fa-thermometer-full"></i></div></div><select name="nozzle_id" id="nozzle_id" class="custom-select input-nozzle-sch"><option value="all">Semua Nozzle</option>' + temp_nozzle + '</select></div></div></div></div>');
             });
 
-            $('#remove_setting').on('click', function() {
-                if($('.setting-calendar').children().length > 1) {
+            $('#remove_setting').on('click', function () {
+                if ($('.setting-calendar').children().length > 1) {
                     $('.setting-calendar').children().last().remove();
-                    numberWrapper -=1;
+                    numberWrapper -= 1;
                 } else {
                     window.alert('Anda tidak dapat menghapus pengaturan kalendar #1')
                 }
             });
 
-            $('.jadwal-kerja-href').on('click', async function() {
+            $('.jadwal-kerja-href').on('click', async function () {
                 let user = $(this).data('user');
                 let name = $(this).data('name');
 
@@ -2253,9 +2499,9 @@ $(function () {
                 $('select#jabatan').attr('disabled', '');
                 $('select#jabatan').children().remove();
                 let appendJabatan = '';
-                if(jabatan.length > 0 && jabatan[0] !== '') {
+                if (jabatan.length > 0 && jabatan[0] !== '') {
                     $('select#jabatan').removeAttr('disabled');
-                    jabatan.forEach(j => appendJabatan += '<option value="'+ j +'">'+ j +'</option>')
+                    jabatan.forEach(j => appendJabatan += '<option value="' + j + '">' + j + '</option>')
                     $('select#jabatan').append(appendJabatan)
                 } else {
                     $('select#jabatan').attr('disabled', '');
@@ -2277,13 +2523,13 @@ $(function () {
                         _token: $('meta[name="csrf-token"]').attr('content'),
                         member_id: user
                     },
-                    beforeSend: function() {},
-                    success: function(res) {
-                        if(res.status == true) {
+                    beforeSend: function () { },
+                    success: function (res) {
+                        if (res.status == true) {
                             data = res.schedule
                         }
                     },
-                    error: function() {}
+                    error: function () { }
                 })
                 $('#calendar').fullCalendar('destroy');
                 await $("#calendar").fullCalendar({
@@ -2297,17 +2543,17 @@ $(function () {
                         right: 'month'
                     },
                     selectMirror: true,
-                    select: function(arg) {
+                    select: function (arg) {
                         return false;
-                    },eventClick: function(arg) {
-                        if(confirm('Ingin Menghapus Jadwal Kerja Terpilih?')) {
+                    }, eventClick: function (arg) {
+                        if (confirm('Ingin Menghapus Jadwal Kerja Terpilih?')) {
                             deleteSchedule(arg)
                         }
                     },
                     dayMaxEvents: true,
                     editable: false,
                     droppable: false,
-                    drop: function() {
+                    drop: function () {
                     },
                     events: data
                 });
@@ -2323,44 +2569,44 @@ $(function () {
                         title: arg.title,
                         member_id: $('.input-employee-sch-id').val()
                     },
-                    beforeSend: function() {},
-                    success: async function(res) {
-                        if(res.status == true) {
+                    beforeSend: function () { },
+                    success: async function (res) {
+                        if (res.status == true) {
                             $('#calendar').fullCalendar('destroy');
-                                await $("#calendar").fullCalendar({
-                                    defaultView: 'month',
-                                    height: 750,
-                                    businessHours: true,
-                                    selectable: true,
-                                    header: {
-                                        left: 'today',
-                                        center: 'title',
-                                        right: 'month'
-                                    },
-                                    selectMirror: true,
-                                    select: function(arg) {
-                                        return false;
-                                    },eventClick: function(arg) {
-                                        if(confirm('Ingin Menghapus Jadwal Kerja Terpilih?')) {
-                                            deleteSchedule(arg)
-                                        }
-                                    },
-                                    dayMaxEvents: true,
-                                    editable: false,
-                                    droppable: false,
-                                    drop: function() {
-                                    },
-                                    events: res.schedule
-                                });
-                                $('#calendar').fullCalendar('render');
+                            await $("#calendar").fullCalendar({
+                                defaultView: 'month',
+                                height: 750,
+                                businessHours: true,
+                                selectable: true,
+                                header: {
+                                    left: 'today',
+                                    center: 'title',
+                                    right: 'month'
+                                },
+                                selectMirror: true,
+                                select: function (arg) {
+                                    return false;
+                                }, eventClick: function (arg) {
+                                    if (confirm('Ingin Menghapus Jadwal Kerja Terpilih?')) {
+                                        deleteSchedule(arg)
+                                    }
+                                },
+                                dayMaxEvents: true,
+                                editable: false,
+                                droppable: false,
+                                drop: function () {
+                                },
+                                events: res.schedule
+                            });
+                            $('#calendar').fullCalendar('render');
                         }
                     },
-                    error: function() {}
+                    error: function () { }
                 })
             }
         })
     }
-    if(routeName == 'setoran.open.pj') {
+    if (routeName == 'setoran.open.pj') {
         $('.table-open-pj-setoran').DataTable({
             language: {
                 url: cdnDatatableIdn,
@@ -2369,15 +2615,15 @@ $(function () {
             serverSide: true,
             ajax: document.location.href,
             columns: [
-                {data: 'nama_jabatan', name: 'nama_jabatan'},
-                {data: 'nama', name: 'nama'},
-                {data: 'action', name: 'action', orderable: false, searchable: false},
+                { data: 'nama_jabatan', name: 'nama_jabatan' },
+                { data: 'nama', name: 'nama' },
+                { data: 'action', name: 'action', orderable: false, searchable: false },
             ]
         });
     }
-    if(routeName == 'setoran.open.pj.create') {
-        $('select#jabatan_id').on('change', function() {
-            if($(this).children().first()['0'].value == '0') {
+    if (routeName == 'setoran.open.pj.create') {
+        $('select#jabatan_id').on('change', function () {
+            if ($(this).children().first()['0'].value == '0') {
                 $(this).children().first().remove();
             }
             $.ajax({
@@ -2387,18 +2633,18 @@ $(function () {
                     jabatan_id: $('select#jabatan_id').val(),
                 },
                 dataType: 'json',
-                beforeSend: function() {
+                beforeSend: function () {
                     $('.custom-checkbox').addClass('d-none');
                     $('.custom-control-input').attr('checked', false);
                     $('.msg-pj').removeClass('d-none');
                     $('.msg-pj').text('Loading... ');
                 },
-                success: function(data) {
-                    if(data.message == 'Member has been catched'){
-                        if(data.data.length > 0) {
+                success: function (data) {
+                    if (data.message == 'Member has been catched') {
+                        if (data.data.length > 0) {
                             $('.msg-pj').addClass('d-none');
                             $('.custom-control.custom-checkbox').map((index, el) => {
-                                if($.inArray(el.dataset.id, data.data) != -1) {
+                                if ($.inArray(el.dataset.id, data.data) != -1) {
                                     el.classList.remove('d-none')
                                 }
                             })
@@ -2410,11 +2656,11 @@ $(function () {
                         $('.msg-pj').text("Jabatan Salah");
                     }
                 },
-                error: function(err) {console.error(err)}
+                error: function (err) { console.error(err) }
             });
         })
     }
-    if(routeName == 'menu.kehadiran') {
+    if (routeName == 'menu.kehadiran') {
         $('.table-jadwal-kerja').DataTable({
             language: {
                 url: cdnDatatableIdn,
@@ -2423,32 +2669,32 @@ $(function () {
             serverSide: true,
             ajax: document.location.href,
             columns: [
-                {data: 'status', name: 'status'},
-                {data: 'tanggal', name: 'tanggal'},
-                {data: 'jam_kerja', name: 'jam_kerja'},
-                {data: 'nozzle', name: 'nozzle'},
-                {data: 'action', name: 'action', orderable: false, searchable: false},
+                { data: 'status', name: 'status' },
+                { data: 'tanggal', name: 'tanggal' },
+                { data: 'jam_kerja', name: 'jam_kerja' },
+                { data: 'nozzle', name: 'nozzle' },
+                { data: 'action', name: 'action', orderable: false, searchable: false },
             ]
         });
     }
-    if(routeName == 'kehadiran.show') {
-        if($('#jenis_jam').val() == 'in') {
-            $('.btn-from-one-to-two').on('click', function() {
+    if (routeName == 'kehadiran.show') {
+        if ($('#jenis_jam').val() == 'in') {
+            $('.btn-from-one-to-two').on('click', function () {
                 $('.wizard-content.one').addClass('d-none');
                 $('.wizard-step.two').addClass('wizard-step-active')
                 $('.wizard-content.two').removeClass('d-none')
             });
-            $('.btn-two-to-one').on('click', function() {
+            $('.btn-two-to-one').on('click', function () {
                 $('.wizard-content.one').removeClass('d-none');
                 $('.wizard-step.two').removeClass('wizard-step-active')
                 $('.wizard-content.two').addClass('d-none')
             });
-            $('.btn-two-to-three').on('click', function() {
+            $('.btn-two-to-three').on('click', function () {
                 $('.wizard-content.two').addClass('d-none');
                 $('.wizard-step.three').addClass('wizard-step-active')
                 $('.wizard-content.three').removeClass('d-none')
             });
-            $('.btn-three-to-two').on('click', function() {
+            $('.btn-three-to-two').on('click', function () {
                 $('.wizard-content.two').removeClass('d-none');
                 $('.wizard-step.three').removeClass('wizard-step-active');
                 $('.wizard-content.three').addClass('d-none');
@@ -2456,7 +2702,7 @@ $(function () {
 
             const scanner = new QrScanner(document.getElementById('qr-video'), result => {
                 $('#cam-qr-result').append(result)
-                if(result != '') {
+                if (result != '') {
                     stopCamera();
                     checkAndSubmitAttendance(result)
                 }
@@ -2472,16 +2718,16 @@ $(function () {
                         code: document.location.href.split('/')[document.location.href.split('/').length - 1]
                     },
                     dataType: 'json',
-                    beforeSend: function() {
+                    beforeSend: function () {
                         $('#start_cam').attr('disabled', '')
                         $('.btn-three-to-two').attr('disabled', '')
                         $('.waiting-alert').removeClass('d-none');
                     },
-                    success: function(res) {
+                    success: function (res) {
                         $('#start_cam').removeAttr('disabled', '')
                         $('.btn-three-to-two').removeAttr('disabled', '')
                         $('.waiting-alert').addClass('d-none');
-                        if(res.message == 'qrcode not valid') {
+                        if (res.message == 'qrcode not valid') {
                             Swal.fire({
                                 icon: 'error',
                                 title: 'Not Valid',
@@ -2489,7 +2735,7 @@ $(function () {
                                 timer: 2000
                             });
                         }
-                        if(res.message == 'qrcode wrong') {
+                        if (res.message == 'qrcode wrong') {
                             Swal.fire({
                                 icon: 'error',
                                 title: 'Not Valid',
@@ -2497,7 +2743,7 @@ $(function () {
                                 timer: 2000
                             });
                         }
-                        if(res.status) {
+                        if (res.status) {
                             $('.wizard-steps').addClass('d-none');
                             $('.wizard-content.three').addClass('d-none');
                             $('.wizard-content.complete').removeClass('d-none');
@@ -2509,7 +2755,7 @@ $(function () {
                             });
                         }
                     },
-                    error: function(err) {console.error(err)}
+                    error: function (err) { console.error(err) }
                 });
             }
 
@@ -2520,25 +2766,25 @@ $(function () {
             }
 
             $('#camList').on('change', event => {
-                scanner.setCamera(event.target.value).then(() => {});
+                scanner.setCamera(event.target.value).then(() => { });
             });
 
             QrScanner.listCameras(true).then(cameras => cameras.forEach(camera => {
-                $('#cam-list').append('<option value="'+ camera.id +'">' + camera.label + '</option>');
+                $('#cam-list').append('<option value="' + camera.id + '">' + camera.label + '</option>');
             }));
 
-            $('#start_cam').on('click',function() {
+            $('#start_cam').on('click', function () {
                 scanner.start().then(() => {
                 });
                 $('#start_cam').attr('disabled', '')
                 $('#stop_cam').removeAttr('disabled')
             });
 
-            $('#stop_cam').on('click',function () {
+            $('#stop_cam').on('click', function () {
                 stopCamera();
             });
         } else {
-            $('.close-btn-from-one-to-two').on('click', function() {
+            $('.close-btn-from-one-to-two').on('click', function () {
                 $.ajax({
                     url: document.location.href + '/api/out',
                     method: 'put',
@@ -2546,19 +2792,19 @@ $(function () {
                         '_token': $('meta[name="csrf-token"]').attr('content'),
                     },
                     dataType: 'json',
-                    beforeSend: function() {
+                    beforeSend: function () {
                         $('#start_cam').attr('disabled', '')
                         $('.btn-three-to-two').attr('disabled', '')
                         $('.waiting-alert').removeClass('d-none');
                     },
-                    success: function(res) {
-                        if(res.status) {
+                    success: function (res) {
+                        if (res.status) {
                             $('.wizard-content.close-one').addClass('d-none')
                             $('.wizard-step.close-two').addClass('wizard-step-active')
                             $('.wizard-content.close-complete').removeClass('d-none')
                         }
                     },
-                    error: function(err) {console.error(err)}
+                    error: function (err) { console.error(err) }
                 });
             })
         }
@@ -2572,10 +2818,10 @@ $(function () {
         serverSide: true,
         ajax: document.location.href,
         columns: [
-            {data: 'nama_file', name: 'nama_file'},
-            {data: 'nama_dokumen', name: 'nama_dokumen'},
-            {data: 'tanggal_upload', name: 'tanggal_upload'},
-            {data: 'action', name: 'action', orderable: false, searchable: false},
+            { data: 'nama_file', name: 'nama_file' },
+            { data: 'nama_dokumen', name: 'nama_dokumen' },
+            { data: 'tanggal_upload', name: 'tanggal_upload' },
+            { data: 'action', name: 'action', orderable: false, searchable: false },
         ]
     });
     $('.table-file-aset').DataTable({
@@ -2586,14 +2832,14 @@ $(function () {
         serverSide: true,
         ajax: document.location.href,
         columns: [
-            {data: 'nama_file', name: 'nama_file'},
-            {data: 'nama_dokumen', name: 'nama_dokumen'},
-            {data: 'tanggal_upload', name: 'tanggal_upload'},
-            {data: 'action', name: 'action', orderable: false, searchable: false},
+            { data: 'nama_file', name: 'nama_file' },
+            { data: 'nama_dokumen', name: 'nama_dokumen' },
+            { data: 'tanggal_upload', name: 'tanggal_upload' },
+            { data: 'action', name: 'action', orderable: false, searchable: false },
         ]
     });
 
-    if(routeName == 'aset.create' || routeName == 'aset.edit') {
+    if (routeName == 'aset.create' || routeName == 'aset.edit') {
         var cleaveOne = new Cleave('.currency', {
             numeral: true,
             numeralThousandsGroupStyle: 'thousand'

@@ -58,22 +58,11 @@ class PostController extends Controller
             $post = Post::create($this->postData());
         }
 
-        if (count($postRequest->tag) > 0) {
-            foreach ($postRequest->tag as $t) {
-                DB::table('tag_post')->insert([
-                    'post_id' => $post->post_id,
-                    'tag_id' => $t
-                ]);
-            }
-        }
-        if (count($postRequest->kategori) > 0) {
-            foreach ($postRequest->kategori as $k) {
-                DB::table('kategori_post')->insert([
-                    'post_id' => $post->post_id,
-                    'kategori_id' => $k
-                ]);
-            }
-        }
+        // syncWithoutDetaching is idempotent: it skips pivot rows that already
+        // exist, so re-submitting or duplicate selections won't violate the
+        // (tag_id, post_id) / (kategori_id, post_id) unique constraints.
+        $post->tag()->syncWithoutDetaching(array_unique($postRequest->tag));
+        $post->kategori()->syncWithoutDetaching(array_unique($postRequest->kategori));
 
         return redirect('/artikel/post/' . $post->post_id)->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> Data Post sudah ditambah.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
     }
@@ -102,24 +91,11 @@ class PostController extends Controller
     public function update(PostRequest $postRequest, Post $post)
     {
         $post->update($this->postData());
-        DB::table('tag_post')->where('post_id', $post->post_id)->delete();
-        if (count($postRequest->tag) > 0) {
-            foreach ($postRequest->tag as $t) {
-                DB::table('tag_post')->insert([
-                    'post_id' => $post->post_id,
-                    'tag_id' => $t
-                ]);
-            }
-        }
-        DB::table('kategori_post')->where('post_id', $post->post_id)->delete();
-        if (count($postRequest->kategori) > 0) {
-            foreach ($postRequest->kategori as $k) {
-                DB::table('kategori_post')->insert([
-                    'post_id' => $post->post_id,
-                    'kategori_id' => $k
-                ]);
-            }
-        }
+
+        // sync detaches removed items and attaches new ones in one step,
+        // without ever duplicating an existing pivot row.
+        $post->tag()->sync(array_unique($postRequest->tag));
+        $post->kategori()->sync(array_unique($postRequest->kategori));
 
         return redirect('/artikel/post/' . $post->post_id)->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> Data Post sudah diubah.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
     }

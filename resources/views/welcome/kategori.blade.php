@@ -1,50 +1,40 @@
 @extends('welcome.welcome')
+
+@section('hero_title', 'Kategori Artikel')
+@section('hero_subtitle', 'Kumpulan artikel dan pengumuman dalam kategori pilihan Anda.')
+
 @section('content')
-<div class="row">
-    <div class="col-12 col-sm-12 col-lg-8 order-2 order-md-2 order-lg-1">
-        <div class="row">
-            <div class="col-12 col-sm-12 d-flex">
-                <p>Kategori: {{ $kategori->nama_kategori }}</p>
-            </div>
-            <div class="col-12 col-sm-12">
-                <p>Detail: {{ $kategori->detail }}</p>
-            </div>
-        </div>
-        @if($artikel->count() > 0)
-        <div class="row">
-            @foreach ($artikel as $a)
-            <div class="col-12 col-sm-12 ">
-                <div class="card">
-                    <div class="card-body">
-                        <h5 class="card-title">{{ $a->title }}</h5>
-                        <p class="card-subtitle">Dibuat oleh {{ $a->member()->first()->ktp()->first()->nama }} pada tanggal {{ $a->created_at->format('d F Y') }}</p>
-                        <p class="card-text">{{ substr($a->content, 0, 50) }}</p>
-                        <a href="{{ route('welcome.show', $a->post_id) }}" class="btn btn-primary">Baca</a>
-                    </div>
+    <div class="row">
+        <div class="col-12 col-lg-8 order-2 order-lg-1">
+            <div class="portal-heading">
+                <div class="ph-ico"><i class="fas fa-folder"></i></div>
+                <div>
+                    <div class="ph-label">Kategori</div>
+                    <div class="ph-value">{{ $kategori->nama_kategori }}</div>
+                    @if ($kategori->detail)
+                        <p class="ph-detail">{{ $kategori->detail }}</p>
+                    @endif
                 </div>
             </div>
-            @endforeach
-        </div>
-        <div class="row">
-            <div class="col-12 col-sm-12">
-                <div class="d-flex justify-content-center">
+
+            @if ($artikel->count() > 0)
+                <div class="row">
+                    @foreach ($artikel as $a)
+                        @include('welcome.partials.article-card', ['a' => $a, 'i' => $loop->index])
+                    @endforeach
+                </div>
+                <div class="d-flex justify-content-center mt-2">
                     {!! $artikel->links() !!}
                 </div>
-            </div>
+            @else
+                <div class="empty-state">
+                    <i class="far fa-folder-open"></i>
+                    <p>Tidak ada artikel pada kategori <strong>{{ $kategori->nama_kategori }}</strong>.</p>
+                </div>
+            @endif
         </div>
-        @else
-        <div class="alert info">Tidak Ada Artikel dari Kategori {{ $kategori->nama_kategori }} yang tersedia</div>
-        @endif
-    </div>
-    <div class="col-12 col-sm-12 col-lg-4 order-1 order-md-1 order-lg-2">
-        <div class="card">
-            <div class="card-body">
-              <h5 class="card-title">Login ke Aplikasi</h5>
-              <p class="card-text">Gunakan Username dan Password</p>
-              <a href="{{ url('/login') }}" class="btn btn-primary">Login</a>
-            </div>
+        <div class="col-12 col-lg-4 order-1 order-lg-2">
+            @include('welcome.partials.sidebar')
         </div>
     </div>
-</div>
-
 @endsection
