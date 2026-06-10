@@ -22,6 +22,10 @@
     <!-- Icon -->
     <link rel="shortcut icon" href="{{ asset('favicon.ico') }}" type="image/x-icon">
 
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.bunny.net">
+    <link href="https://fonts.bunny.net/css?family=plus-jakarta-sans:400,500,600,700,800&display=swap" rel="stylesheet" />
+
     <!-- Google Chart -->
     <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
 
@@ -104,6 +108,347 @@
             height: 100%;
             color: #adb5bd;
             font-size: 13px;
+        }
+
+        /* ============================================================
+           GLOBAL MODERN THEME — navbar · sidebar · content
+           ============================================================ */
+        :root {
+            --pri: #6777ef;
+            --pri-dark: #4f5fdc;
+            --ink: #1f2440;
+            --muted: #8089a8;
+        }
+
+        body {
+            background: #f2f4fc !important;
+            font-family: 'Plus Jakarta Sans', 'Nunito', 'Segoe UI', sans-serif;
+            color: #2b3052;
+        }
+
+        /* soft colorful glow behind the content area */
+        .main-content {
+            position: relative;
+            margin-top: 28px;
+        }
+
+        .main-content:before {
+            content: "";
+            position: fixed;
+            top: 0;
+            right: 0;
+            width: 60vw;
+            height: 320px;
+            pointer-events: none;
+            z-index: 0;
+            background:
+                radial-gradient(circle at 80% 0%, rgba(103, 119, 239, .14), transparent 60%),
+                radial-gradient(circle at 100% 20%, rgba(155, 89, 182, .12), transparent 55%);
+        }
+
+        .main-content > * {
+            position: relative;
+            z-index: 1;
+        }
+
+        /* ---- Cards ---- */
+        .main-content .card {
+            border: 0;
+            border-radius: 16px;
+            box-shadow: 0 6px 22px rgba(31, 36, 64, .06);
+        }
+
+        .main-content .card .card-header {
+            border-bottom: 1px solid rgba(31, 36, 64, .06);
+        }
+
+        .main-content .card .card-header h4 {
+            font-weight: 700;
+            font-size: 16px;
+            color: var(--ink);
+        }
+
+        .section-header h1,
+        .section-title {
+            font-weight: 800;
+            color: var(--ink);
+        }
+
+        .main-footer,
+        .main-content .main-footer {
+            background: transparent;
+            box-shadow: none;
+        }
+
+        /* ============================================================
+           TOP NAVBAR
+           ============================================================ */
+        .navbar-bg {
+            background: transparent !important;
+        }
+
+        .main-navbar {
+            top: 14px;
+            background: rgba(255, 255, 255, .88) !important;
+            backdrop-filter: saturate(180%) blur(10px);
+            box-shadow: 0 2px 18px rgba(31, 36, 64, .06);
+            border: 0 !important;
+        }
+
+        .main-navbar .navbar-nav .nav-link {
+            color: #5a6488 !important;
+        }
+
+        /* hamburger + action icons -> rounded buttons */
+        .main-navbar .navbar-nav .nav-link-lg {
+            width: 42px;
+            height: 42px;
+            display: grid !important;
+            place-items: center;
+            border-radius: 12px;
+            background: #f1f3fb;
+            margin-left: 8px;
+            font-size: 16px;
+            transition: background .18s ease, color .18s ease, transform .18s ease;
+        }
+
+        .main-navbar .navbar-nav .nav-link-lg:hover {
+            background: rgba(103, 119, 239, .14);
+            color: var(--pri) !important;
+            transform: translateY(-1px);
+        }
+
+        .main-navbar .navbar-right .nav-link-user img {
+            width: 30px;
+            height: 30px;
+            object-fit: cover;
+            border: 2px solid var(--pri);
+            margin: 0 !important;
+        }
+
+        /* notification dot on the bell */
+        .main-navbar a:has(.fa-bell) {
+            position: relative;
+        }
+
+        .main-navbar a:has(.fa-bell):after {
+            content: "";
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #fc544b;
+            border: 2px solid #fff;
+        }
+
+        .main-navbar a#logout-btn:hover {
+            background: rgba(252, 84, 75, .14);
+            color: #fc544b !important;
+        }
+
+        /* ============================================================
+           SIDEBAR — white & minimal with colorful icon chips
+           ============================================================ */
+        .main-sidebar {
+            background: #ffffff !important;
+            box-shadow: 2px 0 22px rgba(31, 36, 64, .05);
+            border: 0 !important;
+        }
+
+        .main-sidebar .sidebar-brand,
+        .main-sidebar .sidebar-brand.sidebar-brand-sm {
+            background: #ffffff !important;
+            height: 64px;
+        }
+
+        .main-sidebar .sidebar-brand a {
+            color: var(--ink) !important;
+            font-weight: 800;
+            letter-spacing: .4px;
+        }
+
+        .main-sidebar .sidebar-brand img {
+            border-radius: 9px;
+        }
+
+        #sidebar-wrapper::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        #sidebar-wrapper::-webkit-scrollbar-thumb {
+            background: rgba(31, 36, 64, .12);
+            border-radius: 6px;
+        }
+
+        .main-sidebar .sidebar-menu {
+            padding: 6px 12px 30px;
+        }
+
+        .main-sidebar .sidebar-menu li.menu-header {
+            color: var(--muted);
+            font-size: 11px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 1.2px;
+            padding: 18px 14px 8px;
+        }
+
+        .main-sidebar .sidebar-menu > li {
+            margin-bottom: 3px;
+        }
+
+        .main-sidebar .sidebar-menu > li > a {
+            display: flex;
+            align-items: center;
+            padding: 9px 12px;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 13.5px;
+            color: #4d5476 !important;
+            transition: background .18s ease, color .18s ease;
+        }
+
+        .main-sidebar .sidebar-menu > li > a > i {
+            width: 36px;
+            min-width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            display: inline-grid;
+            place-items: center;
+            margin-right: 12px;
+            font-size: 15px;
+            background: rgba(103, 119, 239, .12);
+            color: var(--pri);
+            transition: background .18s ease, color .18s ease;
+        }
+
+        .main-sidebar .sidebar-menu > li > a:hover {
+            background: #f3f4fd !important;
+            color: var(--ink) !important;
+        }
+
+        /* colorful icon chips, cycled per item */
+        .main-sidebar .sidebar-menu > li:nth-of-type(8n+1) > a > i { background: rgba(103, 119, 239, .12); color: #6777ef; }
+        .main-sidebar .sidebar-menu > li:nth-of-type(8n+2) > a > i { background: rgba(252, 84, 75, .12); color: #fc544b; }
+        .main-sidebar .sidebar-menu > li:nth-of-type(8n+3) > a > i { background: rgba(255, 164, 38, .14); color: #f6820d; }
+        .main-sidebar .sidebar-menu > li:nth-of-type(8n+4) > a > i { background: rgba(71, 195, 99, .14); color: #2f9e4f; }
+        .main-sidebar .sidebar-menu > li:nth-of-type(8n+5) > a > i { background: rgba(58, 186, 244, .14); color: #1d9bd7; }
+        .main-sidebar .sidebar-menu > li:nth-of-type(8n+6) > a > i { background: rgba(155, 89, 182, .14); color: #9b59b6; }
+        .main-sidebar .sidebar-menu > li:nth-of-type(8n+7) > a > i { background: rgba(0, 201, 167, .14); color: #00a98c; }
+        .main-sidebar .sidebar-menu > li:nth-of-type(8n+8) > a > i { background: rgba(245, 83, 118, .14); color: #f55376; }
+
+        /* active item -> gradient pill (higher specificity wins over chips) */
+        .main-sidebar .sidebar-menu > li.active > a {
+            background: linear-gradient(135deg, var(--pri), var(--pri-dark)) !important;
+            color: #ffffff !important;
+            box-shadow: 0 8px 18px rgba(103, 119, 239, .4);
+        }
+
+        .main-sidebar .sidebar-menu > li.active > a > i {
+            background: rgba(255, 255, 255, .22) !important;
+            color: #ffffff !important;
+        }
+
+        .main-sidebar .sidebar-menu > li > a.has-dropdown:after {
+            color: var(--muted);
+        }
+
+        .main-sidebar .sidebar-menu > li.active > a.has-dropdown:after {
+            color: rgba(255, 255, 255, .85);
+        }
+
+        /* ---- submenu (sub-nav): indented list with a connecting rail ---- */
+        /* high-specificity selectors below also neutralise stisla's gray
+           active-state background + deep 65px padding on submenu items */
+        .main-sidebar .sidebar-menu li ul.dropdown-menu,
+        .main-sidebar .sidebar-menu li.active ul.dropdown-menu {
+            position: relative;
+            background: transparent !important;
+            padding: 2px 0 6px !important;
+            margin: 2px 0 8px 28px !important;
+        }
+
+        /* the vertical rail */
+        .main-sidebar .sidebar-menu li ul.dropdown-menu:before {
+            content: "";
+            position: absolute;
+            left: 7px;
+            top: 4px;
+            bottom: 10px;
+            width: 2px;
+            border-radius: 2px;
+            background: #e8eaf4;
+        }
+
+        .main-sidebar .sidebar-menu li ul.dropdown-menu li a {
+            position: relative;
+            display: flex;
+            align-items: center;
+            height: auto !important;
+            min-height: 36px;
+            padding: 8px 12px 8px 26px !important;
+            margin: 1px 10px 1px 0;
+            border-radius: 9px;
+            font-size: 13px;
+            font-weight: 500;
+            color: #7a829f !important;
+            background: transparent !important;
+            transition: background .18s ease, color .18s ease;
+        }
+
+        /* node on the rail */
+        .main-sidebar .sidebar-menu li ul.dropdown-menu li a:before {
+            content: "";
+            position: absolute;
+            left: 3px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 9px;
+            height: 9px;
+            border-radius: 50%;
+            background: #fff;
+            border: 2px solid #cdd2e6;
+            transition: border-color .18s ease, background .18s ease, box-shadow .18s ease;
+        }
+
+        .main-sidebar .sidebar-menu li ul.dropdown-menu li a:hover {
+            background: #f1f2fc !important;
+            color: var(--ink) !important;
+        }
+
+        .main-sidebar .sidebar-menu li.active ul.dropdown-menu li a:hover {
+            background: #f1f2fc !important;
+        }
+
+        .main-sidebar .sidebar-menu li ul.dropdown-menu li.active > a {
+            background: rgba(103, 119, 239, .12) !important;
+            color: var(--pri-dark) !important;
+            font-weight: 700;
+        }
+
+        .main-sidebar .sidebar-menu li ul.dropdown-menu li.active > a:before,
+        .main-sidebar .sidebar-menu li ul.dropdown-menu li a:hover:before {
+            background: var(--pri);
+            border-color: var(--pri);
+            box-shadow: 0 0 0 3px rgba(103, 119, 239, .18);
+        }
+
+        /* collapsed (mini) sidebar */
+        body.sidebar-mini .main-sidebar .sidebar-menu > li > a {
+            justify-content: center;
+        }
+
+        body.sidebar-mini .main-sidebar .sidebar-menu > li > a > i {
+            margin-right: 0;
+        }
+
+        body.sidebar-mini .main-sidebar .sidebar-menu > li > ul.dropdown-menu {
+            background: #ffffff !important;
+            padding: 8px !important;
+            border-radius: 12px;
+            box-shadow: 0 14px 32px rgba(31, 36, 64, .16);
         }
     </style>
 </head>
