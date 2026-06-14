@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Aset;
 use App\Models\FileAset;
 use Illuminate\Support\Facades\Storage;
+use Inertia\Inertia;
 use Yajra\DataTables\DataTables;
 use Illuminate\Http\Request;
 
@@ -15,8 +16,8 @@ class FileAsetController extends Controller
      */
     public function index(Request $request, Aset $aset)
     {
-        if ($request->ajax()) {
-            $data = FileAset::select('*');
+        if ($request->ajax() && ! $request->inertia()) {
+            $data = $aset->file_aset()->select('*');
             return DataTables::of($data)
                 ->addIndexColumn()
                 ->addColumn('action', function ($row) {
@@ -26,7 +27,20 @@ class FileAsetController extends Controller
                 ->rawColumns(['action'])
                 ->make(true);
         }
-        return view('master/aset/file/index', compact('aset'));
+        return Inertia::render('Table/Index', [
+            'title' => 'File Aset',
+            'breadcrumbs' => [['label' => 'Master Data', 'url' => route('menu.master')], ['label' => 'Aset', 'url' => route('aset.index')], ['label' => $aset->nama_aset, 'url' => route('aset.show', $aset)]],
+            'createUrl' => route('aset.file.create', $aset),
+            'table' => [
+                'url' => $request->url(),
+                'columns' => [
+                    ['label' => 'Nama File', 'data' => 'nama_file'],
+                    ['label' => 'Nama Dokumen', 'data' => 'nama_dokumen'],
+                    ['label' => 'Tanggal Upload', 'data' => 'tanggal_upload'],
+                    ['label' => 'Aksi', 'data' => 'action', 'orderable' => false, 'searchable' => false, 'raw' => true],
+                ],
+            ],
+        ]);
     }
 
     /**
@@ -34,7 +48,16 @@ class FileAsetController extends Controller
      */
     public function create(Aset $aset)
     {
-        return view('master/aset/file/create', compact('aset'));
+        return Inertia::render('Form/Index', [
+            'title' => 'Tambah File Aset',
+            'breadcrumbs' => [['label' => 'Master Data', 'url' => route('menu.master')], ['label' => 'Aset', 'url' => route('aset.index')], ['label' => 'File Aset', 'url' => route('aset.file.index', $aset)]],
+            'backUrl' => route('aset.file.index', $aset),
+            'method' => 'post',
+            'action' => route('aset.file.store', $aset),
+            'fields' => [
+                ['name' => 'gambar', 'label' => 'File', 'type' => 'file', 'value' => null, 'hint' => 'Pilih file dokumen/gambar yang akan diunggah.'],
+            ],
+        ]);
     }
 
     /**
@@ -42,6 +65,8 @@ class FileAsetController extends Controller
      */
     public function store(Request $request, Aset $aset)
     {
+        $request->validate(['gambar' => 'required|file|max:' . \App\Support\Upload::maxKb()]);
+
         $foto = 'default.png';
         if ($request->hasFile('gambar')) {
             $filenameWithExt = $request->file('gambar')->getClientOriginalName();
@@ -64,7 +89,22 @@ class FileAsetController extends Controller
      */
     public function show(Aset $aset, FileAset $fileAset)
     {
-        return view('master/aset/file/show', compact('aset', 'fileAset'));
+        return Inertia::render('Show/Index', [
+            'title' => 'Detail File Aset',
+            'breadcrumbs' => [['label' => 'Master Data', 'url' => route('menu.master')], ['label' => 'Aset', 'url' => route('aset.index')], ['label' => 'File Aset', 'url' => route('aset.file.index', $aset)]],
+            'backUrl' => route('aset.file.index', $aset),
+            'fields' => [
+                ['label' => 'Nama Dokumen', 'value' => $fileAset->nama_dokumen],
+                ['label' => 'Nama File', 'value' => $fileAset->nama_file],
+                ['label' => 'Tanggal Upload', 'value' => $fileAset->tanggal_upload],
+            ],
+            'image' => asset('storage/aset/' . $fileAset->nama_file),
+            'actions' => [
+                ['label' => 'Ubah', 'url' => route('aset.file.edit', [$aset, $fileAset]), 'color' => 'primary', 'icon' => 'pen'],
+                ['label' => 'Download', 'url' => route('aset.file.download', [$aset, $fileAset]), 'color' => 'info', 'icon' => 'download'],
+            ],
+            'deleteUrl' => route('aset.file.delete', [$aset, $fileAset]),
+        ]);
     }
 
     /**
@@ -72,7 +112,16 @@ class FileAsetController extends Controller
      */
     public function edit(Aset $aset, FileAset $fileAset)
     {
-        return view('master/aset/file/edit', compact('aset', 'fileAset'));
+        return Inertia::render('Form/Index', [
+            'title' => 'Ubah File Aset',
+            'breadcrumbs' => [['label' => 'Master Data', 'url' => route('menu.master')], ['label' => 'Aset', 'url' => route('aset.index')], ['label' => 'File Aset', 'url' => route('aset.file.index', $aset)]],
+            'backUrl' => route('aset.file.show', [$aset, $fileAset]),
+            'method' => 'put',
+            'action' => route('aset.file.update', [$aset, $fileAset]),
+            'fields' => [
+                ['name' => 'gambar', 'label' => 'File Pengganti', 'type' => 'file', 'value' => null, 'hint' => 'File saat ini: ' . $fileAset->nama_dokumen],
+            ],
+        ]);
     }
 
     /**
@@ -80,6 +129,8 @@ class FileAsetController extends Controller
      */
     public function update(Request $request, Aset $aset, FileAset $fileAset)
     {
+        $request->validate(['gambar' => 'nullable|file|max:' . \App\Support\Upload::maxKb()]);
+
         $foto = $fileAset->nama_file;
         $filenameWithExt = $fileAset->nama_dokumen;
 
@@ -117,7 +168,7 @@ class FileAsetController extends Controller
         return [
             'nama_file' => $file != null ? $file : request('nama_file'),
             'nama_dokumen' => $dokumen != null ? $dokumen : request('nama_dokumen'),
-            'tanggal_upload' => request('tanggal_upload'),
+            'tanggal_upload' => request('tanggal_upload') ?? date('Y-m-d'),
         ];
     }
 

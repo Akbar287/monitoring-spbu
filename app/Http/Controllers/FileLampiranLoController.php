@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use Inertia\Inertia;
 use App\Models\FileLampiranLo;
 use App\Models\FileLo;
 use App\Models\Pengiriman;
@@ -17,7 +18,7 @@ class FileLampiranLoController extends Controller
      */
     public function index(Request $request, Pengiriman $pengiriman, FileLo $file_lo)
     {
-        if ($request->ajax()) {
+        if ($request->ajax() && ! $request->inertia()) {
             $data = FileLampiranLo::get();
             return DataTables::of($data)
                 ->addIndexColumn()
@@ -31,7 +32,20 @@ class FileLampiranLoController extends Controller
                 ->rawColumns(['action'])
                 ->make(true);
         }
-        return view('procurement/file_lampiran_lo/index', compact('pengiriman', 'file_lo'));
+        return Inertia::render('Table/Index', [
+            'title' => 'Lampiran LO',
+            'breadcrumbs' => [['label' => 'Procurement', 'url' => route('menu.procurement')], ['label' => 'Delivery', 'url' => route('pengiriman.index')]],
+            'createUrl' => route('pengiriman.file_lo_show.lampiran.create', [$pengiriman, $file_lo]),
+            'table' => [
+                'url' => $request->url(),
+                'columns' => [
+                    ['label' => 'Nama File', 'data' => 'nama_file'],
+                    ['label' => 'Nama Dokumen', 'data' => 'nama_dokumen'],
+                    ['label' => 'Tanggal Upload', 'data' => 'tanggal_upload'],
+                    ['label' => 'Aksi', 'data' => 'action', 'orderable' => false, 'searchable' => false, 'raw' => true],
+                ],
+            ],
+        ]);
     }
 
     /**
@@ -39,7 +53,16 @@ class FileLampiranLoController extends Controller
      */
     public function create(Pengiriman $pengiriman, FileLo $file_lo)
     {
-        return view('procurement/file_lampiran_lo/create', compact('pengiriman', 'file_lo'));
+        return Inertia::render('Form/Index', [
+            'title' => 'Tambah Lampiran LO',
+            'breadcrumbs' => [['label' => 'Procurement', 'url' => route('menu.procurement')], ['label' => 'Delivery', 'url' => route('pengiriman.index')], ['label' => 'Lampiran LO', 'url' => route('pengiriman.file_lo_show.lampiran.index', [$pengiriman, $file_lo])]],
+            'backUrl' => route('pengiriman.file_lo_show.lampiran.index', [$pengiriman, $file_lo]),
+            'method' => 'post',
+            'action' => route('pengiriman.file_lo_show.lampiran.store', [$pengiriman, $file_lo]),
+            'fields' => [
+                ['name' => 'gambar', 'label' => 'File', 'type' => 'file', 'value' => null, 'hint' => 'Pilih file dokumen/gambar yang akan diunggah.'],
+            ],
+        ]);
     }
 
     /**
@@ -47,6 +70,8 @@ class FileLampiranLoController extends Controller
      */
     public function store(Request $request, Pengiriman $pengiriman, FileLo $file_lo)
     {
+        $request->validate(['gambar' => 'required|file|max:' . \App\Support\Upload::maxKb()]);
+
         $foto = 'default.png';
         $filenameWithExt = '';
 
@@ -71,7 +96,22 @@ class FileLampiranLoController extends Controller
      */
     public function show(Pengiriman $pengiriman, FileLo $file_lo, FileLampiranLo $fileLampiranLo)
     {
-        return view('procurement/file_lampiran_lo/show', compact('pengiriman', 'file_lo', 'fileLampiranLo'));
+        return Inertia::render('Show/Index', [
+            'title' => 'Detail Lampiran LO',
+            'breadcrumbs' => [['label' => 'Procurement', 'url' => route('menu.procurement')], ['label' => 'Delivery', 'url' => route('pengiriman.index')], ['label' => 'Lampiran LO', 'url' => route('pengiriman.file_lo_show.lampiran.index', [$pengiriman, $file_lo])]],
+            'backUrl' => route('pengiriman.file_lo_show.lampiran.index', [$pengiriman, $file_lo]),
+            'fields' => [
+                ['label' => 'Nama Dokumen', 'value' => $fileLampiranLo->nama_dokumen],
+                ['label' => 'Nama File', 'value' => $fileLampiranLo->nama_file],
+                ['label' => 'Tanggal Upload', 'value' => $fileLampiranLo->tanggal_upload],
+            ],
+            'image' => asset('storage/file_lampiran_lo/' . $fileLampiranLo->nama_file),
+            'actions' => [
+                ['label' => 'Ubah', 'url' => route('pengiriman.file_lo_show.lampiran.edit', [$pengiriman, $file_lo, $fileLampiranLo]), 'color' => 'primary', 'icon' => 'pen'],
+                ['label' => 'Download', 'url' => route('pengiriman.file_lo_show.lampiran.unduh', [$pengiriman, $file_lo, $fileLampiranLo]), 'color' => 'info', 'icon' => 'download'],
+            ],
+            'deleteUrl' => route('pengiriman.file_lo_show.lampiran.destroy', [$pengiriman, $file_lo, $fileLampiranLo]),
+        ]);
     }
 
     /**
@@ -79,7 +119,16 @@ class FileLampiranLoController extends Controller
      */
     public function edit(Pengiriman $pengiriman, FileLo $file_lo, FileLampiranLo $fileLampiranLo)
     {
-        return view('procurement/file_lampiran_lo/edit', compact('pengiriman', 'file_lo', 'fileLampiranLo'));
+        return Inertia::render('Form/Index', [
+            'title' => 'Ubah Lampiran LO',
+            'breadcrumbs' => [['label' => 'Procurement', 'url' => route('menu.procurement')], ['label' => 'Delivery', 'url' => route('pengiriman.index')], ['label' => 'Lampiran LO', 'url' => route('pengiriman.file_lo_show.lampiran.index', [$pengiriman, $file_lo])]],
+            'backUrl' => route('pengiriman.file_lo_show.lampiran.show', [$pengiriman, $file_lo, $fileLampiranLo]),
+            'method' => 'put',
+            'action' => route('pengiriman.file_lo_show.lampiran.update', [$pengiriman, $file_lo, $fileLampiranLo]),
+            'fields' => [
+                ['name' => 'file', 'label' => 'File Pengganti', 'type' => 'file', 'value' => null, 'hint' => 'File saat ini: ' . $fileLampiranLo->nama_dokumen],
+            ],
+        ]);
     }
 
     /**
@@ -87,6 +136,8 @@ class FileLampiranLoController extends Controller
      */
     public function update(Request $request, Pengiriman $pengiriman, FileLo $file_lo, FileLampiranLo $fileLampiranLo)
     {
+        $request->validate(['gambar' => 'nullable|file|max:' . \App\Support\Upload::maxKb()]);
+
 
         $foto = $fileLampiranLo->nama_file;
         $filenameWithExt = $fileLampiranLo->nama_dokumen;

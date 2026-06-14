@@ -9,6 +9,7 @@ use App\Models\Tag;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Inertia\Inertia;
 use Yajra\DataTables\DataTables;
 
 class PostController extends Controller
@@ -18,7 +19,7 @@ class PostController extends Controller
      */
     public function index(Request $request)
     {
-        if ($request->ajax()) {
+        if ($request->ajax() && ! $request->inertia()) {
             $data = Post::get();
             return DataTables::of($data)
                 ->addIndexColumn()
@@ -35,7 +36,20 @@ class PostController extends Controller
                 ->rawColumns(['action'])
                 ->make(true);
         }
-        return view('article/post/index');
+        return Inertia::render('Table/Index', [
+            'title' => 'Post',
+            'breadcrumbs' => [['label' => 'Artikel', 'url' => route('menu.artikel')]],
+            'createUrl' => route('post.create'),
+            'table' => [
+                'url' => $request->url(),
+                'columns' => [
+                    ['label' => 'Tanggal', 'data' => 'tanggal'],
+                    ['label' => 'Nama Judul', 'data' => 'title'],
+                    ['label' => 'Status', 'data' => 'status'],
+                    ['label' => 'Aksi', 'data' => 'action', 'orderable' => false, 'searchable' => false, 'raw' => true],
+                ],
+            ],
+        ]);
     }
 
     /**
@@ -45,7 +59,35 @@ class PostController extends Controller
     {
         $kategori = Kategori::get();
         $tag = Tag::get();
-        return view('article/post/create', compact('tag', 'kategori'));
+
+        return Inertia::render('Form/Index', [
+            'title' => 'Tambah Post',
+            'breadcrumbs' => [['label' => 'Artikel', 'url' => route('menu.artikel')], ['label' => 'Post', 'url' => route('post.index')]],
+            'backUrl' => route('post.index'),
+            'method' => 'post',
+            'action' => route('post.store'),
+            'fields' => $this->postFields($tag, $kategori, null),
+        ]);
+    }
+
+    /**
+     * Descriptor field form Post (create: $post null, edit: nilai dari $post).
+     */
+    private function postFields($tag, $kategori, ?Post $post): array
+    {
+        return [
+            ['name' => 'title', 'label' => 'Judul', 'type' => 'text', 'value' => $post?->title],
+            ['name' => 'content', 'label' => 'Konten', 'type' => 'textarea', 'rows' => 6, 'value' => $post?->content],
+            ['name' => 'kategori', 'label' => 'Kategori', 'type' => 'multiselect', 'col' => 'col-md-6',
+                'value' => $post ? $post->kategori()->pluck('kategori.kategori_id')->map(fn ($v) => (string) $v)->all() : [],
+                'options' => $kategori->map(fn ($x) => ['value' => $x->kategori_id, 'label' => $x->nama_kategori])->values()->all()],
+            ['name' => 'tag', 'label' => 'Tag', 'type' => 'multiselect', 'col' => 'col-md-6',
+                'value' => $post ? $post->tag()->pluck('tag.tag_id')->map(fn ($v) => (string) $v)->all() : [],
+                'options' => $tag->map(fn ($x) => ['value' => $x->tag_id, 'label' => $x->nama_tag])->values()->all()],
+            ['name' => 'active', 'label' => 'Status', 'type' => 'select',
+                'value' => $post ? (filter_var($post->active, FILTER_VALIDATE_BOOLEAN) ? 'true' : 'false') : null,
+                'options' => [['value' => 'true', 'label' => 'Aktifkan'], ['value' => 'false', 'label' => 'Jangan Aktifkan']]],
+        ];
     }
 
     /**
@@ -72,7 +114,24 @@ class PostController extends Controller
      */
     public function show(Post $post)
     {
-        return view('article/post/show', compact('post'));
+        return Inertia::render('Show/Index', [
+            'title' => 'Detail Post',
+            'breadcrumbs' => [['label' => 'Artikel', 'url' => route('menu.artikel')], ['label' => 'Post', 'url' => route('post.index')]],
+            'backUrl' => route('post.index'),
+            'fields' => [
+                ['label' => 'Judul', 'value' => $post->title],
+                ['label' => 'Tanggal', 'value' => $post->created_at->format('d F Y')],
+                ['label' => 'Status', 'value' => filter_var($post->active, FILTER_VALIDATE_BOOLEAN) ? 'Aktif' : 'Tidak Aktif'],
+                ['label' => 'Kategori', 'value' => $post->kategori()->pluck('nama_kategori')->implode(', ')],
+                ['label' => 'Tag', 'value' => $post->tag()->pluck('nama_tag')->map(fn ($t) => '#' . $t)->implode(' ')],
+                ['label' => 'Konten', 'value' => $post->content],
+            ],
+            'actions' => [
+                ['label' => 'Ubah', 'url' => route('post.edit', $post), 'color' => 'primary', 'icon' => 'pen'],
+                ['label' => 'File', 'url' => route('file.post.index', $post), 'color' => 'info', 'icon' => 'folder-open'],
+            ],
+            'deleteUrl' => route('post.delete', $post),
+        ]);
     }
 
     /**
@@ -82,7 +141,15 @@ class PostController extends Controller
     {
         $kategori = Kategori::get();
         $tag = Tag::get();
-        return view('article/post/edit', compact('tag', 'kategori', 'post'));
+
+        return Inertia::render('Form/Index', [
+            'title' => 'Ubah Post',
+            'breadcrumbs' => [['label' => 'Artikel', 'url' => route('menu.artikel')], ['label' => 'Post', 'url' => route('post.index')]],
+            'backUrl' => route('post.show', $post),
+            'method' => 'put',
+            'action' => route('post.update', $post),
+            'fields' => $this->postFields($tag, $kategori, $post),
+        ]);
     }
 
     /**

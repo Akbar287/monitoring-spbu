@@ -6,6 +6,7 @@ use App\Models\Fasilitas;
 use App\Models\FileFasilitas;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Inertia\Inertia;
 use Yajra\DataTables\DataTables;
 
 class FileFasilitasController extends Controller
@@ -15,8 +16,8 @@ class FileFasilitasController extends Controller
      */
     public function index(Request $request, Fasilitas $fasilitas)
     {
-        if ($request->ajax()) {
-            $data = FileFasilitas::select('*');
+        if ($request->ajax() && ! $request->inertia()) {
+            $data = $fasilitas->file_fasilitas()->select('*');
             return DataTables::of($data)
                 ->addIndexColumn()
                 ->addColumn('action', function ($row) {
@@ -26,7 +27,20 @@ class FileFasilitasController extends Controller
                 ->rawColumns(['action'])
                 ->make(true);
         }
-        return view('master/fasilitas/file/index', compact('fasilitas'));
+        return Inertia::render('Table/Index', [
+            'title' => 'File Fasilitas',
+            'breadcrumbs' => [['label' => 'Master Data', 'url' => route('menu.master')], ['label' => 'Fasilitas', 'url' => route('fasilitas.index')], ['label' => $fasilitas->nama_fasilitas, 'url' => route('fasilitas.show', $fasilitas)]],
+            'createUrl' => route('fasilitas.file.create', $fasilitas),
+            'table' => [
+                'url' => $request->url(),
+                'columns' => [
+                    ['label' => 'Nama File', 'data' => 'nama_file'],
+                    ['label' => 'Nama Dokumen', 'data' => 'nama_dokumen'],
+                    ['label' => 'Tanggal Upload', 'data' => 'tanggal_upload'],
+                    ['label' => 'Aksi', 'data' => 'action', 'orderable' => false, 'searchable' => false, 'raw' => true],
+                ],
+            ],
+        ]);
     }
 
     /**
@@ -34,7 +48,16 @@ class FileFasilitasController extends Controller
      */
     public function create(Fasilitas $fasilitas)
     {
-        return view('master/fasilitas/file/create', compact('fasilitas'));
+        return Inertia::render('Form/Index', [
+            'title' => 'Tambah File Fasilitas',
+            'breadcrumbs' => [['label' => 'Master Data', 'url' => route('menu.master')], ['label' => 'Fasilitas', 'url' => route('fasilitas.index')], ['label' => 'File Fasilitas', 'url' => route('fasilitas.file.index', $fasilitas)]],
+            'backUrl' => route('fasilitas.file.index', $fasilitas),
+            'method' => 'post',
+            'action' => route('fasilitas.file.store', $fasilitas),
+            'fields' => [
+                ['name' => 'gambar', 'label' => 'File', 'type' => 'file', 'value' => null, 'hint' => 'Pilih file dokumen/gambar yang akan diunggah.'],
+            ],
+        ]);
     }
 
     /**
@@ -42,6 +65,8 @@ class FileFasilitasController extends Controller
      */
     public function store(Request $request, Fasilitas $fasilitas)
     {
+        $request->validate(['gambar' => 'required|file|max:' . \App\Support\Upload::maxKb()]);
+
         $foto = 'default.png';
         $filenameWithExt = '';
 
@@ -66,7 +91,22 @@ class FileFasilitasController extends Controller
      */
     public function show(Fasilitas $fasilitas, FileFasilitas $fileFasilitas)
     {
-        return view('master/fasilitas/file/show', compact('fileFasilitas', 'fasilitas'));
+        return Inertia::render('Show/Index', [
+            'title' => 'Detail File Fasilitas',
+            'breadcrumbs' => [['label' => 'Master Data', 'url' => route('menu.master')], ['label' => 'Fasilitas', 'url' => route('fasilitas.index')], ['label' => 'File Fasilitas', 'url' => route('fasilitas.file.index', $fasilitas)]],
+            'backUrl' => route('fasilitas.file.index', $fasilitas),
+            'fields' => [
+                ['label' => 'Nama Dokumen', 'value' => $fileFasilitas->nama_dokumen],
+                ['label' => 'Nama File', 'value' => $fileFasilitas->nama_file],
+                ['label' => 'Tanggal Upload', 'value' => $fileFasilitas->tanggal_upload],
+            ],
+            'image' => asset('storage/fasilitas/' . $fileFasilitas->nama_file),
+            'actions' => [
+                ['label' => 'Ubah', 'url' => route('fasilitas.file.edit', [$fasilitas, $fileFasilitas]), 'color' => 'primary', 'icon' => 'pen'],
+                ['label' => 'Download', 'url' => route('fasilitas.file.download', [$fasilitas, $fileFasilitas]), 'color' => 'info', 'icon' => 'download'],
+            ],
+            'deleteUrl' => route('fasilitas.file.delete', [$fasilitas, $fileFasilitas]),
+        ]);
     }
 
     /**
@@ -74,7 +114,16 @@ class FileFasilitasController extends Controller
      */
     public function edit(Fasilitas $fasilitas, FileFasilitas $fileFasilitas)
     {
-        return view('master/fasilitas/file/edit', compact('fasilitas', 'fileFasilitas'));
+        return Inertia::render('Form/Index', [
+            'title' => 'Ubah File Fasilitas',
+            'breadcrumbs' => [['label' => 'Master Data', 'url' => route('menu.master')], ['label' => 'Fasilitas', 'url' => route('fasilitas.index')], ['label' => 'File Fasilitas', 'url' => route('fasilitas.file.index', $fasilitas)]],
+            'backUrl' => route('fasilitas.file.show', [$fasilitas, $fileFasilitas]),
+            'method' => 'put',
+            'action' => route('fasilitas.file.update', [$fasilitas, $fileFasilitas]),
+            'fields' => [
+                ['name' => 'gambar', 'label' => 'File Pengganti', 'type' => 'file', 'value' => null, 'hint' => 'File saat ini: ' . $fileFasilitas->nama_dokumen],
+            ],
+        ]);
     }
 
     /**
@@ -82,6 +131,8 @@ class FileFasilitasController extends Controller
      */
     public function update(Request $request, Fasilitas $fasilitas, FileFasilitas $fileFasilitas)
     {
+        $request->validate(['gambar' => 'nullable|file|max:' . \App\Support\Upload::maxKb()]);
+
         $foto = $fileFasilitas->nama_file;
         $filenameWithExt = $fileFasilitas->nama_dokumen;
 
@@ -119,7 +170,7 @@ class FileFasilitasController extends Controller
         return [
             'nama_file' => $file != null ? $file : request('nama_file'),
             'nama_dokumen' => $dokumen != null ? $dokumen : request('nama_dokumen'),
-            'tanggal_upload' => request('tanggal_upload'),
+            'tanggal_upload' => request('tanggal_upload') ?? date('Y-m-d'),
         ];
     }
 

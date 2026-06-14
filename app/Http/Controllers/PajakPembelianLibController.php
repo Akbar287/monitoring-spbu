@@ -6,6 +6,7 @@ use App\Http\Requests\PajakPembelianLibRequest;
 use App\Models\PajakPembelianLib;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Inertia\Inertia;
 use Yajra\DataTables\DataTables;
 
 class PajakPembelianLibController extends Controller
@@ -15,7 +16,7 @@ class PajakPembelianLibController extends Controller
      */
     public function index(Request $request)
     {
-        if ($request->ajax()) {
+        if ($request->ajax() && ! $request->inertia()) {
             $data = PajakPembelianLib::orderBy('created_at', 'desc')->get();
             return DataTables::of($data)
                 ->addIndexColumn()
@@ -33,7 +34,22 @@ class PajakPembelianLibController extends Controller
                 ->rawColumns(['action'])
                 ->make(true);
         }
-        return view('konfigurasi/pajak/index');
+        return Inertia::render('Table/Index', [
+            'title' => 'Pajak',
+            'breadcrumbs' => [['label' => 'Konfigurasi', 'url' => route('menu.konfigurasi')]],
+            'createUrl' => route('pajak_pembelian_lib.create'),
+            'table' => [
+                'url' => $request->url(),
+                'columns' => [
+                    ['label' => 'Tanggal', 'data' => 'tanggal'],
+                    ['label' => 'PPN', 'data' => 'ppn'],
+                    ['label' => 'PPH', 'data' => 'pph'],
+                    ['label' => 'PPBKB', 'data' => 'ppbkb'],
+                    ['label' => 'Aktif', 'data' => 'is_aktif'],
+                    ['label' => 'Aksi', 'data' => 'action', 'orderable' => false, 'searchable' => false, 'raw' => true],
+                ],
+            ],
+        ]);
     }
 
     /**
@@ -41,7 +57,19 @@ class PajakPembelianLibController extends Controller
      */
     public function create()
     {
-        return view('konfigurasi/pajak/create');
+        return Inertia::render('Form/Index', [
+            'title' => 'Tambah Pajak',
+            'breadcrumbs' => [['label' => 'Konfigurasi', 'url' => route('menu.konfigurasi')], ['label' => 'Pajak', 'url' => route('pajak_pembelian_lib.index')]],
+            'backUrl' => route('pajak_pembelian_lib.index'),
+            'method' => 'post',
+            'action' => route('pajak_pembelian_lib.store'),
+            'fields' => [
+                ['name' => 'ppn', 'label' => 'PPN', 'type' => 'text', 'value' => null, 'col' => 'col-md-4'],
+                ['name' => 'pph', 'label' => 'PPH', 'type' => 'text', 'value' => null, 'col' => 'col-md-4'],
+                ['name' => 'ppbkb', 'label' => 'PPBKB', 'type' => 'text', 'value' => null, 'col' => 'col-md-4'],
+                ['name' => 'is_aktif', 'label' => 'Status', 'type' => 'select', 'value' => null, 'options' => [['value' => 'true', 'label' => 'Aktifkan'], ['value' => 'false', 'label' => 'Jangan Aktifkan']]],
+            ],
+        ]);
     }
 
     /**
@@ -54,7 +82,7 @@ class PajakPembelianLibController extends Controller
             $pajakPembelianLib = PajakPembelianLib::create($this->pajakPembelianLibData());
         }
 
-        return redirect('/konfigurasi/pajak/' . $pajakPembelianLib->pajak_pembelian_lib_id)->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> Data Pajak Pembelian Library sudah ditambah.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
+        return redirect('/konfigurasi/pajak')->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> Data Pajak Pembelian Library sudah ditambah.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
     }
 
     /**
@@ -62,7 +90,20 @@ class PajakPembelianLibController extends Controller
      */
     public function show(PajakPembelianLib $pajak)
     {
-        return view('konfigurasi/pajak/show', compact('pajak'));
+        return Inertia::render('Show/Index', [
+            'title' => 'Detail Pajak',
+            'breadcrumbs' => [['label' => 'Konfigurasi', 'url' => route('menu.konfigurasi')], ['label' => 'Pajak', 'url' => route('pajak_pembelian_lib.index')]],
+            'backUrl' => route('pajak_pembelian_lib.index'),
+            'fields' => [
+                ['label' => 'Tanggal', 'value' => $pajak->tanggal],
+                ['label' => 'PPN', 'value' => $pajak->ppn],
+                ['label' => 'PPH', 'value' => $pajak->pph],
+                ['label' => 'PPBKB', 'value' => $pajak->ppbkb],
+                ['label' => 'Status', 'value' => filter_var($pajak->is_aktif, FILTER_VALIDATE_BOOLEAN) ? 'Aktif' : 'Tidak Aktif'],
+            ],
+            'actions' => [['label' => 'Ubah', 'url' => route('pajak_pembelian_lib.edit', $pajak), 'color' => 'primary', 'icon' => 'pen']],
+            'deleteUrl' => route('pajak_pembelian_lib.destroy', $pajak),
+        ]);
     }
 
     /**
@@ -70,7 +111,19 @@ class PajakPembelianLibController extends Controller
      */
     public function edit(PajakPembelianLib $pajak)
     {
-        return view('konfigurasi/pajak/edit', compact('pajak'));
+        return Inertia::render('Form/Index', [
+            'title' => 'Ubah Pajak',
+            'breadcrumbs' => [['label' => 'Konfigurasi', 'url' => route('menu.konfigurasi')], ['label' => 'Pajak', 'url' => route('pajak_pembelian_lib.index')]],
+            'backUrl' => route('pajak_pembelian_lib.index'),
+            'method' => 'put',
+            'action' => route('pajak_pembelian_lib.update', $pajak),
+            'fields' => [
+                ['name' => 'ppn', 'label' => 'PPN', 'type' => 'text', 'value' => $pajak->ppn, 'col' => 'col-md-4'],
+                ['name' => 'pph', 'label' => 'PPH', 'type' => 'text', 'value' => $pajak->pph, 'col' => 'col-md-4'],
+                ['name' => 'ppbkb', 'label' => 'PPBKB', 'type' => 'text', 'value' => $pajak->ppbkb, 'col' => 'col-md-4'],
+                ['name' => 'is_aktif', 'label' => 'Status', 'type' => 'select', 'value' => filter_var($pajak->is_aktif, FILTER_VALIDATE_BOOLEAN) ? 'true' : 'false', 'options' => [['value' => 'true', 'label' => 'Aktifkan'], ['value' => 'false', 'label' => 'Jangan Aktifkan']]],
+            ],
+        ]);
     }
 
     /**
@@ -80,7 +133,7 @@ class PajakPembelianLibController extends Controller
     {
         $pajak->update($this->pajakPembelianLibData());
 
-        return redirect('/konfigurasi/pajak/' . $pajak->pajak_pembelian_lib_id)->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> Data Pajak Pembelian Library sudah diubah.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
+        return redirect('/konfigurasi/pajak')->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> Data Pajak Pembelian Library sudah diubah.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
     }
 
     /**

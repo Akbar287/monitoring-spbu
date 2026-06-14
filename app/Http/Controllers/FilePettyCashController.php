@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use Inertia\Inertia;
 use App\Models\FilePettyCash;
 use App\Models\PettyCash;
 use Illuminate\Http\Request;
@@ -15,7 +16,7 @@ class FilePettyCashController extends Controller
      */
     public function index(Request $request, PettyCash $pettyCash)
     {
-        if ($request->ajax()) {
+        if ($request->ajax() && ! $request->inertia()) {
             $data = $pettyCash->file_petty_cash()->get();
             return DataTables::of($data)
                 ->addIndexColumn()
@@ -29,7 +30,19 @@ class FilePettyCashController extends Controller
                 ->rawColumns(['action'])
                 ->make(true);
         }
-        return view('financial/petty_cash/file/index', compact('pettyCash'));
+        return Inertia::render('Table/Index', [
+            'title' => 'File Petty Cash',
+            'breadcrumbs' => [['label' => 'Financial', 'url' => route('menu.financial')], ['label' => 'Petty Cash', 'url' => route('financial.petty-cash')]],
+            'createUrl' => route('petty-cash.file.create', $pettyCash),
+            'table' => [
+                'url' => $request->url(),
+                'columns' => [
+                    ['label' => 'Tanggal', 'data' => 'tanggal'],
+                    ['label' => 'Nama Dokumen', 'data' => 'nama_dokumen'],
+                    ['label' => 'Aksi', 'data' => 'action', 'orderable' => false, 'searchable' => false, 'raw' => true],
+                ],
+            ],
+        ]);
     }
 
     /**
@@ -37,7 +50,16 @@ class FilePettyCashController extends Controller
      */
     public function create(PettyCash $pettyCash)
     {
-        return view('financial/petty_cash/file/create', compact('pettyCash'));
+        return Inertia::render('Form/Index', [
+            'title' => 'Tambah File Petty Cash',
+            'breadcrumbs' => [['label' => 'Financial', 'url' => route('menu.financial')], ['label' => 'Petty Cash', 'url' => route('financial.petty-cash')], ['label' => 'File Petty Cash', 'url' => route('financial.petty-cash.file', $pettyCash)]],
+            'backUrl' => route('financial.petty-cash.file', $pettyCash),
+            'method' => 'post',
+            'action' => route('petty-cash.file.store', $pettyCash),
+            'fields' => [
+                ['name' => 'gambar', 'label' => 'File', 'type' => 'file', 'value' => null, 'hint' => 'Pilih file dokumen/gambar yang akan diunggah.'],
+            ],
+        ]);
     }
 
     /**
@@ -45,6 +67,8 @@ class FilePettyCashController extends Controller
      */
     public function store(Request $request, PettyCash $pettyCash)
     {
+        $request->validate(['gambar' => 'required|file|max:' . \App\Support\Upload::maxKb()]);
+
         $foto = 'default.png';
         $filenameWithExt = '';
 
@@ -69,7 +93,22 @@ class FilePettyCashController extends Controller
      */
     public function show(PettyCash $pettyCash, FilePettyCash $file)
     {
-        return view('financial/petty_cash/file/show', compact('pettyCash', 'file'));
+        return Inertia::render('Show/Index', [
+            'title' => 'Detail File Petty Cash',
+            'breadcrumbs' => [['label' => 'Financial', 'url' => route('menu.financial')], ['label' => 'Petty Cash', 'url' => route('financial.petty-cash')], ['label' => 'File Petty Cash', 'url' => route('financial.petty-cash.file', $pettyCash)]],
+            'backUrl' => route('financial.petty-cash.file', $pettyCash),
+            'fields' => [
+                ['label' => 'Nama Dokumen', 'value' => $file->nama_dokumen],
+                ['label' => 'Nama File', 'value' => $file->nama_file],
+                ['label' => 'Tanggal Upload', 'value' => $file->tanggal_upload],
+            ],
+            'image' => asset('storage/file_petty_cash/' . $file->nama_file),
+            'actions' => [
+                ['label' => 'Ubah', 'url' => route('petty-cash.file.edit', [$pettyCash, $file]), 'color' => 'primary', 'icon' => 'pen'],
+                ['label' => 'Download', 'url' => route('petty-cash.file.download', [$pettyCash, $file]), 'color' => 'info', 'icon' => 'download'],
+            ],
+            'deleteUrl' => route('petty-cash.file.delete', [$pettyCash, $file]),
+        ]);
     }
 
     /**
@@ -77,7 +116,16 @@ class FilePettyCashController extends Controller
      */
     public function edit(PettyCash $pettyCash, FilePettyCash $file)
     {
-        return view('financial/petty_cash/file/edit', compact('pettyCash', 'file'));
+        return Inertia::render('Form/Index', [
+            'title' => 'Ubah File Petty Cash',
+            'breadcrumbs' => [['label' => 'Financial', 'url' => route('menu.financial')], ['label' => 'Petty Cash', 'url' => route('financial.petty-cash')], ['label' => 'File Petty Cash', 'url' => route('financial.petty-cash.file', $pettyCash)]],
+            'backUrl' => route('petty-cash.file.show', [$pettyCash, $file]),
+            'method' => 'put',
+            'action' => route('petty-cash.file.update', [$pettyCash, $file]),
+            'fields' => [
+                ['name' => 'gambar', 'label' => 'File Pengganti', 'type' => 'file', 'value' => null, 'hint' => 'File saat ini: ' . $file->nama_dokumen],
+            ],
+        ]);
     }
 
     /**
@@ -85,6 +133,8 @@ class FilePettyCashController extends Controller
      */
     public function update(Request $request, PettyCash $pettyCash, FilePettyCash $file)
     {
+        $request->validate(['gambar' => 'nullable|file|max:' . \App\Support\Upload::maxKb()]);
+
         $foto = $file->nama_file;
         $filenameWithExt = $file->nama_dokumen;
 

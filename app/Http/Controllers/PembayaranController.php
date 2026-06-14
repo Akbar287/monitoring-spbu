@@ -12,6 +12,7 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
+use Inertia\Inertia;
 use Yajra\DataTables\DataTables;
 
 class PembayaranController extends Controller
@@ -31,7 +32,7 @@ class PembayaranController extends Controller
         $waktuMulai = $waktuMulai->format('Y-m-d');
         $waktuSelesai = $waktuSelesai->format('Y-m-d');
 
-        if ($request->ajax()) {
+        if ($request->ajax() && ! $request->inertia()) {
             $data = StatusPurchase::where("nama_status", "Pembayaran")->first()->rencana_pembelian()->whereBetween('tanggal_pembelian', [$waktuMulai, $waktuSelesai])->get();
             return DataTables::of($data)
                 ->addIndexColumn()
@@ -54,7 +55,21 @@ class PembayaranController extends Controller
                 ->rawColumns(['action'])
                 ->make(true);
         }
-        return view('procurement/pembayaran/index', compact('waktuMulai', 'waktuSelesai'));
+        return Inertia::render('Table/Index', [
+            'title' => 'Pembayaran',
+            'breadcrumbs' => [['label' => 'Procurement', 'url' => route('menu.procurement')]],
+            'dateFilter' => ['mulai' => $waktuMulai, 'selesai' => $waktuSelesai],
+            'table' => [
+                'url' => $request->fullUrl(),
+                'columns' => [
+                    ['label' => 'Kode', 'data' => 'kode_pembelian'],
+                    ['label' => 'Tanggal', 'data' => 'created_at'],
+                    ['label' => 'Grand Total', 'data' => 'grand_total'],
+                    ['label' => 'Total Produk', 'data' => 'produk_id'],
+                    ['label' => 'Aksi', 'data' => 'action', 'orderable' => false, 'searchable' => false, 'raw' => true],
+                ],
+            ],
+        ]);
     }
 
     /**
@@ -62,7 +77,7 @@ class PembayaranController extends Controller
      */
     public function show(Request $request, RencanaPembelian $rencana)
     {
-        if ($request->ajax()) {
+        if ($request->ajax() && ! $request->inertia()) {
             $data = $rencana->pembayaran()->get();
             return DataTables::of($data)
                 ->addIndexColumn()
@@ -93,7 +108,69 @@ class PembayaranController extends Controller
             }
         }
         $pajak = $rencana->pajak_pembelian()->first();
-        return view('procurement/pembayaran/show', compact('rencana', 'continue', 'pajak'));
+
+        $isPJ = optional(optional(optional(auth()->user()->member()->first())->jabatan()->first())->level()->first())->nama_level === 'Penanggung Jawab';
+
+        $fields = [
+            ['label' => 'Id Rencana Pembelian', 'value' => $rencana->rencana_pembelian_id],
+            ['label' => 'Kode', 'value' => $rencana->kode_pembelian],
+            ['label' => 'SPBU', 'value' => optional($rencana->spbu()->first())->nama_spbu],
+            ['label' => 'Keterangan', 'value' => $rencana->keterangan],
+        ];
+        if ($pajak) {
+            $fields[] = ['label' => 'Net Price', 'value' => 'Rp ' . number_format($pajak->net_price, 6, '.', ',')];
+            $fields[] = ['label' => 'PPn', 'value' => 'Rp ' . number_format($pajak->ppn, 6, '.', ',')];
+            $fields[] = ['label' => 'PPh', 'value' => 'Rp ' . number_format($pajak->pph, 6, '.', ',')];
+            $fields[] = ['label' => 'PPBKB', 'value' => 'Rp ' . number_format($pajak->ppbkb, 6, '.', ',')];
+            $fields[] = ['label' => 'Total Amount (Gross Price)', 'value' => 'Rp ' . number_format($pajak->total_amount, 6, '.', ',')];
+        }
+
+        $rows = $rencana->detail_rencana_pembelian()->get()->map(fn ($p) => [
+            optional($p->produk()->first())->nama_produk,
+            number_format($p->rit, 6, '.', ','),
+            number_format($p->jumlah, 6, '.', ','),
+            $p->satuan_jumlah,
+            'Rp ' . number_format($p->harga, 6, '.', ','),
+            'Rp ' . number_format($p->total_harga, 6, '.', ','),
+        ])->values()->all();
+
+        $actions = [
+            ['label' => 'Tambah Pembayaran', 'url' => route('pembayaran.create', $rencana->rencana_pembelian_id), 'color' => 'primary', 'icon' => 'plus'],
+            ['label' => 'Pajak', 'url' => route('pembayaran.pajak_edit', $rencana->rencana_pembelian_id), 'color' => 'warning', 'icon' => 'percent'],
+        ];
+        if ($isPJ) {
+            if ($continue) {
+                $actions[] = ['label' => 'Konfirmasi Pembayaran', 'method' => 'put', 'url' => route('pembayaran.delivery', $rencana->rencana_pembelian_id),
+                    'color' => 'info', 'icon' => 'check', 'confirm' => 'Sudah Bayar? Ingin meneruskan rencana ini ke tahap MS2 ?'];
+            }
+            $actions[] = ['label' => 'Batalkan Konfirmasi Rencana', 'method' => 'put', 'url' => route('pembayaran.ditolak', $rencana->rencana_pembelian_id),
+                'color' => 'danger', 'icon' => 'times', 'confirm' => 'Anda yakin membatalkan pembayaran untuk rencana pembelian ini?'];
+        }
+
+        return Inertia::render('Show/Index', [
+            'title' => 'Detail Pembayaran',
+            'breadcrumbs' => [['label' => 'Procurement', 'url' => route('menu.procurement')], ['label' => 'Pembayaran', 'url' => route('pembayaran.index')]],
+            'backUrl' => route('pembayaran.index'),
+            'fields' => $fields,
+            'tables' => [[
+                'title' => 'Detail Rencana Pembelian',
+                'columns' => ['Nama Produk', 'Rit', 'Quantity', 'Satuan', 'Harga', 'Total Harga'],
+                'rows' => $rows,
+            ]],
+            'table' => [
+                'title' => 'Pembayaran',
+                'url' => $request->url(),
+                'columns' => [
+                    ['label' => 'Tanggal', 'data' => 'tanggal'],
+                    ['label' => 'Nomor Rekening', 'data' => 'no_rekening'],
+                    ['label' => 'Nama Rekening', 'data' => 'nama_rekening'],
+                    ['label' => 'Total Bayar', 'data' => 'total_setoran'],
+                    ['label' => 'Status', 'data' => 'is_confirmation', 'raw' => true],
+                    ['label' => 'Aksi', 'data' => 'action', 'orderable' => false, 'searchable' => false, 'raw' => true],
+                ],
+            ],
+            'actions' => $actions,
+        ]);
     }
 
     public function konfirmasi_delivery(RencanaPembelian $rencana)
@@ -122,7 +199,23 @@ class PembayaranController extends Controller
     public function create(RencanaPembelian $rencana)
     {
         $member = Member::get();
-        return view('procurement/pembayaran/create', compact('rencana', 'member'));
+
+        return Inertia::render('Form/Index', [
+            'title' => 'Tambah Pembayaran',
+            'breadcrumbs' => [['label' => 'Procurement', 'url' => route('menu.procurement')], ['label' => 'Pembayaran', 'url' => route('pembayaran.index')], ['label' => $rencana->kode_pembelian, 'url' => route('pembayaran.show', $rencana->rencana_pembelian_id)]],
+            'backUrl' => route('pembayaran.show', $rencana->rencana_pembelian_id),
+            'method' => 'post',
+            'action' => route('pembayaran.store', $rencana->rencana_pembelian_id),
+            'fields' => [
+                ['name' => 'tanggal', 'label' => 'Tanggal Bayar', 'type' => 'date', 'value' => null],
+                ['name' => 'member_id', 'label' => 'Penyetor', 'type' => 'select', 'value' => null,
+                    'options' => $member->map(fn ($s) => ['value' => $s->member_id, 'label' => optional($s->ktp()->first())->nama])->values()->all()],
+                ['name' => 'no_rekening', 'label' => 'No Rekening', 'type' => 'text', 'value' => null, 'col' => 'col-md-6'],
+                ['name' => 'nama_rekening', 'label' => 'Nama Rekening', 'type' => 'text', 'value' => null, 'col' => 'col-md-6'],
+                ['name' => 'no_cek_bg', 'label' => 'No Cek BG', 'type' => 'text', 'value' => null, 'col' => 'col-md-6'],
+                ['name' => 'total_setoran', 'label' => 'Total Setor Ke Bank', 'type' => 'text', 'value' => null, 'col' => 'col-md-6'],
+            ],
+        ]);
     }
     public function store(PembayaranRequest $pembayaranRequest, RencanaPembelian $rencana)
     {
@@ -136,7 +229,7 @@ class PembayaranController extends Controller
     }
     public function detail(Request $request, RencanaPembelian $rencana, Pembayaran $pembayaran)
     {
-        if ($request->ajax()) {
+        if ($request->ajax() && ! $request->inertia()) {
             $data = $pembayaran->file_pembayaran()->get();
             return DataTables::of($data)
                 ->addIndexColumn()
@@ -150,12 +243,68 @@ class PembayaranController extends Controller
                 ->rawColumns(['action'])
                 ->make(true);
         }
-        return view('procurement/pembayaran/detail', compact('rencana', 'pembayaran'));
+        $isPJ = optional(optional(optional(auth()->user()->member()->first())->jabatan()->first())->level()->first())->nama_level === 'Penanggung Jawab';
+
+        $actions = [
+            ['label' => 'Tambah File', 'url' => route('pembayaran.file.create', [$rencana->rencana_pembelian_id, $pembayaran->pembayaran_id]), 'color' => 'primary', 'icon' => 'plus'],
+            ['label' => 'Ubah', 'url' => route('pembayaran.edit', [$rencana->rencana_pembelian_id, $pembayaran->pembayaran_id]), 'color' => 'success', 'icon' => 'pen'],
+        ];
+        $actions[] = $pembayaran->is_confirmation_top
+            ? ['label' => 'Batalkan Konfirmasi Top', 'method' => 'put', 'url' => route('pembayaran.update.confirmation_top_no', [$rencana->rencana_pembelian_id, $pembayaran->pembayaran_id]), 'color' => 'danger', 'icon' => 'times', 'confirm' => "Tolak Konfirmasi Pembayaran ini!\n Lanjutkan?"]
+            : ['label' => 'Konfirmasi Top Manajemen', 'method' => 'put', 'url' => route('pembayaran.update.confirmation_top_ok', [$rencana->rencana_pembelian_id, $pembayaran->pembayaran_id]), 'color' => 'info', 'icon' => 'check', 'confirm' => "Konfirmasi Pembayaran ini!\n Lanjutkan?"];
+        if ($isPJ) {
+            $actions[] = $pembayaran->is_confirmation_admin
+                ? ['label' => 'Batalkan Konfirmasi Admin', 'method' => 'put', 'url' => route('pembayaran.update.confirmation_admin_no', [$rencana->rencana_pembelian_id, $pembayaran->pembayaran_id]), 'color' => 'danger', 'icon' => 'times', 'confirm' => "Tolak Konfirmasi Pembayaran ini!\n Lanjutkan?"]
+                : ['label' => 'Konfirmasi Admin', 'method' => 'put', 'url' => route('pembayaran.update.confirmation_admin_ok', [$rencana->rencana_pembelian_id, $pembayaran->pembayaran_id]), 'color' => 'info', 'icon' => 'check', 'confirm' => "Konfirmasi Pembayaran ini!\n Lanjutkan?"];
+        }
+
+        return Inertia::render('Show/Index', [
+            'title' => 'Detail Pembayaran',
+            'breadcrumbs' => [['label' => 'Procurement', 'url' => route('menu.procurement')], ['label' => 'Pembayaran', 'url' => route('pembayaran.index')], ['label' => $rencana->kode_pembelian, 'url' => route('pembayaran.show', $rencana->rencana_pembelian_id)]],
+            'backUrl' => route('pembayaran.show', $rencana->rencana_pembelian_id),
+            'fields' => [
+                ['label' => 'Tanggal Bayar', 'value' => $pembayaran->tanggal],
+                ['label' => 'Penyetor', 'value' => optional(optional($pembayaran->member()->first())->ktp()->first())->nama],
+                ['label' => 'No Rekening', 'value' => $pembayaran->no_rekening],
+                ['label' => 'Nama Rekening', 'value' => $pembayaran->nama_rekening],
+                ['label' => 'No Cek BG', 'value' => $pembayaran->no_cek_bg],
+                ['label' => 'Total Setor Ke Bank', 'value' => 'Rp ' . number_format($pembayaran->total_setoran, 6, '.', ',')],
+                ['label' => 'Konfirmasi Admin', 'value' => $pembayaran->is_confirmation_admin ? 'Terkonfirmasi' : 'Belum Terkonfirmasi'],
+                ['label' => 'Konfirmasi Top Manajemen', 'value' => $pembayaran->is_confirmation_top ? 'Terkonfirmasi' : 'Belum Terkonfirmasi'],
+            ],
+            'table' => [
+                'title' => 'File Pembayaran',
+                'url' => $request->url(),
+                'columns' => [
+                    ['label' => 'Tanggal Upload', 'data' => 'tanggal_upload'],
+                    ['label' => 'Nama File', 'data' => 'nama_file'],
+                    ['label' => 'Nama Dokumen', 'data' => 'nama_dokumen'],
+                    ['label' => 'Aksi', 'data' => 'action', 'orderable' => false, 'searchable' => false, 'raw' => true],
+                ],
+            ],
+            'actions' => $actions,
+            'deleteUrl' => route('pembayaran.destroy', [$rencana->rencana_pembelian_id, $pembayaran->pembayaran_id]),
+        ]);
     }
     public function edit(RencanaPembelian $rencana, Pembayaran $pembayaran)
     {
         $member = Member::get();
-        return view('procurement/pembayaran/edit', compact('rencana', 'pembayaran', 'member'));
+        return Inertia::render('Form/Index', [
+            'title' => 'Ubah Pembayaran',
+            'breadcrumbs' => [['label' => 'Procurement', 'url' => route('menu.procurement')], ['label' => 'Pembayaran', 'url' => route('pembayaran.index')], ['label' => $rencana->kode_pembelian, 'url' => route('pembayaran.show', $rencana->rencana_pembelian_id)]],
+            'backUrl' => route('pembayaran.detail', [$rencana->rencana_pembelian_id, $pembayaran->pembayaran_id]),
+            'method' => 'put',
+            'action' => route('pembayaran.update', [$rencana->rencana_pembelian_id, $pembayaran->pembayaran_id]),
+            'fields' => [
+                ['name' => 'tanggal', 'label' => 'Tanggal Bayar', 'type' => 'date', 'value' => $pembayaran->tanggal],
+                ['name' => 'member_id', 'label' => 'Penyetor', 'type' => 'select', 'value' => $pembayaran->member_id,
+                    'options' => $member->map(fn ($s) => ['value' => $s->member_id, 'label' => optional($s->ktp()->first())->nama])->values()->all()],
+                ['name' => 'no_rekening', 'label' => 'No Rekening', 'type' => 'text', 'value' => $pembayaran->no_rekening, 'col' => 'col-md-6'],
+                ['name' => 'nama_rekening', 'label' => 'Nama Rekening', 'type' => 'text', 'value' => $pembayaran->nama_rekening, 'col' => 'col-md-6'],
+                ['name' => 'no_cek_bg', 'label' => 'No Cek BG', 'type' => 'text', 'value' => $pembayaran->no_cek_bg, 'col' => 'col-md-6'],
+                ['name' => 'total_setoran', 'label' => 'Total Setor Ke Bank', 'type' => 'text', 'value' => number_format($pembayaran->total_setoran, 6, '.', ','), 'col' => 'col-md-6'],
+            ],
+        ]);
     }
     public function update(PembayaranRequest $pembayaranRequest, RencanaPembelian $rencana, Pembayaran $pembayaran)
     {
@@ -224,10 +373,21 @@ class PembayaranController extends Controller
 
     public function file_create(RencanaPembelian $rencana, Pembayaran $pembayaran)
     {
-        return view('/procurement/file_pembayaran/create', compact('rencana', 'pembayaran'));
+        return Inertia::render('Form/Index', [
+            'title' => 'Tambah File Pembayaran',
+            'breadcrumbs' => [['label' => 'Procurement', 'url' => route('menu.procurement')], ['label' => 'Pembayaran', 'url' => route('pembayaran.index')], ['label' => $rencana->kode_pembelian, 'url' => route('pembayaran.show', $rencana->rencana_pembelian_id)], ['label' => 'File', 'url' => route('pembayaran.detail', [$rencana->rencana_pembelian_id, $pembayaran->pembayaran_id])]],
+            'backUrl' => route('pembayaran.detail', [$rencana->rencana_pembelian_id, $pembayaran->pembayaran_id]),
+            'method' => 'post',
+            'action' => route('pembayaran.file.store', [$rencana->rencana_pembelian_id, $pembayaran->pembayaran_id]),
+            'fields' => [
+                ['name' => 'file', 'label' => 'File', 'type' => 'file', 'value' => null, 'hint' => 'Pilih file bukti pembayaran yang akan diunggah.'],
+            ],
+        ]);
     }
     public function file_store(RencanaPembelian $rencana, Pembayaran $pembayaran, Request $request)
     {
+        $request->validate(['file' => 'required|file|max:' . \App\Support\Upload::maxKb()]);
+
         $foto = $request->nama_file;
         if ($request->hasFile('file')) {
             $filenameWithExt = $request->file('file')->getClientOriginalName();
@@ -245,14 +405,40 @@ class PembayaranController extends Controller
     }
     public function file_show(RencanaPembelian $rencana, Pembayaran $pembayaran, FilePembayaran $file)
     {
-        return view('/procurement/file_pembayaran/show', compact('rencana', 'pembayaran', 'file'));
+        return Inertia::render('Show/Index', [
+            'title' => 'Detail File Pembayaran',
+            'breadcrumbs' => [['label' => 'Procurement', 'url' => route('menu.procurement')], ['label' => 'Pembayaran', 'url' => route('pembayaran.index')], ['label' => $rencana->kode_pembelian, 'url' => route('pembayaran.show', $rencana->rencana_pembelian_id)], ['label' => 'File', 'url' => route('pembayaran.detail', [$rencana->rencana_pembelian_id, $pembayaran->pembayaran_id])]],
+            'backUrl' => route('pembayaran.detail', [$rencana->rencana_pembelian_id, $pembayaran->pembayaran_id]),
+            'fields' => [
+                ['label' => 'Nama Dokumen', 'value' => $file->nama_dokumen],
+                ['label' => 'Nama File', 'value' => $file->nama_file],
+                ['label' => 'Tanggal Upload', 'value' => $file->tanggal_upload],
+            ],
+            'image' => asset('storage/pembayaran/' . $file->nama_file),
+            'actions' => [
+                ['label' => 'Ubah', 'url' => route('pembayaran.file.edit', [$rencana->rencana_pembelian_id, $pembayaran->pembayaran_id, $file->file_pembayaran_id]), 'color' => 'primary', 'icon' => 'pen'],
+                ['label' => 'Download', 'url' => route('pembayaran.file.unduh', [$rencana->rencana_pembelian_id, $pembayaran->pembayaran_id, $file->file_pembayaran_id]), 'color' => 'info', 'icon' => 'download'],
+            ],
+            'deleteUrl' => route('pembayaran.file.destroy', [$rencana->rencana_pembelian_id, $pembayaran->pembayaran_id, $file->file_pembayaran_id]),
+        ]);
     }
     public function file_edit(RencanaPembelian $rencana, Pembayaran $pembayaran, FilePembayaran $file)
     {
-        return view('/procurement/file_pembayaran/edit', compact('rencana', 'pembayaran', 'file'));
+        return Inertia::render('Form/Index', [
+            'title' => 'Ubah File Pembayaran',
+            'breadcrumbs' => [['label' => 'Procurement', 'url' => route('menu.procurement')], ['label' => 'Pembayaran', 'url' => route('pembayaran.index')], ['label' => $rencana->kode_pembelian, 'url' => route('pembayaran.show', $rencana->rencana_pembelian_id)], ['label' => 'File', 'url' => route('pembayaran.detail', [$rencana->rencana_pembelian_id, $pembayaran->pembayaran_id])]],
+            'backUrl' => route('pembayaran.file.show', [$rencana->rencana_pembelian_id, $pembayaran->pembayaran_id, $file->file_pembayaran_id]),
+            'method' => 'put',
+            'action' => route('pembayaran.file.update', [$rencana->rencana_pembelian_id, $pembayaran->pembayaran_id, $file->file_pembayaran_id]),
+            'fields' => [
+                ['name' => 'file', 'label' => 'File Pengganti', 'type' => 'file', 'value' => null, 'hint' => 'File saat ini: ' . $file->nama_dokumen],
+            ],
+        ]);
     }
     public function file_update(RencanaPembelian $rencana, Pembayaran $pembayaran, FilePembayaran $file, Request $request)
     {
+        $request->validate(['file' => 'nullable|file|max:' . \App\Support\Upload::maxKb()]);
+
         $foto = $request->nama_file;
         if ($request->hasFile('file')) {
             if ($file->nama_file != 'default.png') {
@@ -294,7 +480,21 @@ class PembayaranController extends Controller
 
     public function pajak_edit(RencanaPembelian $rencana)
     {
-        return view('/procurement/pembayaran/pajak_edit', compact('rencana'));
+        $pajakLib = \App\Models\PajakPembelianLib::where('is_aktif', 1)->first();
+
+        return Inertia::render('Pembelian/PajakEdit', [
+            'title' => 'Ubah Pajak Pembayaran',
+            'breadcrumbs' => [['label' => 'Procurement', 'url' => route('menu.procurement')], ['label' => 'Pembayaran', 'url' => route('pembayaran.index')], ['label' => $rencana->kode_pembelian, 'url' => route('pembayaran.show', $rencana->rencana_pembelian_id)]],
+            'backUrl' => route('pembayaran.show', $rencana->rencana_pembelian_id),
+            'action' => route('pembayaran.pajak_update', $rencana->rencana_pembelian_id),
+            'values' => [
+                'net_price' => number_format($rencana->pajak_pembelian()->first()->net_price ?? $rencana->grand_total, 6, '.', ','),
+                'ppn' => number_format($rencana->pajak_pembelian()->first()->ppn ?? $rencana->grand_total * ($pajakLib->ppn / 100), 6, '.', ','),
+                'ppbkb' => number_format($rencana->pajak_pembelian()->first()->ppbkb ?? $rencana->grand_total * ($pajakLib->ppbkb / 100), 6, '.', ','),
+                'pph' => number_format($rencana->pajak_pembelian()->first()->pph ?? $rencana->grand_total * ($pajakLib->pph / 100), 6, '.', ','),
+                'total_amount' => number_format($rencana->pajak_pembelian()->first()->total_amount ?? $rencana->grand_total + ($rencana->grand_total * ($pajakLib->ppn / 100)) + ($rencana->grand_total * ($pajakLib->ppbkb / 100)) + ($rencana->grand_total * ($pajakLib->pph / 100)), 6, '.', ','),
+            ],
+        ]);
     }
 
     public function pajak_update(Request $request, RencanaPembelian $rencana)

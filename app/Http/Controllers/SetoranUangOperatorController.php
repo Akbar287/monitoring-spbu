@@ -8,6 +8,7 @@ use App\Models\Penjualan;
 use App\Models\StatusSetoran;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Inertia\Inertia;
 use Yajra\DataTables\DataTables;
 
 class SetoranUangOperatorController extends Controller
@@ -26,7 +27,7 @@ class SetoranUangOperatorController extends Controller
         $waktuMulai = $waktuMulai->format('Y-m-d');
         $waktuSelesai = $waktuSelesai->format('Y-m-d');
 
-        if ($request->ajax()) {
+        if ($request->ajax() && ! $request->inertia()) {
             if ($statusSetoranSelected == 'all') {
                 $data = Penjualan::whereBetween('penjualan.tanggal', [$waktuMulai, $waktuSelesai])->get();
             } else {
@@ -59,7 +60,25 @@ class SetoranUangOperatorController extends Controller
                 ->rawColumns(['action', 'status'])
                 ->make(true);
         }
-        return view('setoran/setor_bank/index_open_penjualan', compact('waktuMulai', 'waktuSelesai', 'penjualan', 'statusSetoran', 'statusSetoranSelected'));
+        return Inertia::render('Table/Index', [
+            'title' => 'Setoran ke Bank',
+            'breadcrumbs' => [['label' => 'Setoran', 'url' => route('menu.setoran')]],
+            'dateFilter' => ['mulai' => $waktuMulai, 'selesai' => $waktuSelesai],
+            'selectFilters' => [
+                ['name' => 'status_setoran_id', 'label' => 'Status Setoran', 'value' => $statusSetoranSelected, 'options' => array_merge([['value' => 'all', 'label' => 'Semua']], $statusSetoran->map(fn ($x) => ['value' => $x->status_setoran_id, 'label' => $x->nama_status])->all())],
+            ],
+            'table' => [
+                'url' => $request->fullUrl(),
+                'columns' => [
+                    ['label' => 'Status', 'data' => 'status', 'raw' => true],
+                    ['label' => 'Tanggal', 'data' => 'tanggal'],
+                    ['label' => 'Jam Kerja', 'data' => 'jam_kerja'],
+                    ['label' => 'Stand Meter', 'data' => 'stand_meter'],
+                    ['label' => 'Total Uang Penjualan', 'data' => 'total_uang_penjualan'],
+                    ['label' => 'Aksi', 'data' => 'action', 'orderable' => false, 'searchable' => false, 'raw' => true],
+                ],
+            ],
+        ]);
     }
 
     /**
@@ -67,12 +86,61 @@ class SetoranUangOperatorController extends Controller
      */
     public function show_penjualan(Penjualan $penjualan)
     {
-        return view('setoran/setor_bank/show_open_penjualan', compact('penjualan'));
+        $who = \App\Support\SetoranShow::levelInfo();
+        $selesai = optional($penjualan->status_setoran()->first())->nama_status === 'Selesai';
+
+        $actions = [
+            ['label' => 'Bank', 'color' => 'success', 'icon' => 'building', 'method' => 'link',
+                'url' => route('setoran.setoran_bank.bank.index', $penjualan->penjualan_id)],
+        ];
+
+        if (! $selesai) {
+            if ($who['divisi'] === 'Top Manajemen') {
+                $actions[] = $penjualan->is_accepted_top
+                    ? ['label' => 'Konfirmasi Top', 'color' => 'danger', 'icon' => 'times', 'method' => 'put',
+                        'url' => route('setoran.setoran_bank.update_status_top_0x002', $penjualan->penjualan_id),
+                        'confirm' => "Penjualan akan Tidak Dikonfirmasi!\n Lanjutkan?"]
+                    : ['label' => 'Konfirmasi Top', 'color' => 'success', 'icon' => 'check', 'method' => 'put',
+                        'url' => route('setoran.setoran_bank.update_status_top_0x003', $penjualan->penjualan_id),
+                        'confirm' => "Penjualan akan dikonfirmasi!\n Lanjutkan?"];
+            }
+
+            if ($who['jabatan'] === 'Admin') {
+                $actions[] = ['label' => 'Kembali ke Closing', 'color' => 'info', 'icon' => 'arrow-left', 'method' => 'put',
+                    'url' => route('setoran.closing.confirm.confirmed_from', $penjualan->penjualan_id),
+                    'confirm' => "Setoran Bank akan di kembalikan ke Closing Setoran!\n Lanjutkan?"];
+
+                $actions[] = $penjualan->is_accepted_admin
+                    ? ['label' => 'Konfirmasi Admin', 'color' => 'danger', 'icon' => 'times', 'method' => 'put',
+                        'url' => route('setoran.setoran_bank.update_status_admin_0x002', $penjualan->penjualan_id),
+                        'confirm' => "Penjualan akan Tidak Dikonfirmasi!\n Lanjutkan?"]
+                    : ['label' => 'Konfirmasi Admin', 'color' => 'success', 'icon' => 'check', 'method' => 'put',
+                        'url' => route('setoran.setoran_bank.update_status_admin_0x003', $penjualan->penjualan_id),
+                        'confirm' => "Penjualan akan dikonfirmasi!\n Lanjutkan?"];
+
+                if ($penjualan->is_accepted_admin && $penjualan->is_accepted_top) {
+                    $actions[] = ['label' => 'Selesai', 'color' => 'success', 'icon' => 'check', 'method' => 'put',
+                        'url' => route('setoran.setoran_bank.check', $penjualan->penjualan_id),
+                        'confirm' => "Setoran Ke bank akan ditandai sebagai Selesai!\n Lanjutkan?"];
+                }
+            }
+        }
+
+        return Inertia::render('Setoran/Show', [
+            'title' => 'Setoran ke Bank',
+            'breadcrumbs' => [['label' => 'Setoran', 'url' => route('menu.setoran')], ['label' => 'Setoran ke Bank', 'url' => route('setoran.setoran_bank.index_setoran_bank_penjualan')]],
+            'backUrl' => route('setoran.setoran_bank.index_setoran_bank_penjualan'),
+            'notice' => $selesai ? ['type' => 'success', 'text' => 'Setoran Ini sudah ditandai sebagai Selesai'] : null,
+            'info' => \App\Support\SetoranShow::info($penjualan),
+            'pj' => \App\Support\SetoranShow::pj($penjualan),
+            'standMeters' => \App\Support\SetoranShow::standMeters($penjualan),
+            'actions' => $actions,
+        ]);
     }
 
     public function index(Request $request, Penjualan $penjualan)
     {
-        if ($request->ajax()) {
+        if ($request->ajax() && ! $request->inertia()) {
             $data = $penjualan->penarikan()->get();
             return DataTables::of($data)
                 ->addIndexColumn()

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use Inertia\Inertia;
 use App\Models\Penarikan;
 use App\Models\Penjualan;
 use App\Models\StatusSetoran;
@@ -26,7 +27,7 @@ class PenitipanSetoranController extends Controller
         $waktuMulai = $waktuMulai->format('Y-m-d');
         $waktuSelesai = $waktuSelesai->format('Y-m-d');
 
-        if ($request->ajax()) {
+        if ($request->ajax() && ! $request->inertia()) {
             $data = StatusSetoran::where('nama_status', 'Penitipan Setoran')->first()->penjualan()->whereBetween('penjualan.tanggal', [$waktuMulai, $waktuSelesai])->get();
             return DataTables::of($data)
                 ->addIndexColumn()
@@ -48,12 +49,45 @@ class PenitipanSetoranController extends Controller
                 ->rawColumns(['action'])
                 ->make(true);
         }
-        return view('setoran/penitipan_setoran/index_open_penjualan', compact('waktuMulai', 'waktuSelesai'));
+        return Inertia::render('Table/Index', [
+            'title' => 'Penitipan Setoran',
+            'breadcrumbs' => [['label' => 'Setoran', 'url' => route('menu.setoran')]],
+            'dateFilter' => ['mulai' => $waktuMulai, 'selesai' => $waktuSelesai],
+            'table' => [
+                'url' => $request->fullUrl(),
+                'columns' => [
+                    ['label' => 'Tanggal', 'data' => 'tanggal'],
+                    ['label' => 'Jam Kerja', 'data' => 'jam_kerja'],
+                    ['label' => 'Stand Meter', 'data' => 'stand_meter'],
+                    ['label' => 'Aksi', 'data' => 'action', 'orderable' => false, 'searchable' => false, 'raw' => true],
+                ],
+            ],
+        ]);
     }
 
     public function show_open_penjualan(Penjualan $penjualan)
     {
-        return view('setoran/penitipan_setoran/show_open_penjualan', compact('penjualan'));
+        $who = \App\Support\SetoranShow::levelInfo();
+
+        $actions = [];
+        if ($who['level'] === 'Penanggung Jawab') {
+            $actions[] = ['label' => 'Kembali ke Opening', 'color' => 'info', 'icon' => 'arrow-left', 'method' => 'put',
+                'url' => route('setoran.open.update.status_from', $penjualan->penjualan_id),
+                'confirm' => "Penitipan Setoran akan di kembalikan ke Opening Setoran!\n Lanjutkan?"];
+            $actions[] = ['label' => 'Lanjut Ke Closing', 'color' => 'success', 'icon' => 'arrow-right', 'method' => 'put',
+                'url' => route('setoran.penitipan.update_closing_to', $penjualan->penjualan_id),
+                'confirm' => "Penitipan Setoran akan di lanjutkan ke Closing!\n Lanjutkan?"];
+        }
+
+        return Inertia::render('Setoran/Show', [
+            'title' => 'Penitipan Setoran',
+            'breadcrumbs' => [['label' => 'Setoran', 'url' => route('menu.setoran')], ['label' => 'Penitipan Setoran', 'url' => route('setoran.penitipan')]],
+            'backUrl' => route('setoran.penitipan'),
+            'info' => \App\Support\SetoranShow::info($penjualan),
+            'pj' => \App\Support\SetoranShow::pj($penjualan),
+            'standMeters' => \App\Support\SetoranShow::standMeters($penjualan),
+            'actions' => $actions,
+        ]);
     }
 
     public function update_closing_to(Request $request, Penjualan $penjualan)

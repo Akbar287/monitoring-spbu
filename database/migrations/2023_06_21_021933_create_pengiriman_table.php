@@ -13,7 +13,6 @@ return new class extends Migration
     {
         Schema::create('pengiriman', function (Blueprint $table) {
             $table->uuid('pengiriman_id')->primary();
-            $table->uuid('rencana_pembelian_id');
             $table->uuid('member_id');
             $table->date('tanggal');
             $table->string('no_do', 32)->nullable();
@@ -23,7 +22,6 @@ return new class extends Migration
             $table->boolean('is_done');
             $table->text('catatan')->nullable();
 
-            $table->foreign('rencana_pembelian_id')->references('rencana_pembelian_id')->on('rencana_pembelian')->cascadeOnDelete();
             $table->foreign('member_id')->references('member_id')->on('member')->cascadeOnDelete();
         });
     }

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use Inertia\Inertia;
 use App\Models\FilePenarikan;
 use App\Models\Penarikan;
 use App\Models\Penjualan;
@@ -18,7 +19,7 @@ class FilePenitipanSetoranController extends Controller
      */
     public function index(Request $request, Penjualan $penjualan, Penarikan $penitipan)
     {
-        if ($request->ajax()) {
+        if ($request->ajax() && ! $request->inertia()) {
             $data = $penitipan->file_penarikan()->get();
             return DataTables::of($data)
                 ->addIndexColumn()
@@ -38,7 +39,20 @@ class FilePenitipanSetoranController extends Controller
                 ->rawColumns(['action', 'gambar'])
                 ->make(true);
         }
-        return view('setoran/file_penitipan/index', compact('penjualan', 'penitipan'));
+        return Inertia::render('Table/Index', [
+            'title' => 'File Penitipan Setoran',
+            'breadcrumbs' => [['label' => 'Setoran', 'url' => route('menu.setoran')], ['label' => 'Setoran ke Bank', 'url' => route('setoran.setoran_bank.index_setoran_bank_penjualan')]],
+            'createUrl' => route('setoran.setoran_bank.file.create', [$penjualan, $penitipan]),
+            'table' => [
+                'url' => $request->url(),
+                'columns' => [
+                    ['label' => 'Tanggal', 'data' => 'tanggal'],
+                    ['label' => 'Gambar', 'data' => 'gambar', 'raw' => true],
+                    ['label' => 'Nama File', 'data' => 'nama_file'],
+                    ['label' => 'Aksi', 'data' => 'action', 'orderable' => false, 'searchable' => false, 'raw' => true],
+                ],
+            ],
+        ]);
     }
 
     /**
@@ -46,7 +60,16 @@ class FilePenitipanSetoranController extends Controller
      */
     public function create(Penjualan $penjualan, Penarikan $penitipan)
     {
-        return view('setoran/file_penitipan/create', compact('penjualan', 'penitipan'));
+        return Inertia::render('Form/Index', [
+            'title' => 'Tambah File Penitipan Setoran',
+            'breadcrumbs' => [['label' => 'Setoran', 'url' => route('menu.setoran')], ['label' => 'Setoran ke Bank', 'url' => route('setoran.setoran_bank.index_setoran_bank_penjualan')], ['label' => 'File Penitipan Setoran', 'url' => route('setoran.setoran_bank.file.index', [$penjualan, $penitipan])]],
+            'backUrl' => route('setoran.setoran_bank.file.index', [$penjualan, $penitipan]),
+            'method' => 'post',
+            'action' => route('setoran.setoran_bank.file.store', [$penjualan, $penitipan]),
+            'fields' => [
+                ['name' => 'gambar', 'label' => 'File', 'type' => 'file', 'value' => null, 'hint' => 'Pilih file dokumen/gambar yang akan diunggah.'],
+            ],
+        ]);
     }
 
     /**
@@ -54,6 +77,8 @@ class FilePenitipanSetoranController extends Controller
      */
     public function store(Request $request, Penjualan $penjualan, Penarikan $penitipan)
     {
+        $request->validate(['gambar' => 'required|file|max:' . \App\Support\Upload::maxKb()]);
+
         $foto = 'default.png';
         $filenameWithExt = '';
 
@@ -95,6 +120,8 @@ class FilePenitipanSetoranController extends Controller
      */
     public function update(Request $request, Penjualan $penjualan, Penarikan $penitipan, FilePenarikan $file)
     {
+        $request->validate(['gambar' => 'nullable|file|max:' . \App\Support\Upload::maxKb()]);
+
         $foto = $file->nama_file;
         $filenameWithExt = $file->nama_dokumen;
 

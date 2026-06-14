@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use Inertia\Inertia;
 use Illuminate\Http\Request;
 
 class PerubahanModalController extends Controller
@@ -11,7 +12,13 @@ class PerubahanModalController extends Controller
      */
     public function index()
     {
-        return view('finansial/perubahan_modal/index');
+return Inertia::render('Show/Index', [
+            'title' => 'Perubahan Modal',
+            'breadcrumbs' => [['label' => 'Financial', 'url' => route('menu.financial')]],
+            'backUrl' => route('menu.financial'),
+            'notice' => ['text' => 'Fitur laporan Perubahan Modal masih dalam pengembangan.', 'color' => 'info'],
+            'fields' => [],
+        ]);
     }
 
     /**

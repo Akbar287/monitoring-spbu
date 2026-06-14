@@ -6,6 +6,7 @@ namespace App\Http\Controllers;
 use App\Models\Divisi;
 use App\Http\Requests\DivisiRequest;
 use App\Models\Spbu;
+use Inertia\Inertia;
 use Yajra\DataTables\DataTables;
 use Illuminate\Http\Request;
 
@@ -16,7 +17,7 @@ class DivisiController extends Controller
      */
     public function index(Request $request)
     {
-        if ($request->ajax()) {
+        if ($request->ajax() && ! $request->inertia()) {
             $data = Divisi::select('*');
             return DataTables::of($data)
                 ->addIndexColumn()
@@ -31,7 +32,20 @@ class DivisiController extends Controller
                 ->rawColumns(['action'])
                 ->make(true);
         }
-        return view('konfigurasi/divisi/index');
+        return Inertia::render('Table/Index', [
+            'title' => 'Divisi',
+            'breadcrumbs' => [['label' => 'Konfigurasi', 'url' => route('menu.konfigurasi')]],
+            'createUrl' => route('divisi.create'),
+            'table' => [
+                'url' => $request->url(),
+                'columns' => [
+                    ['label' => 'Nama Divisi', 'data' => 'nama_divisi'],
+                    ['label' => 'Keterangan', 'data' => 'keterangan'],
+                    ['label' => 'Aktif', 'data' => 'is_aktif'],
+                    ['label' => 'Aksi', 'data' => 'action', 'orderable' => false, 'searchable' => false, 'raw' => true],
+                ],
+            ],
+        ]);
     }
 
     /**
@@ -40,7 +54,19 @@ class DivisiController extends Controller
     public function create()
     {
         $spbu = Spbu::all();
-        return view('konfigurasi/divisi/create', compact('spbu'));
+        return Inertia::render('Form/Index', [
+            'title' => 'Tambah Divisi',
+            'breadcrumbs' => [['label' => 'Konfigurasi', 'url' => route('menu.konfigurasi')], ['label' => 'Divisi', 'url' => route('divisi.index')]],
+            'backUrl' => route('divisi.index'),
+            'method' => 'post',
+            'action' => route('divisi.store'),
+            'fields' => [
+                ['name' => 'spbu_id', 'label' => 'SPBU', 'type' => 'select', 'value' => null, 'options' => $spbu->map(fn ($x) => ['value' => $x->spbu_id, 'label' => $x->nama_spbu . ' - ' . $x->nomor_spbu])->values()->all()],
+                ['name' => 'nama_divisi', 'label' => 'Nama Divisi', 'type' => 'text', 'value' => null],
+                ['name' => 'is_aktif', 'label' => 'Status', 'type' => 'select', 'value' => null, 'options' => [['value' => 'true', 'label' => 'Aktifkan'], ['value' => 'false', 'label' => 'Jangan Aktifkan']]],
+                ['name' => 'keterangan', 'label' => 'Keterangan', 'type' => 'textarea', 'value' => null],
+            ],
+        ]);
     }
 
     /**
@@ -55,7 +81,7 @@ class DivisiController extends Controller
             $divisi = $spbu->divisi()->create($this->divisiData());
         }
 
-        return redirect('/konfigurasi/divisi/' . $divisi->divisi_id)->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> Data Divisi sudah ditambah.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
+        return redirect('/konfigurasi/divisi')->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> Data Divisi sudah ditambah.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
     }
 
     /**
@@ -63,7 +89,19 @@ class DivisiController extends Controller
      */
     public function show(Divisi $divisi)
     {
-        return view('konfigurasi/divisi/show', compact('divisi'));
+        return Inertia::render('Show/Index', [
+            'title' => 'Detail Divisi',
+            'breadcrumbs' => [['label' => 'Konfigurasi', 'url' => route('menu.konfigurasi')], ['label' => 'Divisi', 'url' => route('divisi.index')]],
+            'backUrl' => route('divisi.index'),
+            'fields' => [
+                ['label' => 'SPBU', 'value' => optional(\Illuminate\Support\Facades\DB::table('spbu')->where('spbu_id', $divisi->spbu_id)->first())->nama_spbu],
+                ['label' => 'Nama Divisi', 'value' => $divisi->nama_divisi],
+                ['label' => 'Status', 'value' => filter_var($divisi->is_aktif, FILTER_VALIDATE_BOOLEAN) ? 'Aktif' : 'Tidak Aktif'],
+                ['label' => 'Keterangan', 'value' => $divisi->keterangan],
+            ],
+            'actions' => [['label' => 'Ubah', 'url' => route('divisi.edit', $divisi), 'color' => 'primary', 'icon' => 'pen']],
+            'deleteUrl' => route('divisi.destroy', $divisi),
+        ]);
     }
 
     /**
@@ -72,7 +110,19 @@ class DivisiController extends Controller
     public function edit(Divisi $divisi)
     {
         $spbu = Spbu::all();
-        return view('konfigurasi/divisi/edit', compact('divisi', 'spbu'));
+        return Inertia::render('Form/Index', [
+            'title' => 'Ubah Divisi',
+            'breadcrumbs' => [['label' => 'Konfigurasi', 'url' => route('menu.konfigurasi')], ['label' => 'Divisi', 'url' => route('divisi.index')]],
+            'backUrl' => route('divisi.index'),
+            'method' => 'put',
+            'action' => route('divisi.update', $divisi),
+            'fields' => [
+                ['name' => 'spbu_id', 'label' => 'SPBU', 'type' => 'select', 'value' => $divisi->spbu_id, 'options' => $spbu->map(fn ($x) => ['value' => $x->spbu_id, 'label' => $x->nama_spbu . ' - ' . $x->nomor_spbu])->values()->all()],
+                ['name' => 'nama_divisi', 'label' => 'Nama Divisi', 'type' => 'text', 'value' => $divisi->nama_divisi],
+                ['name' => 'is_aktif', 'label' => 'Status', 'type' => 'select', 'value' => filter_var($divisi->is_aktif, FILTER_VALIDATE_BOOLEAN) ? 'true' : 'false', 'options' => [['value' => 'true', 'label' => 'Aktifkan'], ['value' => 'false', 'label' => 'Jangan Aktifkan']]],
+                ['name' => 'keterangan', 'label' => 'Keterangan', 'type' => 'textarea', 'value' => $divisi->keterangan],
+            ],
+        ]);
     }
 
     /**
@@ -82,7 +132,7 @@ class DivisiController extends Controller
     {
         $divisi->update($this->divisiData());
 
-        return redirect('/konfigurasi/divisi/' . $divisi->divisi_id)->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> Data Divisi sudah diubah.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
+        return redirect('/konfigurasi/divisi')->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> Data Divisi sudah diubah.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
     }
 
     /**

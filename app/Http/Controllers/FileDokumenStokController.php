@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use Inertia\Inertia;
 use App\Models\DokumenStok;
 use App\Models\FileDokumenStok;
 use Illuminate\Http\Request;
@@ -15,7 +16,7 @@ class FileDokumenStokController extends Controller
      */
     public function index(Request $request, DokumenStok $stok)
     {
-        if ($request->ajax()) {
+        if ($request->ajax() && ! $request->inertia()) {
             $data = $stok->file_dokumen_stok()->get();
             return DataTables::of($data)
                 ->addIndexColumn()
@@ -26,7 +27,19 @@ class FileDokumenStokController extends Controller
                 ->rawColumns(['action'])
                 ->make(true);
         }
-        return view('stok/file_stok_taking/index', compact('stok'));
+        return Inertia::render('Table/Index', [
+            'title' => 'File Stok Taking',
+            'breadcrumbs' => [['label' => 'Manajemen Persediaan', 'url' => route('menu.stok')], ['label' => 'Stok Taking', 'url' => route('stok-taking.index')]],
+            'createUrl' => route('stok-taking.file.create', $stok),
+            'table' => [
+                'url' => $request->url(),
+                'columns' => [
+                    ['label' => 'Nama Dokumen', 'data' => 'nama_dokumen'],
+                    ['label' => 'Tanggal Upload', 'data' => 'tanggal_upload'],
+                    ['label' => 'Aksi', 'data' => 'action', 'orderable' => false, 'searchable' => false, 'raw' => true],
+                ],
+            ],
+        ]);
     }
 
     /**
@@ -34,7 +47,16 @@ class FileDokumenStokController extends Controller
      */
     public function create(DokumenStok $stok)
     {
-        return view('stok/file_stok_taking/create', compact('stok'));
+        return Inertia::render('Form/Index', [
+            'title' => 'Tambah File Stok Taking',
+            'breadcrumbs' => [['label' => 'Manajemen Persediaan', 'url' => route('menu.stok')], ['label' => 'Stok Taking', 'url' => route('stok-taking.index')], ['label' => 'File Stok Taking', 'url' => route('stok-taking.file.index', $stok)]],
+            'backUrl' => route('stok-taking.file.index', $stok),
+            'method' => 'post',
+            'action' => route('stok-taking.file.store', $stok),
+            'fields' => [
+                ['name' => 'gambar', 'label' => 'File', 'type' => 'file', 'value' => null, 'hint' => 'Pilih file dokumen/gambar yang akan diunggah.'],
+            ],
+        ]);
     }
 
     /**
@@ -42,6 +64,8 @@ class FileDokumenStokController extends Controller
      */
     public function store(Request $request, DokumenStok $stok)
     {
+        $request->validate(['gambar' => 'required|file|max:' . \App\Support\Upload::maxKb()]);
+
         $foto = 'default.png';
         $filenameWithExt = null;
 
@@ -57,7 +81,7 @@ class FileDokumenStokController extends Controller
         if (is_null($file)) {
             $file = $stok->file_dokumen_stok()->create($this->fileDokumenStokData($filenameWithExt, $foto));
         }
-        return redirect('/stok/stok-taking/' . $stok->dokumen_stok_id . '/file/' . $file->file_stok_taking_id)->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> File Fasilitas sudah ditambahkan.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
+        return redirect('/stok/stok-taking/' . $stok->dokumen_stok_id . '/file/' . $file->file_dokumen_stok_id)->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> File Fasilitas sudah ditambahkan.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
     }
 
     /**
@@ -65,7 +89,22 @@ class FileDokumenStokController extends Controller
      */
     public function show(DokumenStok $stok, FileDokumenStok $file)
     {
-        return view('stok/file_stok_taking/show', compact('stok', 'file'));
+        return Inertia::render('Show/Index', [
+            'title' => 'Detail File Stok Taking',
+            'breadcrumbs' => [['label' => 'Manajemen Persediaan', 'url' => route('menu.stok')], ['label' => 'Stok Taking', 'url' => route('stok-taking.index')], ['label' => 'File Stok Taking', 'url' => route('stok-taking.file.index', $stok)]],
+            'backUrl' => route('stok-taking.file.index', $stok),
+            'fields' => [
+                ['label' => 'Nama Dokumen', 'value' => $file->nama_dokumen],
+                ['label' => 'Nama File', 'value' => $file->nama_file],
+                ['label' => 'Tanggal Upload', 'value' => $file->tanggal_upload],
+            ],
+            'image' => asset('storage/file_dokumen_stok/' . $file->nama_file),
+            'actions' => [
+                ['label' => 'Ubah', 'url' => route('stok-taking.file.edit', [$stok, $file]), 'color' => 'primary', 'icon' => 'pen'],
+                ['label' => 'Download', 'url' => route('stok-taking.file.download', [$stok, $file]), 'color' => 'info', 'icon' => 'download'],
+            ],
+            'deleteUrl' => route('stok-taking.file.delete', [$stok, $file]),
+        ]);
     }
 
     /**
@@ -73,7 +112,16 @@ class FileDokumenStokController extends Controller
      */
     public function edit(DokumenStok $stok, FileDokumenStok $file)
     {
-        return view('stok/file_stok_taking/edit', compact('stok', 'file'));
+        return Inertia::render('Form/Index', [
+            'title' => 'Ubah File Stok Taking',
+            'breadcrumbs' => [['label' => 'Manajemen Persediaan', 'url' => route('menu.stok')], ['label' => 'Stok Taking', 'url' => route('stok-taking.index')], ['label' => 'File Stok Taking', 'url' => route('stok-taking.file.index', $stok)]],
+            'backUrl' => route('stok-taking.file.show', [$stok, $file]),
+            'method' => 'put',
+            'action' => route('stok-taking.file.update', [$stok, $file]),
+            'fields' => [
+                ['name' => 'gambar', 'label' => 'File Pengganti', 'type' => 'file', 'value' => null, 'hint' => 'File saat ini: ' . $file->nama_dokumen],
+            ],
+        ]);
     }
 
     /**
@@ -81,6 +129,8 @@ class FileDokumenStokController extends Controller
      */
     public function update(Request $request, DokumenStok $stok, FileDokumenStok $file)
     {
+        $request->validate(['gambar' => 'nullable|file|max:' . \App\Support\Upload::maxKb()]);
+
         $foto = $file->nama_file;
         $filenameWithExt = $file->nama_dokumen;
 
@@ -110,7 +160,7 @@ class FileDokumenStokController extends Controller
         }
         $file->delete();
 
-        return redirect('/stok/stok-taking/' . $stok->dokumen_stok_id . '/' . $stok->dokumen_stok_id . '/file')->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> Data File Dokumen Stok sudah dihapus.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
+        return redirect('/stok/stok-taking/' . $stok->dokumen_stok_id . '/file')->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> Data File Dokumen Stok sudah dihapus.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
     }
 
     public function download(DokumenStok $stok, FileDokumenStok $file)

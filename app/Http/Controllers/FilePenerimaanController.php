@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use Inertia\Inertia;
 use App\Models\FilePenerimaan;
 use App\Models\Penerimaan;
 use Carbon\Carbon;
@@ -16,7 +17,7 @@ class FilePenerimaanController extends Controller
      */
     public function index(Request $request, Penerimaan $penerimaan)
     {
-        if ($request->ajax()) {
+        if ($request->ajax() && ! $request->inertia()) {
             $data = $penerimaan->file_penerimaan()->get();
             return DataTables::of($data)
                 ->addIndexColumn()
@@ -30,7 +31,20 @@ class FilePenerimaanController extends Controller
                 ->rawColumns(['action'])
                 ->make(true);
         }
-        return view('stok/file_penerimaan/index', compact('penerimaan'));
+        return Inertia::render('Table/Index', [
+            'title' => 'File Penerimaan',
+            'breadcrumbs' => [['label' => 'Manajemen Persediaan', 'url' => route('menu.stok')], ['label' => 'Penerimaan BBM', 'url' => route('penerimaan.index')]],
+            'createUrl' => route('penerimaan.file.create', $penerimaan),
+            'table' => [
+                'url' => $request->url(),
+                'columns' => [
+                    ['label' => 'Id File', 'data' => 'file_penerimaan_id'],
+                    ['label' => 'Nama Dokumen', 'data' => 'nama_dokumen'],
+                    ['label' => 'Tanggal', 'data' => 'tanggal_upload'],
+                    ['label' => 'Aksi', 'data' => 'action', 'orderable' => false, 'searchable' => false, 'raw' => true],
+                ],
+            ],
+        ]);
     }
 
     /**
@@ -38,7 +52,16 @@ class FilePenerimaanController extends Controller
      */
     public function create(Penerimaan $penerimaan)
     {
-        return view('stok/file_penerimaan/create', compact('penerimaan'));
+        return Inertia::render('Form/Index', [
+            'title' => 'Tambah File Penerimaan',
+            'breadcrumbs' => [['label' => 'Manajemen Persediaan', 'url' => route('menu.stok')], ['label' => 'Penerimaan BBM', 'url' => route('penerimaan.index')], ['label' => 'File Penerimaan', 'url' => route('penerimaan.file.index', $penerimaan)]],
+            'backUrl' => route('penerimaan.file.index', $penerimaan),
+            'method' => 'post',
+            'action' => route('penerimaan.file.store', $penerimaan),
+            'fields' => [
+                ['name' => 'gambar', 'label' => 'File', 'type' => 'file', 'value' => null, 'hint' => 'Pilih file dokumen/gambar yang akan diunggah.'],
+            ],
+        ]);
     }
 
     /**
@@ -46,6 +69,8 @@ class FilePenerimaanController extends Controller
      */
     public function store(Request $request, Penerimaan $penerimaan)
     {
+        $request->validate(['gambar' => 'required|file|max:' . \App\Support\Upload::maxKb()]);
+
         $foto = 'default.png';
         $filenameWithExt = '';
 
@@ -70,7 +95,19 @@ class FilePenerimaanController extends Controller
      */
     public function show(Penerimaan $penerimaan, FilePenerimaan $file)
     {
-        return view('stok/file_penerimaan/show', compact('penerimaan', 'file'));
+        return Inertia::render('Show/Index', [
+            'title' => 'Detail File Penerimaan',
+            'breadcrumbs' => [['label' => 'Manajemen Persediaan', 'url' => route('menu.stok')], ['label' => 'Penerimaan BBM', 'url' => route('penerimaan.index')], ['label' => 'File Penerimaan', 'url' => route('penerimaan.file.index', $penerimaan)]],
+            'backUrl' => route('penerimaan.file.index', $penerimaan),
+            'fields' => [
+                ['label' => 'Nama Dokumen', 'value' => $file->nama_dokumen],
+                ['label' => 'Nama File', 'value' => $file->nama_file],
+                ['label' => 'Tanggal Upload', 'value' => $file->tanggal_upload],
+            ],
+            'image' => asset('storage/file_penerimaan/' . $file->nama_file),
+            'actions' => [['label' => 'Ubah', 'url' => route('penerimaan.file.edit', [$penerimaan, $file]), 'color' => 'primary', 'icon' => 'pen'], ['label' => 'Download', 'url' => route('penerimaan.file.download', [$penerimaan, $file]), 'color' => 'info', 'icon' => 'download']],
+            'deleteUrl' => route('penerimaan.file.delete', [$penerimaan, $file]),
+        ]);
     }
 
     /**
@@ -78,7 +115,16 @@ class FilePenerimaanController extends Controller
      */
     public function edit(Penerimaan $penerimaan, FilePenerimaan $file)
     {
-        return view('stok/file_penerimaan/edit', compact('penerimaan', 'file'));
+        return Inertia::render('Form/Index', [
+            'title' => 'Ubah File Penerimaan',
+            'breadcrumbs' => [['label' => 'Manajemen Persediaan', 'url' => route('menu.stok')], ['label' => 'Penerimaan BBM', 'url' => route('penerimaan.index')], ['label' => 'File Penerimaan', 'url' => route('penerimaan.file.index', $penerimaan)]],
+            'backUrl' => route('penerimaan.file.show', [$penerimaan, $file]),
+            'method' => 'put',
+            'action' => route('penerimaan.file.update', [$penerimaan, $file]),
+            'fields' => [
+                ['name' => 'gambar', 'label' => 'File Pengganti', 'type' => 'file', 'value' => null, 'hint' => 'File saat ini: ' . $file->nama_dokumen],
+            ],
+        ]);
     }
 
     /**
@@ -86,6 +132,8 @@ class FilePenerimaanController extends Controller
      */
     public function update(Request $request, Penerimaan $penerimaan, FilePenerimaan $file)
     {
+        $request->validate(['gambar' => 'nullable|file|max:' . \App\Support\Upload::maxKb()]);
+
         $foto = $file->nama_file;
         $filenameWithExt = $file->nama_dokumen;
 
@@ -134,7 +182,7 @@ class FilePenerimaanController extends Controller
 
     public function index_riwayat(Request $request, Penerimaan $penerimaan)
     {
-        if ($request->ajax()) {
+        if ($request->ajax() && ! $request->inertia()) {
             $data = $penerimaan->file_penerimaan()->get();
             return DataTables::of($data)
                 ->addIndexColumn()
@@ -148,11 +196,33 @@ class FilePenerimaanController extends Controller
                 ->rawColumns(['action'])
                 ->make(true);
         }
-        return view('stok/file_penerimaan/index_riwayat', compact('penerimaan'));
+        return Inertia::render('Table/Index', [
+            'title' => 'Riwayat File Penerimaan',
+            'breadcrumbs' => [['label' => 'Manajemen Persediaan', 'url' => route('menu.stok')], ['label' => 'Riwayat Penerimaan BBM', 'url' => route('penerimaan.riwayat')]],
+            'table' => [
+                'url' => $request->url(),
+                'columns' => [
+                    ['label' => 'Id File', 'data' => 'file_penerimaan_id'],
+                    ['label' => 'Nama Dokumen', 'data' => 'nama_dokumen'],
+                    ['label' => 'Tanggal', 'data' => 'tanggal_upload'],
+                    ['label' => 'Aksi', 'data' => 'action', 'orderable' => false, 'searchable' => false, 'raw' => true],
+                ],
+            ],
+        ]);
     }
 
     public function show_riwayat(Penerimaan $penerimaan, FilePenerimaan $file)
     {
-        return view('stok/file_penerimaan/show_riwayat', compact('penerimaan', 'file'));
+        return Inertia::render('Show/Index', [
+            'title' => 'Detail Riwayat File Penerimaan',
+            'breadcrumbs' => [['label' => 'Manajemen Persediaan', 'url' => route('menu.stok')], ['label' => 'Riwayat Penerimaan BBM', 'url' => route('penerimaan.riwayat')], ['label' => 'Riwayat File Penerimaan', 'url' => route('penerimaan.file.riwayat.index', $penerimaan)]],
+            'backUrl' => route('penerimaan.file.riwayat.index', $penerimaan),
+            'fields' => [
+                ['label' => 'Nama Dokumen', 'value' => $file->nama_dokumen],
+                ['label' => 'Nama File', 'value' => $file->nama_file],
+                ['label' => 'Tanggal Upload', 'value' => $file->tanggal_upload],
+            ],
+            'image' => asset('storage/file_penerimaan/' . $file->nama_file),
+        ]);
     }
 }

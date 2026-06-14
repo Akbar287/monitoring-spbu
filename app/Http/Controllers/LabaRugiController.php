@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use Inertia\Inertia;
 use Illuminate\Http\Request;
 
 class LabaRugiController extends Controller
@@ -11,7 +12,13 @@ class LabaRugiController extends Controller
      */
     public function index()
     {
-        return view('financial/laba_rugi/index');
+return Inertia::render('Show/Index', [
+            'title' => 'Laba Rugi',
+            'breadcrumbs' => [['label' => 'Financial', 'url' => route('menu.financial')]],
+            'backUrl' => route('menu.financial'),
+            'notice' => ['text' => 'Fitur laporan Laba Rugi masih dalam pengembangan.', 'color' => 'info'],
+            'fields' => [],
+        ]);
     }
 
     /**

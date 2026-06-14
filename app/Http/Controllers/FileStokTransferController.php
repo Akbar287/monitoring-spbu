@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use Inertia\Inertia;
 use App\Models\DokumenStok;
 use App\Models\DombakTransfer;
 use App\Models\FileDokumenStok;
@@ -17,7 +18,7 @@ class FileStokTransferController extends Controller
      */
     public function index(Request $request, DombakTransfer $dombakTransfer, DokumenStok $dokumenStok)
     {
-        if ($request->ajax()) {
+        if ($request->ajax() && ! $request->inertia()) {
             $data = $dokumenStok->file_dokumen_stok()->get();
             return DataTables::of($data)
                 ->addIndexColumn()
@@ -34,7 +35,19 @@ class FileStokTransferController extends Controller
                 ->rawColumns(['action'])
                 ->make(true);
         }
-        return view('stok/file_stok_transfer/index', compact('dombakTransfer', 'dokumenStok'));
+        return Inertia::render('Table/Index', [
+            'title' => 'File Stok Transfer',
+            'breadcrumbs' => [['label' => 'Manajemen Persediaan', 'url' => route('menu.stok')], ['label' => 'Stok Transfer', 'url' => route('stok-transfer.index')]],
+            'createUrl' => route('stok-transfer.file.create', [$dombakTransfer, $dokumenStok]),
+            'table' => [
+                'url' => $request->url(),
+                'columns' => [
+                    ['label' => 'Nama Dokumen', 'data' => 'nama_dokumen'],
+                    ['label' => 'Tanggal', 'data' => 'tanggal_upload'],
+                    ['label' => 'Aksi', 'data' => 'action', 'orderable' => false, 'searchable' => false, 'raw' => true],
+                ],
+            ],
+        ]);
     }
 
     /**
@@ -42,7 +55,16 @@ class FileStokTransferController extends Controller
      */
     public function create(DombakTransfer $dombakTransfer, DokumenStok $dokumenStok)
     {
-        return view('stok/file_stok_transfer/create', compact('dombakTransfer', 'dokumenStok'));
+        return Inertia::render('Form/Index', [
+            'title' => 'Tambah File Stok Transfer',
+            'breadcrumbs' => [['label' => 'Manajemen Persediaan', 'url' => route('menu.stok')], ['label' => 'Stok Transfer', 'url' => route('stok-transfer.index')], ['label' => 'File Stok Transfer', 'url' => route('stok-transfer.file.index', [$dombakTransfer, $dokumenStok])]],
+            'backUrl' => route('stok-transfer.file.index', [$dombakTransfer, $dokumenStok]),
+            'method' => 'post',
+            'action' => route('stok-transfer.file.store', [$dombakTransfer, $dokumenStok]),
+            'fields' => [
+                ['name' => 'gambar', 'label' => 'File', 'type' => 'file', 'value' => null, 'hint' => 'Pilih file dokumen/gambar yang akan diunggah.'],
+            ],
+        ]);
     }
 
     /**
@@ -50,6 +72,8 @@ class FileStokTransferController extends Controller
      */
     public function store(Request $request, DombakTransfer $dombakTransfer, DokumenStok $dokumenStok)
     {
+        $request->validate(['gambar' => 'required|file|max:' . \App\Support\Upload::maxKb()]);
+
         $foto = 'default.png';
         $filenameWithExt = null;
 
@@ -74,7 +98,19 @@ class FileStokTransferController extends Controller
      */
     public function show(DombakTransfer $dombakTransfer, DokumenStok $dokumenStok, FileDokumenStok $fileDokumenStok)
     {
-        return view('stok/file_stok_transfer/show', compact('dombakTransfer', 'dokumenStok', 'fileDokumenStok'));
+        return Inertia::render('Show/Index', [
+            'title' => 'Detail File Stok Transfer',
+            'breadcrumbs' => [['label' => 'Manajemen Persediaan', 'url' => route('menu.stok')], ['label' => 'Stok Transfer', 'url' => route('stok-transfer.index')], ['label' => 'File Stok Transfer', 'url' => route('stok-transfer.file.index', [$dombakTransfer, $dokumenStok])]],
+            'backUrl' => route('stok-transfer.file.index', [$dombakTransfer, $dokumenStok]),
+            'fields' => [
+                ['label' => 'Nama Dokumen', 'value' => $fileDokumenStok->nama_dokumen],
+                ['label' => 'Nama File', 'value' => $fileDokumenStok->nama_file],
+                ['label' => 'Tanggal Upload', 'value' => $fileDokumenStok->tanggal_upload],
+            ],
+            'image' => asset('storage/file_dokumen_stok/' . $fileDokumenStok->nama_file),
+            'actions' => [['label' => 'Ubah', 'url' => route('stok-transfer.file.edit', [$dombakTransfer, $dokumenStok, $fileDokumenStok]), 'color' => 'primary', 'icon' => 'pen'], ['label' => 'Download', 'url' => route('stok-transfer.file.download', [$dombakTransfer, $dokumenStok, $fileDokumenStok]), 'color' => 'info', 'icon' => 'download']],
+            'deleteUrl' => route('stok-transfer.file.delete', [$dombakTransfer, $dokumenStok, $fileDokumenStok]),
+        ]);
     }
 
     /**
@@ -82,7 +118,16 @@ class FileStokTransferController extends Controller
      */
     public function edit(DombakTransfer $dombakTransfer, DokumenStok $dokumenStok, FileDokumenStok $fileDokumenStok)
     {
-        return view('stok/file_stok_transfer/edit', compact('dombakTransfer', 'dokumenStok', 'fileDokumenStok'));
+        return Inertia::render('Form/Index', [
+            'title' => 'Ubah File Stok Transfer',
+            'breadcrumbs' => [['label' => 'Manajemen Persediaan', 'url' => route('menu.stok')], ['label' => 'Stok Transfer', 'url' => route('stok-transfer.index')], ['label' => 'File Stok Transfer', 'url' => route('stok-transfer.file.index', [$dombakTransfer, $dokumenStok])]],
+            'backUrl' => route('stok-transfer.file.show', [$dombakTransfer, $dokumenStok, $fileDokumenStok]),
+            'method' => 'put',
+            'action' => route('stok-transfer.file.update', [$dombakTransfer, $dokumenStok, $fileDokumenStok]),
+            'fields' => [
+                ['name' => 'gambar', 'label' => 'File Pengganti', 'type' => 'file', 'value' => null, 'hint' => 'File saat ini: ' . $fileDokumenStok->nama_dokumen],
+            ],
+        ]);
     }
 
     /**
@@ -90,6 +135,8 @@ class FileStokTransferController extends Controller
      */
     public function update(Request $request, DombakTransfer $dombakTransfer, DokumenStok $dokumenStok, FileDokumenStok $fileDokumenStok)
     {
+        $request->validate(['gambar' => 'nullable|file|max:' . \App\Support\Upload::maxKb()]);
+
         $foto = $fileDokumenStok->nama_file;
         $filenameWithExt = $fileDokumenStok->nama_dokumen;
 

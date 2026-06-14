@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\ServiceProvider;
+use Inertia\Inertia;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -22,5 +23,6 @@ class AppServiceProvider extends ServiceProvider
     {
         // \Illuminate\Support\Facades\URL::forceScheme('https');
         Paginator::useBootstrapFour();
+        Inertia::setRootView('inertia');
     }
 }

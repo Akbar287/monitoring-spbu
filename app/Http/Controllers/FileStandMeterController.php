@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use Inertia\Inertia;
 use App\Models\FileStandMeter;
 use App\Models\StandMeter;
 use Illuminate\Http\Request;
@@ -15,7 +16,7 @@ class FileStandMeterController extends Controller
      */
     public function index(Request $request, StandMeter $standMeter)
     {
-        if ($request->ajax()) {
+        if ($request->ajax() && ! $request->inertia()) {
             $data = $standMeter->file_stand_meter()->get();
             return DataTables::of($data)
                 ->addIndexColumn()
@@ -26,7 +27,20 @@ class FileStandMeterController extends Controller
                 ->rawColumns(['action'])
                 ->make(true);
         }
-        return view('stok/file_totalisator/index', compact('standMeter'));
+        return Inertia::render('Table/Index', [
+            'title' => 'File Totalisator',
+            'breadcrumbs' => [['label' => 'Manajemen Persediaan', 'url' => route('menu.stok')], ['label' => 'Totalisator', 'url' => route('totalisator.index')]],
+            'createUrl' => route('totalisator.file.create', $standMeter),
+            'table' => [
+                'url' => $request->url(),
+                'columns' => [
+                    ['label' => 'Id File', 'data' => 'file_stand_meter_id'],
+                    ['label' => 'Nama Dokumen', 'data' => 'nama_dokumen'],
+                    ['label' => 'Tanggal', 'data' => 'tanggal_upload'],
+                    ['label' => 'Aksi', 'data' => 'action', 'orderable' => false, 'searchable' => false, 'raw' => true],
+                ],
+            ],
+        ]);
     }
 
     /**
@@ -34,7 +48,16 @@ class FileStandMeterController extends Controller
      */
     public function create(StandMeter $standMeter)
     {
-        return view('stok/file_totalisator/create', compact('standMeter'));
+        return Inertia::render('Form/Index', [
+            'title' => 'Tambah File Totalisator',
+            'breadcrumbs' => [['label' => 'Manajemen Persediaan', 'url' => route('menu.stok')], ['label' => 'Totalisator', 'url' => route('totalisator.index')], ['label' => 'File Totalisator', 'url' => route('totalisator.file.index', $standMeter)]],
+            'backUrl' => route('totalisator.file.index', $standMeter),
+            'method' => 'post',
+            'action' => route('totalisator.file.store', $standMeter),
+            'fields' => [
+                ['name' => 'gambar', 'label' => 'File', 'type' => 'file', 'value' => null, 'hint' => 'Pilih file dokumen/gambar yang akan diunggah.'],
+            ],
+        ]);
     }
 
     /**
@@ -42,6 +65,8 @@ class FileStandMeterController extends Controller
      */
     public function store(Request $request, StandMeter $standMeter)
     {
+        $request->validate(['gambar' => 'required|file|max:' . \App\Support\Upload::maxKb()]);
+
         $foto = 'default.png';
         $filenameWithExt = 'default.png';
         if ($request->hasFile('gambar')) {
@@ -65,7 +90,19 @@ class FileStandMeterController extends Controller
      */
     public function show(StandMeter $standMeter, FileStandMeter $file)
     {
-        return view('stok/file_totalisator/show', compact('standMeter', 'file'));
+        return Inertia::render('Show/Index', [
+            'title' => 'Detail File Totalisator',
+            'breadcrumbs' => [['label' => 'Manajemen Persediaan', 'url' => route('menu.stok')], ['label' => 'Totalisator', 'url' => route('totalisator.index')], ['label' => 'File Totalisator', 'url' => route('totalisator.file.index', $standMeter)]],
+            'backUrl' => route('totalisator.file.index', $standMeter),
+            'fields' => [
+                ['label' => 'Nama Dokumen', 'value' => $file->nama_dokumen],
+                ['label' => 'Nama File', 'value' => $file->nama_file],
+                ['label' => 'Tanggal Upload', 'value' => $file->tanggal_upload],
+            ],
+            'image' => asset('storage/file_stand_meter/' . $file->nama_file),
+            'actions' => [['label' => 'Ubah', 'url' => route('totalisator.file.edit', [$standMeter, $file]), 'color' => 'primary', 'icon' => 'pen'], ['label' => 'Download', 'url' => route('totalisator.file.download', [$standMeter, $file]), 'color' => 'info', 'icon' => 'download']],
+            'deleteUrl' => route('totalisator.file.delete', [$standMeter, $file]),
+        ]);
     }
 
     /**
@@ -73,7 +110,16 @@ class FileStandMeterController extends Controller
      */
     public function edit(StandMeter $standMeter, FileStandMeter $file)
     {
-        return view('stok/file_totalisator/edit', compact('standMeter', 'file'));
+        return Inertia::render('Form/Index', [
+            'title' => 'Ubah File Totalisator',
+            'breadcrumbs' => [['label' => 'Manajemen Persediaan', 'url' => route('menu.stok')], ['label' => 'Totalisator', 'url' => route('totalisator.index')], ['label' => 'File Totalisator', 'url' => route('totalisator.file.index', $standMeter)]],
+            'backUrl' => route('totalisator.file.show', [$standMeter, $file]),
+            'method' => 'put',
+            'action' => route('totalisator.file.update', [$standMeter, $file]),
+            'fields' => [
+                ['name' => 'gambar', 'label' => 'File Pengganti', 'type' => 'file', 'value' => null, 'hint' => 'File saat ini: ' . $file->nama_dokumen],
+            ],
+        ]);
     }
 
     /**
@@ -81,6 +127,8 @@ class FileStandMeterController extends Controller
      */
     public function update(Request $request, StandMeter $standMeter, FileStandMeter $file)
     {
+        $request->validate(['gambar' => 'nullable|file|max:' . \App\Support\Upload::maxKb()]);
+
         $foto = $file->nama_file;
         $filenameWithExt = $file->nama_dokumen;
 
@@ -126,7 +174,7 @@ class FileStandMeterController extends Controller
 
     public function riwayat_index(Request $request, StandMeter $standMeter)
     {
-        if ($request->ajax()) {
+        if ($request->ajax() && ! $request->inertia()) {
             $data = $standMeter->file_stand_meter()->get();
             return DataTables::of($data)
                 ->addIndexColumn()
@@ -137,7 +185,20 @@ class FileStandMeterController extends Controller
                 ->rawColumns(['action'])
                 ->make(true);
         }
-        return view('stok/riwayat_file_totalisator/index', compact('standMeter'));
+        return Inertia::render('Table/Index', [
+            'title' => 'Riwayat File Totalisator',
+            'breadcrumbs' => [['label' => 'Manajemen Persediaan', 'url' => route('menu.stok')], ['label' => 'Riwayat Totalisator', 'url' => route('totalisator.riwayat')]],
+            'createUrl' => route('totalisator.file.riwayat.create', $standMeter),
+            'table' => [
+                'url' => $request->url(),
+                'columns' => [
+                    ['label' => 'Id File', 'data' => 'file_stand_meter_id'],
+                    ['label' => 'Nama Dokumen', 'data' => 'nama_dokumen'],
+                    ['label' => 'Tanggal', 'data' => 'tanggal_upload'],
+                    ['label' => 'Aksi', 'data' => 'action', 'orderable' => false, 'searchable' => false, 'raw' => true],
+                ],
+            ],
+        ]);
     }
 
     /**
@@ -145,7 +206,16 @@ class FileStandMeterController extends Controller
      */
     public function riwayat_create(StandMeter $standMeter)
     {
-        return view('stok/riwayat_file_totalisator/create', compact('standMeter'));
+        return Inertia::render('Form/Index', [
+            'title' => 'Tambah Riwayat File Totalisator',
+            'breadcrumbs' => [['label' => 'Manajemen Persediaan', 'url' => route('menu.stok')], ['label' => 'Riwayat Totalisator', 'url' => route('totalisator.riwayat')], ['label' => 'Riwayat File Totalisator', 'url' => route('totalisator.file.riwayat.index', $standMeter)]],
+            'backUrl' => route('totalisator.file.riwayat.index', $standMeter),
+            'method' => 'post',
+            'action' => route('totalisator.file.riwayat.store', $standMeter),
+            'fields' => [
+                ['name' => 'gambar', 'label' => 'File', 'type' => 'file', 'value' => null, 'hint' => 'Pilih file dokumen/gambar yang akan diunggah.'],
+            ],
+        ]);
     }
 
     /**
@@ -153,6 +223,8 @@ class FileStandMeterController extends Controller
      */
     public function riwayat_store(Request $request, StandMeter $standMeter)
     {
+        $request->validate(['gambar' => 'required|file|max:' . \App\Support\Upload::maxKb()]);
+
         $foto = 'default.png';
         $filenameWithExt = 'default.png';
         if ($request->hasFile('gambar')) {
@@ -176,7 +248,19 @@ class FileStandMeterController extends Controller
      */
     public function riwayat_show(StandMeter $standMeter, FileStandMeter $file)
     {
-        return view('stok/riwayat_file_totalisator/show', compact('standMeter', 'file'));
+        return Inertia::render('Show/Index', [
+            'title' => 'Detail Riwayat File Totalisator',
+            'breadcrumbs' => [['label' => 'Manajemen Persediaan', 'url' => route('menu.stok')], ['label' => 'Riwayat Totalisator', 'url' => route('totalisator.riwayat')], ['label' => 'Riwayat File Totalisator', 'url' => route('totalisator.file.riwayat.index', $standMeter)]],
+            'backUrl' => route('totalisator.file.riwayat.index', $standMeter),
+            'fields' => [
+                ['label' => 'Nama Dokumen', 'value' => $file->nama_dokumen],
+                ['label' => 'Nama File', 'value' => $file->nama_file],
+                ['label' => 'Tanggal Upload', 'value' => $file->tanggal_upload],
+            ],
+            'image' => asset('storage/file_stand_meter/' . $file->nama_file),
+            'actions' => [['label' => 'Ubah', 'url' => route('totalisator.file.riwayat.edit', [$standMeter, $file]), 'color' => 'primary', 'icon' => 'pen']],
+            'deleteUrl' => route('totalisator.file.riwayat.delete', [$standMeter, $file]),
+        ]);
     }
 
     /**
@@ -184,7 +268,16 @@ class FileStandMeterController extends Controller
      */
     public function riwayat_edit(StandMeter $standMeter, FileStandMeter $file)
     {
-        return view('stok/riwayat_file_totalisator/edit', compact('standMeter', 'file'));
+        return Inertia::render('Form/Index', [
+            'title' => 'Ubah Riwayat File Totalisator',
+            'breadcrumbs' => [['label' => 'Manajemen Persediaan', 'url' => route('menu.stok')], ['label' => 'Riwayat Totalisator', 'url' => route('totalisator.riwayat')], ['label' => 'Riwayat File Totalisator', 'url' => route('totalisator.file.riwayat.index', $standMeter)]],
+            'backUrl' => route('totalisator.file.riwayat.show', [$standMeter, $file]),
+            'method' => 'put',
+            'action' => route('totalisator.file.riwayat.update', [$standMeter, $file]),
+            'fields' => [
+                ['name' => 'gambar', 'label' => 'File Pengganti', 'type' => 'file', 'value' => null, 'hint' => 'File saat ini: ' . $file->nama_dokumen],
+            ],
+        ]);
     }
 
     /**
@@ -192,6 +285,8 @@ class FileStandMeterController extends Controller
      */
     public function riwayat_update(Request $request, StandMeter $standMeter, FileStandMeter $file)
     {
+        $request->validate(['gambar' => 'nullable|file|max:' . \App\Support\Upload::maxKb()]);
+
         $foto = $file->nama_file;
         $filenameWithExt = $file->nama_dokumen;
 

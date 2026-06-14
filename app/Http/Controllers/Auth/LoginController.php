@@ -37,4 +37,16 @@ class LoginController extends Controller
     {
         $this->middleware('guest')->except('logout');
     }
+
+    /**
+     * Halaman login React (Inertia). POST tetap ditangani trait
+     * AuthenticatesUsers (field username, redirect sukses ke /home React).
+     */
+    public function showLoginForm()
+    {
+        return \Inertia\Inertia::render('Auth/Login', [
+            'action' => route('login'),
+            'homeUrl' => url('/'),
+        ]);
+    }
 }

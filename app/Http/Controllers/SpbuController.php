@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Spbu;
 use Illuminate\Http\Request;
 use App\Http\Requests\SpbuRequest;
+use Inertia\Inertia;
 use Yajra\DataTables\DataTables;
 
 class SpbuController extends Controller
@@ -14,8 +15,7 @@ class SpbuController extends Controller
      */
     public function index(Request $request)
     {
-        $spbus = Spbu::all();
-        if ($request->ajax()) {
+        if ($request->ajax() && ! $request->inertia()) {
             $data = Spbu::select('*');
             return DataTables::of($data)
                 ->addIndexColumn()
@@ -26,7 +26,22 @@ class SpbuController extends Controller
                 ->rawColumns(['action'])
                 ->make(true);
         }
-        return view('konfigurasi/spbu/index', compact('spbus'));
+        return Inertia::render('Table/Index', [
+            'title' => 'SPBU',
+            'lead' => 'Kelola SPBU yang ingin anda monitoring.',
+            'breadcrumbs' => [['label' => 'Konfigurasi', 'url' => route('menu.konfigurasi')]],
+            'createUrl' => route('spbu.create'),
+            'table' => [
+                'url' => $request->url(),
+                'columns' => [
+                    ['label' => 'Nama SPBU', 'data' => 'nama_spbu'],
+                    ['label' => 'Nomor SPBU', 'data' => 'nomor_spbu'],
+                    ['label' => 'Tanggal Berdiri', 'data' => 'tanggal_pendirian'],
+                    ['label' => 'Alamat', 'data' => 'alamat'],
+                    ['label' => 'Aksi', 'data' => 'action', 'orderable' => false, 'searchable' => false, 'raw' => true],
+                ],
+            ],
+        ]);
     }
 
     /**
@@ -34,7 +49,21 @@ class SpbuController extends Controller
      */
     public function create()
     {
-        return view('konfigurasi/spbu/create');
+        return Inertia::render('Form/Index', [
+            'title' => 'Tambah SPBU',
+            'breadcrumbs' => [['label' => 'Konfigurasi', 'url' => route('menu.konfigurasi')], ['label' => 'SPBU', 'url' => route('spbu.index')]],
+            'backUrl' => route('spbu.index'),
+            'method' => 'post',
+            'action' => route('spbu.store'),
+            'fields' => [
+                ['name' => 'nama_spbu', 'label' => 'Nama SPBU', 'type' => 'text', 'value' => null],
+                ['name' => 'nomor_spbu', 'label' => 'Nomor SPBU', 'type' => 'text', 'value' => null],
+                ['name' => 'tanggal_pendirian', 'label' => 'Tanggal Pendirian', 'type' => 'date', 'value' => null],
+                ['name' => 'luas_lahan', 'label' => 'Luas Lahan', 'type' => 'text', 'value' => null, 'col' => 'col-md-6'],
+                ['name' => 'satuan_luas', 'label' => 'Satuan Luas', 'type' => 'text', 'value' => null, 'col' => 'col-md-6'],
+                ['name' => 'alamat', 'label' => 'Alamat', 'type' => 'textarea', 'value' => null],
+            ],
+        ]);
     }
 
     /**
@@ -47,7 +76,7 @@ class SpbuController extends Controller
             $spbu = Spbu::create($this->spbuData());
         }
 
-        return redirect('/konfigurasi/spbu/' . $spbu->spbu_id)->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> Data Spbu sudah ditambah.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
+        return redirect('/konfigurasi/spbu')->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> Data Spbu sudah ditambah.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
     }
 
     /**
@@ -55,7 +84,20 @@ class SpbuController extends Controller
      */
     public function show(Spbu $spbu)
     {
-        return view('konfigurasi/spbu/show', compact('spbu'));
+        return Inertia::render('Show/Index', [
+            'title' => 'Detail SPBU',
+            'breadcrumbs' => [['label' => 'Konfigurasi', 'url' => route('menu.konfigurasi')], ['label' => 'SPBU', 'url' => route('spbu.index')]],
+            'backUrl' => route('spbu.index'),
+            'fields' => [
+                ['label' => 'Nama SPBU', 'value' => $spbu->nama_spbu],
+                ['label' => 'Nomor SPBU', 'value' => $spbu->nomor_spbu],
+                ['label' => 'Tanggal Berdiri', 'value' => $spbu->tanggal_pendirian],
+                ['label' => 'Luas Lahan', 'value' => trim($spbu->luas_lahan . ' ' . $spbu->satuan_luas)],
+                ['label' => 'Alamat', 'value' => $spbu->alamat],
+            ],
+            'actions' => [['label' => 'Ubah', 'url' => route('spbu.edit', $spbu), 'color' => 'primary', 'icon' => 'pen']],
+            'deleteUrl' => route('spbu.destroy', $spbu),
+        ]);
     }
 
     /**
@@ -63,7 +105,21 @@ class SpbuController extends Controller
      */
     public function edit(Spbu $spbu)
     {
-        return view('konfigurasi/spbu/edit', compact('spbu'));
+        return Inertia::render('Form/Index', [
+            'title' => 'Ubah SPBU',
+            'breadcrumbs' => [['label' => 'Konfigurasi', 'url' => route('menu.konfigurasi')], ['label' => 'SPBU', 'url' => route('spbu.index')]],
+            'backUrl' => route('spbu.index'),
+            'method' => 'put',
+            'action' => route('spbu.update', $spbu),
+            'fields' => [
+                ['name' => 'nama_spbu', 'label' => 'Nama SPBU', 'type' => 'text', 'value' => $spbu->nama_spbu],
+                ['name' => 'nomor_spbu', 'label' => 'Nomor SPBU', 'type' => 'text', 'value' => $spbu->nomor_spbu],
+                ['name' => 'tanggal_pendirian', 'label' => 'Tanggal Pendirian', 'type' => 'date', 'value' => $spbu->tanggal_pendirian],
+                ['name' => 'luas_lahan', 'label' => 'Luas Lahan', 'type' => 'text', 'value' => $spbu->luas_lahan, 'col' => 'col-md-6'],
+                ['name' => 'satuan_luas', 'label' => 'Satuan Luas', 'type' => 'text', 'value' => $spbu->satuan_luas, 'col' => 'col-md-6'],
+                ['name' => 'alamat', 'label' => 'Alamat', 'type' => 'textarea', 'value' => $spbu->alamat],
+            ],
+        ]);
     }
 
     /**
@@ -73,7 +129,7 @@ class SpbuController extends Controller
     {
         $spbu->update($this->spbuData());
 
-        return redirect('/konfigurasi/spbu/' . $spbu->spbu_id)->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> Data Spbu sudah diubah.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
+        return redirect('/konfigurasi/spbu')->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> Data Spbu sudah diubah.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
     }
 
     /**

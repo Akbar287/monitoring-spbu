@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use Inertia\Inertia;
 use Illuminate\Http\Request;
 
 class NeracaController extends Controller
@@ -11,7 +12,13 @@ class NeracaController extends Controller
      */
     public function index()
     {
-        return view('financial/neraca/index');
+return Inertia::render('Show/Index', [
+            'title' => 'Neraca',
+            'breadcrumbs' => [['label' => 'Financial', 'url' => route('menu.financial')]],
+            'backUrl' => route('menu.financial'),
+            'notice' => ['text' => 'Fitur laporan Neraca masih dalam pengembangan.', 'color' => 'info'],
+            'fields' => [],
+        ]);
     }
 
     /**

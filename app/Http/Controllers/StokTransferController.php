@@ -11,6 +11,7 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Inertia\Inertia;
 use Yajra\DataTables\DataTables;
 
 class StokTransferController extends Controller
@@ -29,7 +30,7 @@ class StokTransferController extends Controller
         }
         $waktuMulai = $waktuMulai->format('Y-m-d');
         $waktuSelesai = $waktuSelesai->format('Y-m-d');
-        if ($request->ajax()) {
+        if ($request->ajax() && ! $request->inertia()) {
             $data = DombakTransfer::where('is_confirmation', 0)->whereBetween('tanggal', [$waktuMulai, $waktuSelesai])->orderBy('created_at', 'desc')->get();
             return DataTables::of($data)
                 ->addIndexColumn()
@@ -65,7 +66,25 @@ class StokTransferController extends Controller
                 ->rawColumns(['action'])
                 ->make(true);
         }
-        return view('stok/stok-transfer/index', compact('waktuMulai', 'waktuSelesai'));
+        return Inertia::render('Table/Index', [
+            'title' => 'Stok Transfer',
+            'breadcrumbs' => [['label' => 'Manajemen Persediaan', 'url' => route('menu.stok')]],
+            'createUrl' => route('stok-transfer.create'),
+            'headerActions' => [['label' => 'Riwayat', 'url' => route('stok-transfer.riwayat'), 'color' => 'info', 'icon' => 'history']],
+            'dateFilter' => ['mulai' => $waktuMulai, 'selesai' => $waktuSelesai],
+            'table' => [
+                'url' => $request->fullUrl(),
+                'columns' => [
+                    ['label' => 'Tanggal', 'data' => 'tanggal'],
+                    ['label' => 'Jam Kerja', 'data' => 'jam_kerja'],
+                    ['label' => 'Dombak Sebelum', 'data' => 'dombak_sebelum'],
+                    ['label' => 'Dombak Setelah', 'data' => 'dombak_setelah'],
+                    ['label' => 'Nama Produk', 'data' => 'nama_produk'],
+                    ['label' => 'Stok Berpindah', 'data' => 'stok_berpindah'],
+                    ['label' => 'Aksi', 'data' => 'action', 'orderable' => false, 'searchable' => false, 'raw' => true],
+                ],
+            ],
+        ]);
     }
 
     public function riwayat(Request $request)
@@ -79,7 +98,7 @@ class StokTransferController extends Controller
         }
         $waktuMulai = $waktuMulai->format('Y-m-d');
         $waktuSelesai = $waktuSelesai->format('Y-m-d');
-        if ($request->ajax()) {
+        if ($request->ajax() && ! $request->inertia()) {
             $data = DombakTransfer::where('is_confirmation', 1)->whereBetween('tanggal', [$waktuMulai, $waktuSelesai])->get();
             return DataTables::of($data)
                 ->addIndexColumn()
@@ -115,7 +134,24 @@ class StokTransferController extends Controller
                 ->rawColumns(['action'])
                 ->make(true);
         }
-        return view('stok/stok-transfer/riwayat', compact('waktuMulai', 'waktuSelesai'));
+        return Inertia::render('Table/Index', [
+            'title' => 'Riwayat Stok Transfer',
+            'breadcrumbs' => [['label' => 'Manajemen Persediaan', 'url' => route('menu.stok')]],
+            'headerActions' => [['label' => 'Stok Transfer', 'url' => route('stok-transfer.index'), 'color' => 'primary', 'icon' => 'flask']],
+            'dateFilter' => ['mulai' => $waktuMulai, 'selesai' => $waktuSelesai],
+            'table' => [
+                'url' => $request->fullUrl(),
+                'columns' => [
+                    ['label' => 'Tanggal', 'data' => 'tanggal'],
+                    ['label' => 'Jam Kerja', 'data' => 'jam_kerja'],
+                    ['label' => 'Dombak Sebelum', 'data' => 'dombak_sebelum'],
+                    ['label' => 'Dombak Setelah', 'data' => 'dombak_setelah'],
+                    ['label' => 'Nama Produk', 'data' => 'nama_produk'],
+                    ['label' => 'Stok Berpindah', 'data' => 'stok_berpindah'],
+                    ['label' => 'Aksi', 'data' => 'action', 'orderable' => false, 'searchable' => false, 'raw' => true],
+                ],
+            ],
+        ]);
     }
 
     /**
@@ -125,7 +161,30 @@ class StokTransferController extends Controller
     {
         $jamKerja = JamKerja::get();
         $dombak = Dombak::get();
-        return view('stok/stok-transfer/create', compact('jamKerja', 'dombak'));
+
+        $dombakOptions = $dombak->map(function ($s) {
+            $sid = $s->stok_inventory_dombak()->first();
+            $si = $sid ? $sid->stok_inventory()->first() : null;
+            $prod = $si ? $si->produk()->first() : null;
+
+            return [
+                'value' => $s->dombak_id,
+                'label' => $s->nama_dombak . ($prod ? ' (' . $prod->nama_produk . ': ' . $sid->stok . 'Liter)' : ''),
+            ];
+        })->values()->all();
+
+        return Inertia::render('StokTransfer/Create', [
+            'title' => 'Tambah Stok Transfer',
+            'breadcrumbs' => [['label' => 'Manajemen Persediaan', 'url' => route('menu.stok')], ['label' => 'Stok Transfer', 'url' => route('stok-transfer.index')]],
+            'backUrl' => route('stok-transfer.index'),
+            'action' => route('stok-transfer.store'),
+            'jamKerjaOptions' => $jamKerja->map(fn ($s) => ['value' => $s->jam_kerja_id, 'label' => $s->nama_jam_kerja . ' (' . $s->jam_datang_in . '-' . $s->jam_pulang_out . ')'])->values()->all(),
+            'dombakOptions' => $dombakOptions,
+            'api' => [
+                'dombak' => url('/master/dombak/api'),
+                'konversi' => url('/master/dombak/konversi/api'),
+            ],
+        ]);
     }
 
     /**
@@ -423,7 +482,40 @@ class StokTransferController extends Controller
         $d2 = $dombakTransfer->dokumen_stok()->where('type_dokumen_stok_id', TypeDokumenStok::where('type_movement', 'Good Transfer Receive')->first()->type_dokumen_stok_id)->first();
 
         $p = ($d1->stok_akhir - $d1->stok_awal) - ($d2->stok_awal - $d2->stok_akhir);
-        return view('stok/stok-transfer/show', compact('dombakTransfer', 'd1', 'd2', 'p'));
+        $fields = [
+            ['label' => 'Tanggal', 'value' => $dombakTransfer->tanggal],
+            ['label' => 'Jam Kerja', 'value' => $dombakTransfer->jam_kerja()->first()->nama_jam_kerja . ' (' . $dombakTransfer->jam_kerja()->first()->jam_datang_in . '-' . $dombakTransfer->jam_kerja()->first()->jam_pulang_out . ')'],
+            ['label' => 'Waktu', 'value' => $dombakTransfer->waktu],
+            ['label' => 'Produk', 'value' => optional($p)->nama_produk],
+            ['label' => 'Dombak Asal', 'value' => $d1->dombak()->first()->nama_dombak],
+            ['label' => 'Tinggi Awal (Asal)', 'value' => $d1->dombak()->first()->konversi()->where('volume', $d1->stok_awal)->first()->tinggi ?? 0],
+            ['label' => 'Tinggi Akhir (Asal)', 'value' => $d1->dombak()->first()->konversi()->where('volume', $d1->stok_akhir)->first()->tinggi ?? 0],
+            ['label' => 'Volume Awal (Asal)', 'value' => $d1->stok_awal],
+            ['label' => 'Volume Akhir (Asal)', 'value' => $d1->stok_akhir],
+            ['label' => 'Volume Berpindah', 'value' => $d1->stok_awal - $d1->stok_akhir],
+            ['label' => 'Dombak Tujuan', 'value' => $d2->dombak()->first()->nama_dombak],
+            ['label' => 'Tinggi Awal (Tujuan)', 'value' => $d2->dombak()->first()->konversi()->where('volume', $d2->stok_awal)->first()->tinggi ?? 0],
+            ['label' => 'Tinggi Akhir (Tujuan)', 'value' => $d2->dombak()->first()->konversi()->where('volume', $d2->stok_akhir)->first()->tinggi ?? 0],
+            ['label' => 'Volume Awal (Tujuan)', 'value' => $d2->stok_awal],
+            ['label' => 'Volume Akhir (Tujuan)', 'value' => $d2->stok_akhir],
+        ];
+
+        $actions = [];
+        $bolehAksi = ! $dombakTransfer->is_confirmation && \Illuminate\Support\Facades\Auth::user()->member()->first()->jabatan()->first()->level()->first()->nama_level == 'Penanggung Jawab';
+        if ($bolehAksi) {
+            $actions[] = ['label' => 'Ubah', 'url' => route('stok-transfer.edit', $dombakTransfer->dombak_transfer_id), 'color' => 'success', 'icon' => 'pen'];
+            $actions[] = ['label' => 'Konfirmasi', 'url' => route('stok-transfer.confirmation', $dombakTransfer->dombak_transfer_id), 'method' => 'put', 'confirm' => 'Stok Transfer akan dikonfirmasi! Lanjutkan?', 'color' => 'info', 'icon' => 'check'];
+        }
+
+        return Inertia::render('Show/Index', [
+            'title' => 'Detail Stok Transfer',
+            'breadcrumbs' => [['label' => 'Manajemen Persediaan', 'url' => route('menu.stok')], ['label' => 'Stok Transfer', 'url' => route('stok-transfer.index')]],
+            'backUrl' => route('stok-transfer.index'),
+            'fields' => $fields,
+            'actions' => $actions,
+            'deleteUrl' => $bolehAksi ? route('stok-transfer.delete', $dombakTransfer->dombak_transfer_id) : null,
+            'deleteConfirm' => 'Stok Transfer akan dihapus! Lanjutkan?',
+        ]);
     }
 
     /**

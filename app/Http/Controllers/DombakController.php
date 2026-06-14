@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\DombakRequest;
 use App\Models\Dombak;
 use App\Models\Spbu;
+use Inertia\Inertia;
 use Yajra\DataTables\DataTables;
 use Illuminate\Http\Request;
 
@@ -15,7 +16,7 @@ class DombakController extends Controller
      */
     public function index(Request $request)
     {
-        if ($request->ajax()) {
+        if ($request->ajax() && ! $request->inertia()) {
             $data = Dombak::select('*');
             return DataTables::of($data)
                 ->addIndexColumn()
@@ -30,7 +31,20 @@ class DombakController extends Controller
                 ->rawColumns(['action'])
                 ->make(true);
         }
-        return view('master/dombak/index');
+        return Inertia::render('Table/Index', [
+            'title' => 'Dombak',
+            'breadcrumbs' => [['label' => 'Master Data', 'url' => route('menu.master')]],
+            'createUrl' => route('dombak.create'),
+            'table' => [
+                'url' => $request->url(),
+                'columns' => [
+                    ['label' => 'Nama Dombak', 'data' => 'nama_dombak'],
+                    ['label' => 'Aktif', 'data' => 'is_aktif'],
+                    ['label' => 'Keterangan', 'data' => 'keterangan'],
+                    ['label' => 'Aksi', 'data' => 'action', 'orderable' => false, 'searchable' => false, 'raw' => true],
+                ],
+            ],
+        ]);
     }
 
     /**
@@ -39,7 +53,19 @@ class DombakController extends Controller
     public function create()
     {
         $spbu = Spbu::all();
-        return view('master/dombak/create', compact('spbu'));
+        return Inertia::render('Form/Index', [
+            'title' => 'Tambah Dombak',
+            'breadcrumbs' => [['label' => 'Master Data', 'url' => route('menu.master')], ['label' => 'Dombak', 'url' => route('dombak.index')]],
+            'backUrl' => route('dombak.index'),
+            'method' => 'post',
+            'action' => route('dombak.store'),
+            'fields' => [
+                ['name' => 'spbu_id', 'label' => 'SPBU', 'type' => 'select', 'value' => null, 'options' => $spbu->map(fn ($x) => ['value' => $x->spbu_id, 'label' => $x->nama_spbu . ' - ' . $x->nomor_spbu])->values()->all()],
+                ['name' => 'nama_dombak', 'label' => 'Nama Dombak', 'type' => 'text', 'value' => null],
+                ['name' => 'is_aktif', 'label' => 'Status', 'type' => 'select', 'value' => null, 'options' => [['value' => 'true', 'label' => 'Aktifkan'], ['value' => 'false', 'label' => 'Jangan Aktifkan']]],
+                ['name' => 'keterangan', 'label' => 'Keterangan', 'type' => 'textarea', 'value' => null],
+            ],
+        ]);
     }
 
     /**
@@ -54,7 +80,7 @@ class DombakController extends Controller
             $dombak = $spbu->dombak()->create($this->dombakData());
         }
 
-        return redirect('/master/dombak/' . $dombak->dombak_id)->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> Data Dombak sudah ditambah.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
+        return redirect('/master/dombak')->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> Data Dombak sudah ditambah.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
     }
 
     /**
@@ -62,7 +88,19 @@ class DombakController extends Controller
      */
     public function show(Dombak $dombak)
     {
-        return view('master/dombak/show', compact('dombak'));
+        return Inertia::render('Show/Index', [
+            'title' => 'Detail Dombak',
+            'breadcrumbs' => [['label' => 'Master Data', 'url' => route('menu.master')], ['label' => 'Dombak', 'url' => route('dombak.index')]],
+            'backUrl' => route('dombak.index'),
+            'fields' => [
+                ['label' => 'SPBU', 'value' => optional(\Illuminate\Support\Facades\DB::table('spbu')->where('spbu_id', $dombak->spbu_id)->first())->nama_spbu],
+                ['label' => 'Nama Dombak', 'value' => $dombak->nama_dombak],
+                ['label' => 'Status', 'value' => filter_var($dombak->is_aktif, FILTER_VALIDATE_BOOLEAN) ? 'Aktif' : 'Tidak Aktif'],
+                ['label' => 'Keterangan', 'value' => $dombak->keterangan],
+            ],
+            'actions' => [['label' => 'Ubah', 'url' => route('dombak.edit', $dombak), 'color' => 'primary', 'icon' => 'pen'], ['label' => 'Konversi', 'url' => route('konversi.index', $dombak), 'color' => 'info', 'icon' => 'ruler-vertical']],
+            'deleteUrl' => route('dombak.destroy', $dombak),
+        ]);
     }
 
     /**
@@ -71,7 +109,19 @@ class DombakController extends Controller
     public function edit(Dombak $dombak)
     {
         $spbu = Spbu::all();
-        return view('master/dombak/edit', compact('spbu', 'dombak'));
+        return Inertia::render('Form/Index', [
+            'title' => 'Ubah Dombak',
+            'breadcrumbs' => [['label' => 'Master Data', 'url' => route('menu.master')], ['label' => 'Dombak', 'url' => route('dombak.index')]],
+            'backUrl' => route('dombak.index'),
+            'method' => 'put',
+            'action' => route('dombak.update', $dombak),
+            'fields' => [
+                ['name' => 'spbu_id', 'label' => 'SPBU', 'type' => 'select', 'value' => $dombak->spbu_id, 'options' => $spbu->map(fn ($x) => ['value' => $x->spbu_id, 'label' => $x->nama_spbu . ' - ' . $x->nomor_spbu])->values()->all()],
+                ['name' => 'nama_dombak', 'label' => 'Nama Dombak', 'type' => 'text', 'value' => $dombak->nama_dombak],
+                ['name' => 'is_aktif', 'label' => 'Status', 'type' => 'select', 'value' => filter_var($dombak->is_aktif, FILTER_VALIDATE_BOOLEAN) ? 'true' : 'false', 'options' => [['value' => 'true', 'label' => 'Aktifkan'], ['value' => 'false', 'label' => 'Jangan Aktifkan']]],
+                ['name' => 'keterangan', 'label' => 'Keterangan', 'type' => 'textarea', 'value' => $dombak->keterangan],
+            ],
+        ]);
     }
 
     /**
@@ -81,7 +131,7 @@ class DombakController extends Controller
     {
         $dombak->update($this->dombakData());
 
-        return redirect('/master/dombak/' . $dombak->dombak_id)->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> Data Dombak sudah diubah.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
+        return redirect('/master/dombak')->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> Data Dombak sudah diubah.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
     }
 
     /**

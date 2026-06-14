@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Support\Charts;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Inertia\Inertia;
 
 class JadwalAbsensiController extends Controller
 {
@@ -48,17 +49,42 @@ class JadwalAbsensiController extends Controller
             ->get();
 
         $charts = [
-            'presensi' => [
-                'labels' => $presensi->pluck('nama_status'),
-                'data' => $presensi->pluck('total'),
+            [
+                'id' => 'presensi',
+                'title' => 'Presensi per Status',
+                'icon' => 'user-check',
+                'color' => 'info',
+                'col' => 'col-lg-4 col-12',
+                'type' => 'doughnut',
+                'data' => ['labels' => $presensi->pluck('nama_status'), 'data' => $presensi->pluck('total')],
             ],
-            'penjadwalan' => [
-                'labels' => $penjadwalan->pluck('nama_kehadiran'),
-                'data' => $penjadwalan->pluck('total'),
+            [
+                'id' => 'penjadwalan',
+                'title' => 'Penjadwalan per Status',
+                'icon' => 'calendar-check',
+                'color' => 'primary',
+                'col' => 'col-lg-4 col-12',
+                'type' => 'doughnut',
+                'data' => ['labels' => $penjadwalan->pluck('nama_kehadiran'), 'data' => $penjadwalan->pluck('total')],
             ],
-            'bulanan' => Charts::monthly('presensi', 'tanggal', 'COUNT(*)'),
+            [
+                'id' => 'bulanan',
+                'title' => 'Presensi per Bulan',
+                'icon' => 'chart-line',
+                'color' => 'success',
+                'badge' => 'Presensi',
+                'col' => 'col-lg-4 col-12',
+                'type' => 'bar',
+                'data' => Charts::monthly('presensi', 'tanggal', 'COUNT(*)'),
+                'opts' => ['colorEach' => false, 'colorIndex' => 3, 'label' => 'Presensi'],
+            ],
         ];
 
-        return view('jadwal_absensi/index', compact('allMenu', 'charts'));
+        return Inertia::render('Menu/Index', [
+            'title' => 'Jadwal & Absensi',
+            'description' => 'Komposisi status presensi, penjadwalan, dan tren kehadiran pegawai.',
+            'menus' => $allMenu,
+            'charts' => $charts,
+        ]);
     }
 }

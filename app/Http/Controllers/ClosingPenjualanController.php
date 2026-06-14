@@ -7,6 +7,7 @@ use App\Models\Penjualan;
 use App\Models\StatusSetoran;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Inertia\Inertia;
 use Yajra\DataTables\DataTables;
 
 class ClosingPenjualanController extends Controller
@@ -26,7 +27,7 @@ class ClosingPenjualanController extends Controller
         $waktuMulai = $waktuMulai->format('Y-m-d');
         $waktuSelesai = $waktuSelesai->format('Y-m-d');
 
-        if ($request->ajax()) {
+        if ($request->ajax() && ! $request->inertia()) {
             $data = StatusSetoran::where('nama_status', 'Closing Penjualan')->first()->penjualan()->whereBetween('penjualan.tanggal', [$waktuMulai, $waktuSelesai])->get();
             return DataTables::of($data)
                 ->addIndexColumn()
@@ -52,7 +53,21 @@ class ClosingPenjualanController extends Controller
                 ->rawColumns(['action', 'status_top', 'status_admin'])
                 ->make(true);
         }
-        return view('setoran/closing_penjualan/index', compact('waktuMulai', 'waktuSelesai'));
+        return Inertia::render('Table/Index', [
+            'title' => 'Closing Penjualan',
+            'breadcrumbs' => [['label' => 'Setoran', 'url' => route('menu.setoran')]],
+            'dateFilter' => ['mulai' => $waktuMulai, 'selesai' => $waktuSelesai],
+            'table' => [
+                'url' => $request->fullUrl(),
+                'columns' => [
+                    ['label' => 'Tanggal', 'data' => 'tanggal'],
+                    ['label' => 'Jam Kerja', 'data' => 'jam_kerja'],
+                    ['label' => 'Stand Meter', 'data' => 'stand_meter'],
+                    ['label' => 'Total Penjualan', 'data' => 'total_uang_penjualan'],
+                    ['label' => 'Aksi', 'data' => 'action', 'orderable' => false, 'searchable' => false, 'raw' => true],
+                ],
+            ],
+        ]);
     }
 
     /**
@@ -60,7 +75,48 @@ class ClosingPenjualanController extends Controller
      */
     public function show(Penjualan $penjualan)
     {
-        return view('setoran/closing_penjualan/show', compact('penjualan'));
+        $who = \App\Support\SetoranShow::levelInfo();
+        $isPJ = $who['level'] === 'Penanggung Jawab';
+
+        $standMeters = collect(\App\Support\SetoranShow::standMeters($penjualan))->map(function ($sm) use ($penjualan, $isPJ) {
+            if ($sm['is_confirmed']) {
+                $sm['badge'] = ['color' => 'success', 'label' => 'Terkonfirmasi'];
+            }
+            if ($isPJ) {
+                $sm['action'] = $sm['is_confirmed']
+                    ? ['label' => 'Batalkan Konfirmasi', 'color' => 'danger', 'icon' => 'times', 'method' => 'put',
+                        'url' => route('setoran.closing.update.confirmed_from', [$penjualan->penjualan_id, $sm['detail_penjualan_id']]),
+                        'confirm' => 'Yakin ingin membatalkan konfirmasi']
+                    : ['label' => 'Terkonfirmasi Nilai Uang', 'color' => 'success', 'icon' => 'check', 'method' => 'put',
+                        'url' => route('setoran.closing.update.confirmed_to', [$penjualan->penjualan_id, $sm['detail_penjualan_id']]),
+                        'confirm' => 'Periksa kembali nominal uang sebelum di konfirmasi'];
+            }
+            return $sm;
+        })->values()->all();
+
+        $actions = [];
+        if ($isPJ) {
+            $actions[] = ['label' => 'Kembali ke Penitipan', 'color' => 'danger', 'icon' => 'arrow-left', 'method' => 'put',
+                'url' => route('setoran.penitipan.update_closing_from', $penjualan->penjualan_id),
+                'fields' => ['type' => 'top'],
+                'confirm' => 'Closing dikembalikan ke penitipan?'];
+            if ($penjualan->detail_penjualan()->where('is_confirmed', false)->count() == 0) {
+                $actions[] = ['label' => 'Konfirmasi Ke Setoran Bank', 'color' => 'success', 'icon' => 'arrow-right', 'method' => 'put',
+                    'url' => route('setoran.closing.confirm.confirmed_to', $penjualan->penjualan_id),
+                    'fields' => ['type' => 'top'],
+                    'confirm' => 'Closing dilanjutkan ke Setoran Bank?'];
+            }
+        }
+
+        return Inertia::render('Setoran/Show', [
+            'title' => 'Closing Penjualan',
+            'breadcrumbs' => [['label' => 'Setoran', 'url' => route('menu.setoran')], ['label' => 'Closing Penjualan', 'url' => route('setoran.closing')]],
+            'backUrl' => route('setoran.closing'),
+            'info' => \App\Support\SetoranShow::info($penjualan),
+            'pj' => \App\Support\SetoranShow::pj($penjualan),
+            'standMeters' => $standMeters,
+            'actions' => $actions,
+        ]);
     }
 
     public function confirmed_to(Penjualan $penjualan, DetailPenjualan $detail)

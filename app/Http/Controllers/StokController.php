@@ -6,6 +6,7 @@ use App\Support\Charts;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Inertia\Inertia;
 
 class StokController extends Controller
 {
@@ -79,17 +80,46 @@ class StokController extends Controller
             ->get();
 
         $charts = [
-            'stok' => [
-                'labels' => $stok->pluck('nama_produk'),
-                'data' => $stok->pluck('total'),
+            [
+                'id' => 'stok',
+                'title' => 'Komposisi Stok per Produk',
+                'icon' => 'gas-pump',
+                'color' => 'primary',
+                'badge' => 'Liter',
+                'col' => 'col-lg-4 col-12',
+                'type' => 'doughnut',
+                'data' => ['labels' => $stok->pluck('nama_produk'), 'data' => $stok->pluck('total')],
+                'opts' => ['unit' => 'L'],
             ],
-            'penerimaan' => Charts::monthly('penerimaan', 'tanggal', 'COUNT(*)'),
-            'losses' => [
-                'labels' => $losses->pluck('simbol')->map(fn ($s) => ucfirst($s)),
-                'data' => $losses->pluck('total'),
+            [
+                'id' => 'penerimaan',
+                'title' => 'Penerimaan BBM per Bulan',
+                'icon' => 'arrow-down',
+                'color' => 'info',
+                'badge' => 'Dokumen',
+                'col' => 'col-lg-5 col-12',
+                'type' => 'bar',
+                'data' => Charts::monthly('penerimaan', 'tanggal', 'COUNT(*)'),
+                'opts' => ['colorEach' => false, 'colorIndex' => 4, 'label' => 'Penerimaan'],
+            ],
+            [
+                'id' => 'losses',
+                'title' => 'Losses (Lebih / Kurang)',
+                'icon' => 'balance-scale',
+                'color' => 'danger',
+                'badge' => 'Liter',
+                'col' => 'col-lg-3 col-12',
+                'type' => 'bar',
+                'data' => ['labels' => $losses->pluck('simbol')->map(fn ($s) => ucfirst($s)), 'data' => $losses->pluck('total')],
+                'opts' => ['unit' => 'L'],
             ],
         ];
 
-        return view('stok/index', compact('allMenu', 'charts'));
+        return Inertia::render('Menu/Index', [
+            'title' => 'Manajemen Persediaan',
+            'description' => 'Sebaran stok BBM, tren penerimaan, dan akumulasi losses.',
+            'menus' => $allMenu,
+            'charts' => $charts,
+        ]);
     }
 }

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use Inertia\Inertia;
 use App\Imports\JadwalKerjaImport;
 use App\Models\Jabatan;
 use App\Models\JamKerja;
@@ -32,7 +33,26 @@ class JadwalKerjaController extends Controller
         $employee = Member::get();
         $jamKerja = JamKerja::orderBy('nama_jam_kerja', 'asc')->get();
         $nozzle = Nozzle::select('nozzle_id', 'nama_nozzle')->orderBy('nama_nozzle', 'asc')->get();
-        return view('jadwal_absensi/penjadwalan/index', compact('employee', 'jamKerja', 'nozzle'));
+        return Inertia::render('JadwalKerja/Index', [
+            'title' => 'Penjadwalan Pegawai',
+            'breadcrumbs' => [['label' => 'Jadwal & Absensi', 'url' => route('menu.jadwal_absensi')]],
+            'employees' => $employee->map(fn ($u) => [
+                'id' => $u->member_id,
+                'nama' => optional($u->ktp()->first())->nama,
+                'jabatan' => $u->jabatan()->select('nama_jabatan')->pluck('nama_jabatan')->all(),
+            ])->values()->all(),
+            'jamKerjaOptions' => $jamKerja->map(fn ($s) => ['value' => $s->jam_kerja_id, 'label' => $s->nama_jam_kerja])->values()->all(),
+            'nozzleOptions' => $nozzle->map(fn ($s) => ['value' => $s->nozzle_id, 'label' => $s->nama_nozzle])->values()->all(),
+            'api' => [
+                'cek' => route('jadwal_kerja.cek_api'),
+                'store' => route('jadwal_kerja.jadwal_api'),
+                'delete' => route('jadwal_kerja.destroy_api'),
+            ],
+            'links' => [
+                'qr' => route('jadwal-kerja.qr'),
+                'upload' => route('jadwal-kerja.upload_file'),
+            ],
+        ]);
     }
 
     /**

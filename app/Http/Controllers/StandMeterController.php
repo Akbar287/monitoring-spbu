@@ -12,6 +12,7 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Inertia\Inertia;
 use Yajra\DataTables\DataTables;
 
 class StandMeterController extends Controller
@@ -39,7 +40,7 @@ class StandMeterController extends Controller
         $waktuMulai = $waktuMulai->format('Y-m-d');
         $waktuSelesai = $waktuSelesai->format('Y-m-d');
 
-        if ($request->ajax()) {
+        if ($request->ajax() && ! $request->inertia()) {
             $data = null;
             $data = $jamKerjaSelected === 'all' ? ($produkSelected === 'all' ?  StandMeter::where('stand_meter_akhir', null)->orWhere('is_confirmation', 0)->whereBetween('tanggal', [$waktuMulai, $waktuSelesai])->join('nozzle', 'nozzle.nozzle_id', 'stand_meter.nozzle_id')->get() : StandMeter::where('stand_meter_akhir', null)->orWhere('is_confirmation', 0)->whereBetween('tanggal', [$waktuMulai, $waktuSelesai])->where('nozzle.produk_id', $produkSelected)->join('nozzle', 'nozzle.nozzle_id', 'stand_meter.nozzle_id')->get()) : ($produkSelected === 'all' ?  StandMeter::where('stand_meter_akhir', null)->orWhere('is_confirmation', 0)->whereBetween('tanggal', [$waktuMulai, $waktuSelesai])->where('stand_meter.jam_kerja_id', $jamKerjaSelected)->join('nozzle', 'nozzle.nozzle_id', 'stand_meter.nozzle_id')->get() : StandMeter::where('stand_meter_akhir', null)->orWhere('is_confirmation', 0)->whereBetween('tanggal', [$waktuMulai, $waktuSelesai])->where('nozzle.produk_id', $produkSelected)->where('stand_meter.jam_kerja_id', $jamKerjaSelected)->join('nozzle', 'nozzle.nozzle_id', 'stand_meter.nozzle_id')->get());
 
@@ -76,7 +77,31 @@ class StandMeterController extends Controller
                 ->rawColumns(['action', 'status'])
                 ->make(true);
         }
-        return view('stok/totalisator/index', compact('waktuMulai', 'waktuSelesai', 'produk', 'produkSelected', 'jamKerja', 'jamKerjaSelected'));
+        return Inertia::render('Table/Index', [
+            'title' => 'Totalisator',
+            'breadcrumbs' => [['label' => 'Manajemen Persediaan', 'url' => route('menu.stok')]],
+            'createUrl' => route('totalisator.create'),
+            'headerActions' => [['label' => 'Riwayat', 'url' => route('totalisator.riwayat'), 'color' => 'info', 'icon' => 'history']],
+            'dateFilter' => ['mulai' => $waktuMulai, 'selesai' => $waktuSelesai],
+            'selectFilters' => [
+                ['name' => 'produk_id', 'label' => 'Produk', 'value' => $produkSelected, 'options' => array_merge([['value' => 'all', 'label' => 'Semua']], $produk->map(fn ($x) => ['value' => $x->produk_id, 'label' => $x->nama_produk])->all())],
+                ['name' => 'jam_kerja_id', 'label' => 'Jam Kerja', 'value' => $jamKerjaSelected, 'options' => array_merge([['value' => 'all', 'label' => 'Semua']], $jamKerja->map(fn ($x) => ['value' => $x->jam_kerja_id, 'label' => $x->nama_jam_kerja])->all())],
+            ],
+            'table' => [
+                'url' => $request->fullUrl(),
+                'columns' => [
+                    ['label' => 'Nozzle', 'data' => 'nozzle'],
+                    ['label' => 'Nama Produk', 'data' => 'nama_produk'],
+                    ['label' => 'Tanggal', 'data' => 'tanggal'],
+                    ['label' => 'Jam Kerja', 'data' => 'jam_kerja'],
+                    ['label' => 'Stand Meter Awal', 'data' => 'stand_meter_awal'],
+                    ['label' => 'Stand Meter Akhir', 'data' => 'stand_meter_akhir'],
+                    ['label' => 'Selisih', 'data' => 'selisih'],
+                    ['label' => 'Status', 'data' => 'status', 'raw' => true],
+                    ['label' => 'Aksi', 'data' => 'action', 'orderable' => false, 'searchable' => false, 'raw' => true],
+                ],
+            ],
+        ]);
     }
 
     public function riwayat(Request $request)
@@ -95,7 +120,7 @@ class StandMeterController extends Controller
         $waktuMulai = $waktuMulai->format('Y-m-d');
         $waktuSelesai = $waktuSelesai->format('Y-m-d');
 
-        if ($request->ajax()) {
+        if ($request->ajax() && ! $request->inertia()) {
             $data = $shiftSelected === 'all' ? ($produkSelected === 'all' ? StandMeter::where('stand_meter_akhir', '!=', null)->where('is_confirmation', 1)->whereBetween('tanggal', [$waktuMulai, $waktuSelesai])->orderBy('tanggal', 'desc')->get() : StandMeter::where('stand_meter_akhir', '!=', null)->where('is_confirmation', 1)->where('nozzle.produk_id', $produkSelected)->join('nozzle', 'nozzle.nozzle_id', 'stand_meter.nozzle_id')->whereBetween('tanggal', [$waktuMulai, $waktuSelesai])->orderBy('tanggal', 'desc')->get()) : ($produkSelected === 'all' ? StandMeter::where('stand_meter_akhir', '!=', null)->where('is_confirmation', 1)->whereBetween('tanggal', [$waktuMulai, $waktuSelesai])->where('jam_kerja_id', $shiftSelected)->orderBy('tanggal', 'desc')->get() : StandMeter::where('stand_meter_akhir', '!=', null)->where('is_confirmation', 1)->where('nozzle.produk_id', $produkSelected)->join('nozzle', 'nozzle.nozzle_id', 'stand_meter.nozzle_id')->whereBetween('tanggal', [$waktuMulai, $waktuSelesai])->where('jam_kerja_id', $shiftSelected)->orderBy('tanggal', 'desc')->get());
             return DataTables::of($data)
                 ->addIndexColumn()
@@ -130,12 +155,61 @@ class StandMeterController extends Controller
                 ->rawColumns(['action', 'status'])
                 ->make(true);
         }
-        return view('stok/totalisator/riwayat', compact('waktuMulai', 'waktuSelesai', 'produk', 'produkSelected', 'shift', 'shiftSelected'));
+        return Inertia::render('Table/Index', [
+            'title' => 'Riwayat Totalisator',
+            'breadcrumbs' => [['label' => 'Manajemen Persediaan', 'url' => route('menu.stok')]],
+            'headerActions' => [['label' => 'Totalisator', 'url' => route('totalisator.index'), 'color' => 'primary', 'icon' => 'thermometer-full']],
+            'dateFilter' => ['mulai' => $waktuMulai, 'selesai' => $waktuSelesai],
+            'selectFilters' => [
+                ['name' => 'produk_id', 'label' => 'Produk', 'value' => $produkSelected, 'options' => array_merge([['value' => 'all', 'label' => 'Semua']], $produk->map(fn ($x) => ['value' => $x->produk_id, 'label' => $x->nama_produk])->all())],
+                ['name' => 'jam_kerja_id', 'label' => 'Jam Kerja', 'value' => $shiftSelected, 'options' => array_merge([['value' => 'all', 'label' => 'Semua']], $shift->map(fn ($x) => ['value' => $x->jam_kerja_id, 'label' => $x->nama_jam_kerja])->all())],
+            ],
+            'table' => [
+                'url' => $request->fullUrl(),
+                'columns' => [
+                    ['label' => 'Nozzle', 'data' => 'nozzle'],
+                    ['label' => 'Nama Produk', 'data' => 'nama_produk'],
+                    ['label' => 'Tanggal', 'data' => 'tanggal'],
+                    ['label' => 'Jam Kerja', 'data' => 'jam_kerja'],
+                    ['label' => 'Stand Meter Awal', 'data' => 'stand_meter_awal'],
+                    ['label' => 'Stand Meter Akhir', 'data' => 'stand_meter_akhir'],
+                    ['label' => 'Selisih', 'data' => 'selisih'],
+                    ['label' => 'Status', 'data' => 'status', 'raw' => true],
+                    ['label' => 'Aksi', 'data' => 'action', 'orderable' => false, 'searchable' => false, 'raw' => true],
+                ],
+            ],
+        ]);
     }
 
     public function riwayat_show(StandMeter $standMeter)
     {
-        return view('stok/totalisator/riwayat_show', compact('standMeter'));
+        $fields = [
+            ['label' => 'Tanggal', 'value' => $standMeter->tanggal],
+            ['label' => 'Jam Kerja', 'value' => optional($standMeter->jam_kerja()->first())->nama_jam_kerja],
+            ['label' => 'Dombak', 'value' => optional($standMeter->dombak()->first())->nama_dombak],
+            ['label' => 'Nozzle', 'value' => optional($standMeter->nozzle()->first())->nama_nozzle],
+            ['label' => 'Stand Meter Awal', 'value' => number_format($standMeter->stand_meter_awal, 6, '.', ',')],
+            ['label' => 'Stand Meter Akhir', 'value' => is_null($standMeter->stand_meter_akhir) ? null : number_format($standMeter->stand_meter_akhir, 6, '.', ',')],
+        ];
+        if ($standMeter->stand_meter_akhir - $standMeter->stand_meter_awal > 0) {
+            $fields[] = ['label' => 'Selisih', 'value' => number_format($standMeter->stand_meter_akhir - $standMeter->stand_meter_awal, 6, '.', ',')];
+        }
+
+        $actions = [
+            ['label' => 'File', 'url' => route('totalisator.file.riwayat.index', $standMeter->stand_meter_id), 'color' => 'info', 'icon' => 'folder-open'],
+        ];
+        if (! $standMeter->is_confirmation) {
+            $actions[] = ['label' => 'Konfirmasi', 'url' => route('totalisator.confirmation', $standMeter->stand_meter_id), 'method' => 'put', 'confirm' => 'Stand Meter akan dikonfirmasi! Lanjutkan?', 'color' => 'success', 'icon' => 'check'];
+        }
+
+        return Inertia::render('Show/Index', [
+            'title' => 'Detail Riwayat Totalisator',
+            'breadcrumbs' => [['label' => 'Manajemen Persediaan', 'url' => route('menu.stok')], ['label' => 'Riwayat Totalisator', 'url' => route('totalisator.riwayat')]],
+            'backUrl' => route('totalisator.riwayat'),
+            'fields' => $fields,
+            'actions' => $actions,
+            'notice' => $standMeter->is_confirmation ? null : ['text' => 'Konfirmasi jika datanya sudah benar dan fixed. Konfirmasi akan mengubah stok produk dan stok dombak dan tidak bisa di-undo.', 'color' => 'danger'],
+        ]);
     }
 
     /**
@@ -144,14 +218,26 @@ class StandMeterController extends Controller
     public function create()
     {
         $dombak = Dombak::where('is_aktif', 1)->get();
-        $nozzle = Nozzle::select('nozzle.nozzle_id')->addSelect('nozzle.nama_nozzle')->addSelect('produk.nama_produk')
-            ->join('dispenser', 'dispenser.dispenser_id', 'nozzle.dispenser_id')
-            ->join('payung', 'payung.payung_id', 'dispenser.payung_id')
-            ->join('produk', 'produk.produk_id', 'nozzle.produk_id')
-            ->whereIn('payung.payung_id', $dombak->first()->payung()->pluck('payung.payung_id')->toArray())
-            ->get();
-        $jamKerja = JamKerja::get();
-        return view('stok/totalisator/create', compact('dombak', 'nozzle', 'jamKerja'));
+
+        $dombakOptions = $dombak->map(function ($s) {
+            $sid = $s->stok_inventory_dombak()->first();
+            $si = $sid ? $sid->stok_inventory()->first() : null;
+            $prod = $si ? $si->produk()->first() : null;
+
+            return [
+                'value' => $s->dombak_id,
+                'label' => $s->nama_dombak . ($prod ? ' (' . $prod->nama_produk . ': ' . number_format($sid->stok, 6, '.', ',') . 'Liter)' : ''),
+            ];
+        })->values()->all();
+
+        return Inertia::render('Totalisator/Create', [
+            'title' => 'Tambah Totalisator',
+            'breadcrumbs' => [['label' => 'Manajemen Persediaan', 'url' => route('menu.stok')], ['label' => 'Totalisator', 'url' => route('totalisator.index')]],
+            'backUrl' => route('totalisator.index'),
+            'action' => route('totalisator.store'),
+            'dombakOptions' => $dombakOptions,
+            'apiUrl' => url('/stok/totalisator/create/api'),
+        ]);
     }
 
     public function create_api(Request $request)
@@ -329,7 +415,41 @@ class StandMeterController extends Controller
      */
     public function show(StandMeter $standMeter)
     {
-        return view('stok/totalisator/show', compact('standMeter'));
+        $fields = [
+            ['label' => 'Tanggal', 'value' => $standMeter->tanggal],
+            ['label' => 'Jam Kerja', 'value' => optional($standMeter->jam_kerja()->first())->nama_jam_kerja],
+            ['label' => 'Dombak', 'value' => optional($standMeter->dombak()->first())->nama_dombak],
+            ['label' => 'Nozzle', 'value' => optional($standMeter->nozzle()->first())->nama_nozzle],
+            ['label' => 'Stand Meter Awal', 'value' => number_format($standMeter->stand_meter_awal, 6, '.', ',')],
+            ['label' => 'Stand Meter Akhir', 'value' => is_null($standMeter->stand_meter_akhir) ? null : number_format($standMeter->stand_meter_akhir, 6, '.', ',')],
+        ];
+        if ($standMeter->stand_meter_akhir - $standMeter->stand_meter_awal > 0) {
+            $fields[] = ['label' => 'Selisih', 'value' => number_format($standMeter->stand_meter_akhir - $standMeter->stand_meter_awal, 6, '.', ',')];
+        }
+
+        $actions = [
+            ['label' => 'File', 'url' => route('totalisator.file.index', $standMeter->stand_meter_id), 'color' => 'info', 'icon' => 'folder-open'],
+            ['label' => 'Ubah', 'url' => route('totalisator.edit', $standMeter->stand_meter_id), 'color' => 'success', 'icon' => 'pen'],
+        ];
+        if (is_null($standMeter->stand_meter_akhir)) {
+            $actions[] = ['label' => 'Input Final', 'url' => route('totalisator.final', $standMeter->stand_meter_id), 'color' => 'primary', 'icon' => 'check'];
+        }
+        if (\Illuminate\Support\Facades\Auth::user()->member()->first()->jabatan()->first()->level()->first()->nama_level == 'Penanggung Jawab' && ! is_null($standMeter->stand_meter_akhir) && ! $standMeter->is_confirmation) {
+            $actions[] = ['label' => 'Konfirmasi', 'url' => route('totalisator.confirmation', $standMeter->stand_meter_id), 'method' => 'put', 'confirm' => 'Stand Meter akan dikonfirmasi! Lanjutkan?', 'color' => 'success', 'icon' => 'check'];
+        }
+
+        return Inertia::render('Show/Index', [
+            'title' => 'Detail Totalisator',
+            'breadcrumbs' => [['label' => 'Manajemen Persediaan', 'url' => route('menu.stok')], ['label' => 'Totalisator', 'url' => route('totalisator.index')]],
+            'backUrl' => route('totalisator.index'),
+            'fields' => $fields,
+            'actions' => $actions,
+            'notice' => (! is_null($standMeter->stand_meter_akhir) && ! $standMeter->is_confirmation)
+                ? ['text' => 'Konfirmasi jika datanya sudah benar dan fixed. Konfirmasi akan mengubah stok produk dan stok dombak dan tidak bisa di-undo.', 'color' => 'danger']
+                : null,
+            'deleteUrl' => route('totalisator.delete', $standMeter->stand_meter_id),
+            'deleteConfirm' => 'Stand Meter akan dihapus! Lanjutkan?',
+        ]);
     }
 
     /**
@@ -340,7 +460,23 @@ class StandMeterController extends Controller
         $dombak = Dombak::where('is_aktif', 1)->get();
         $nozzle = Nozzle::where('is_aktif', 1)->get();
         $jamKerja = JamKerja::get();
-        return view('stok/totalisator/edit', compact('dombak', 'nozzle', 'jamKerja', 'standMeter'));
+        $info = [
+            ['label' => 'Tanggal', 'value' => $standMeter->tanggal],
+            ['label' => 'Jam Kerja', 'value' => optional($standMeter->jam_kerja()->first())->nama_jam_kerja],
+            ['label' => 'Dombak', 'value' => optional($standMeter->dombak()->first())->nama_dombak],
+            ['label' => 'Nozzle', 'value' => optional($standMeter->nozzle()->first())->nama_nozzle],
+            ['label' => 'Stand Meter Awal', 'value' => number_format($standMeter->stand_meter_awal, 6, '.', ',')],
+        ];
+
+        return Inertia::render('Totalisator/Final', [
+            'title' => 'Ubah Totalisator',
+            'breadcrumbs' => [['label' => 'Manajemen Persediaan', 'url' => route('menu.stok')], ['label' => 'Totalisator', 'url' => route('totalisator.index')]],
+            'backUrl' => route('totalisator.show', $standMeter->stand_meter_id),
+            'action' => route('totalisator.update', $standMeter->stand_meter_id),
+            'info' => $info,
+            'standMeterAwal' => $standMeter->stand_meter_awal,
+            'initialAkhir' => $standMeter->stand_meter_akhir,
+        ]);
     }
 
     /**
@@ -362,7 +498,23 @@ class StandMeterController extends Controller
         $dombak = Dombak::where('is_aktif', 1)->get();
         $nozzle = Nozzle::where('is_aktif', 1)->get();
         $jamKerja = JamKerja::get();
-        return view('stok/totalisator/final', compact('dombak', 'nozzle', 'jamKerja', 'standMeter'));
+        $info = [
+            ['label' => 'Tanggal', 'value' => $standMeter->tanggal],
+            ['label' => 'Jam Kerja', 'value' => optional($standMeter->jam_kerja()->first())->nama_jam_kerja],
+            ['label' => 'Dombak', 'value' => optional($standMeter->dombak()->first())->nama_dombak],
+            ['label' => 'Nozzle', 'value' => optional($standMeter->nozzle()->first())->nama_nozzle],
+            ['label' => 'Stand Meter Awal', 'value' => number_format($standMeter->stand_meter_awal, 6, '.', ',')],
+        ];
+
+        return Inertia::render('Totalisator/Final', [
+            'title' => 'Input Final Totalisator',
+            'breadcrumbs' => [['label' => 'Manajemen Persediaan', 'url' => route('menu.stok')], ['label' => 'Totalisator', 'url' => route('totalisator.index')]],
+            'backUrl' => route('totalisator.show', $standMeter->stand_meter_id),
+            'action' => route('totalisator.final_update', $standMeter->stand_meter_id),
+            'info' => $info,
+            'standMeterAwal' => $standMeter->stand_meter_awal,
+            'initialAkhir' => $standMeter->stand_meter_akhir,
+        ]);
     }
 
     public function final_update(Request $request, StandMeter $standMeter)

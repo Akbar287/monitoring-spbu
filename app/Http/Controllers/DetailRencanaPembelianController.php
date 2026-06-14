@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use Inertia\Inertia;
 use App\Models\DetailRencanaPembelian;
 use App\Models\Produk;
 use App\Models\RencanaPembelian;
@@ -15,7 +16,7 @@ class DetailRencanaPembelianController extends Controller
      */
     public function index(Request $request, RencanaPembelian $rencana)
     {
-        if ($request->ajax()) {
+        if ($request->ajax() && ! $request->inertia()) {
             $data = DetailRencanaPembelian::select('*')->where('rencana_pembelian_id', $rencana->rencana_pembelian_id);
             return DataTables::of($data)
                 ->addIndexColumn()
@@ -34,7 +35,21 @@ class DetailRencanaPembelianController extends Controller
                 ->rawColumns(['action'])
                 ->make(true);
         }
-        return view('procurement/perencanaan_detail/index', compact('rencana'));
+        return Inertia::render('Table/Index', [
+            'title' => 'Detail Produk Perencanaan',
+            'breadcrumbs' => [['label' => 'Procurement', 'url' => route('menu.procurement')], ['label' => 'Perencanaan', 'url' => route('perencanaan.index')], ['label' => $rencana->kode_pembelian, 'url' => route('perencanaan.show', $rencana->rencana_pembelian_id)]],
+            'createUrl' => route('perencanaan.detail.create', $rencana->rencana_pembelian_id),
+            'table' => [
+                'url' => $request->url(),
+                'columns' => [
+                    ['label' => 'Id Produk', 'data' => 'detail_rencana_pembelian_id'],
+                    ['label' => 'Nama Produk', 'data' => 'nama_produk'],
+                    ['label' => 'Jumlah', 'data' => 'jumlah'],
+                    ['label' => 'Satuan Jumlah', 'data' => 'satuan_jumlah'],
+                    ['label' => 'Aksi', 'data' => 'action', 'orderable' => false, 'searchable' => false, 'raw' => true],
+                ],
+            ],
+        ]);
     }
 
     public function getRandomKode(RencanaPembelian $rencana)
@@ -49,7 +64,21 @@ class DetailRencanaPembelianController extends Controller
     {
         $produk = Produk::all();
         $kode = $this->getRandomKode($rencana);
-        return view('procurement/perencanaan_detail/create', compact('rencana', 'produk', 'kode'));
+        return Inertia::render('Form/Index', [
+            'title' => 'Tambah Detail Produk',
+            'breadcrumbs' => [['label' => 'Procurement', 'url' => route('menu.procurement')], ['label' => 'Perencanaan', 'url' => route('perencanaan.index')], ['label' => $rencana->kode_pembelian, 'url' => route('perencanaan.show', $rencana->rencana_pembelian_id)]],
+            'backUrl' => route('perencanaan.detail.index', $rencana->rencana_pembelian_id),
+            'method' => 'post',
+            'action' => route('perencanaan.detail.store', $rencana->rencana_pembelian_id),
+            'fields' => [
+                ['name' => 'kode', 'label' => 'Kode', 'type' => 'hidden', 'value' => $kode],
+                ['name' => 'produk_id', 'label' => 'Produk', 'type' => 'select', 'value' => null,
+                    'options' => $produk->map(fn ($s) => ['value' => $s->produk_id, 'label' => $s->nama_produk])->values()->all()],
+                ['name' => 'jumlah', 'label' => 'Jumlah', 'type' => 'text', 'value' => null],
+                ['name' => 'satuan_jumlah', 'label' => 'Satuan Jumlah', 'type' => 'select', 'value' => 'liter',
+                    'options' => [['value' => 'liter', 'label' => 'Liter']]],
+            ],
+        ]);
     }
 
     /**
@@ -82,7 +111,20 @@ class DetailRencanaPembelianController extends Controller
      */
     public function show(RencanaPembelian $rencana, DetailRencanaPembelian $detail)
     {
-        return view('procurement/perencanaan_detail/show', compact('rencana', 'detail'));
+        return Inertia::render('Show/Index', [
+            'title' => 'Detail Produk',
+            'breadcrumbs' => [['label' => 'Procurement', 'url' => route('menu.procurement')], ['label' => 'Perencanaan', 'url' => route('perencanaan.index')], ['label' => $rencana->kode_pembelian, 'url' => route('perencanaan.show', $rencana->rencana_pembelian_id)]],
+            'backUrl' => route('perencanaan.detail.index', $rencana->rencana_pembelian_id),
+            'fields' => [
+                ['label' => 'Produk', 'value' => optional($detail->produk()->first())->nama_produk],
+                ['label' => 'Jumlah', 'value' => $detail->jumlah],
+                ['label' => 'Satuan Jumlah', 'value' => $detail->satuan_jumlah],
+            ],
+            'actions' => [
+                ['label' => 'Ubah', 'url' => route('perencanaan.detail.edit', [$rencana->rencana_pembelian_id, $detail->detail_rencana_pembelian_id]), 'color' => 'primary', 'icon' => 'pen'],
+            ],
+            'deleteUrl' => route('perencanaan.detail.destroy', [$rencana->rencana_pembelian_id, $detail->detail_rencana_pembelian_id]),
+        ]);
     }
 
     /**
@@ -91,7 +133,20 @@ class DetailRencanaPembelianController extends Controller
     public function edit(RencanaPembelian $rencana, DetailRencanaPembelian $detail)
     {
         $produk = Produk::all();
-        return view('procurement/perencanaan_detail/edit', compact('rencana', 'produk', 'detail'));
+        return Inertia::render('Form/Index', [
+            'title' => 'Ubah Detail Produk',
+            'breadcrumbs' => [['label' => 'Procurement', 'url' => route('menu.procurement')], ['label' => 'Perencanaan', 'url' => route('perencanaan.index')], ['label' => $rencana->kode_pembelian, 'url' => route('perencanaan.show', $rencana->rencana_pembelian_id)]],
+            'backUrl' => route('perencanaan.detail.show', [$rencana->rencana_pembelian_id, $detail->detail_rencana_pembelian_id]),
+            'method' => 'put',
+            'action' => route('perencanaan.detail.update', [$rencana->rencana_pembelian_id, $detail->detail_rencana_pembelian_id]),
+            'fields' => [
+                ['name' => 'produk_id', 'label' => 'Produk', 'type' => 'select', 'value' => $detail->produk_id,
+                    'options' => $produk->map(fn ($s) => ['value' => $s->produk_id, 'label' => $s->nama_produk])->values()->all()],
+                ['name' => 'jumlah', 'label' => 'Jumlah', 'type' => 'text', 'value' => $detail->jumlah],
+                ['name' => 'satuan_jumlah', 'label' => 'Satuan Jumlah', 'type' => 'select', 'value' => $detail->satuan_jumlah,
+                    'options' => [['value' => 'liter', 'label' => 'Liter']]],
+            ],
+        ]);
     }
 
     /**

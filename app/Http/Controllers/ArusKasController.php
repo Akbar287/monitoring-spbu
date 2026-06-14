@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use Inertia\Inertia;
 use Illuminate\Http\Request;
 
 class ArusKasController extends Controller
@@ -11,7 +12,13 @@ class ArusKasController extends Controller
      */
     public function index()
     {
-        return view('other/arus_kas/index');
+return Inertia::render('Show/Index', [
+            'title' => 'Arus Kas',
+            'breadcrumbs' => [['label' => 'Financial', 'url' => route('menu.financial')]],
+            'backUrl' => route('menu.financial'),
+            'notice' => ['text' => 'Fitur laporan Arus Kas masih dalam pengembangan.', 'color' => 'info'],
+            'fields' => [],
+        ]);
     }
 
     /**

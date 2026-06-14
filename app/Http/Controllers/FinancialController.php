@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Support\Charts;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Inertia\Inertia;
 
 class FinancialController extends Controller
 {
@@ -71,14 +72,46 @@ class FinancialController extends Controller
             ->get();
 
         $charts = [
-            'penjualan' => Charts::monthly('penjualan', 'tanggal', 'SUM(total_penjualan)'),
-            'pettyArus' => Charts::monthly('petty_cash', 'tanggal', 'SUM(jumlah)'),
-            'pettyJenis' => [
-                'labels' => $pettyJenis->pluck('jenis')->map(fn ($j) => ucfirst($j ?? '-')),
-                'data' => $pettyJenis->pluck('total'),
+            [
+                'id' => 'penjualan',
+                'title' => 'Pendapatan Penjualan per Bulan',
+                'icon' => 'chart-line',
+                'color' => 'success',
+                'badge' => 'Rupiah',
+                'col' => 'col-lg-6 col-12',
+                'type' => 'line',
+                'data' => Charts::monthly('penjualan', 'tanggal', 'SUM(total_penjualan)'),
+                'opts' => ['money' => true, 'label' => 'Pendapatan'],
+            ],
+            [
+                'id' => 'pettyArus',
+                'title' => 'Arus Petty Cash per Bulan',
+                'icon' => 'wallet',
+                'color' => 'primary',
+                'badge' => 'Rupiah',
+                'col' => 'col-lg-3 col-md-6 col-12',
+                'type' => 'bar',
+                'data' => Charts::monthly('petty_cash', 'tanggal', 'SUM(jumlah)'),
+                'opts' => ['money' => true, 'colorEach' => false, 'colorIndex' => 0, 'label' => 'Petty Cash'],
+            ],
+            [
+                'id' => 'pettyJenis',
+                'title' => 'Petty Cash per Jenis',
+                'icon' => 'random',
+                'color' => 'warning',
+                'badge' => 'Rupiah',
+                'col' => 'col-lg-3 col-md-6 col-12',
+                'type' => 'doughnut',
+                'data' => ['labels' => $pettyJenis->pluck('jenis')->map(fn ($j) => ucfirst($j ?? '-')), 'data' => $pettyJenis->pluck('total')],
+                'opts' => ['money' => true],
             ],
         ];
 
-        return view('financial/index', compact('allMenu', 'charts'));
+        return Inertia::render('Menu/Index', [
+            'title' => 'Financial',
+            'description' => 'Tren pendapatan, arus petty cash, dan komposisi transaksi kas kecil.',
+            'menus' => $allMenu,
+            'charts' => $charts,
+        ]);
     }
 }

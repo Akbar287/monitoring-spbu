@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\TagRequest;
 use App\Models\Tag;
 use Illuminate\Http\Request;
+use Inertia\Inertia;
 use Yajra\DataTables\DataTables;
 
 class TagController extends Controller
@@ -14,7 +15,7 @@ class TagController extends Controller
      */
     public function index(Request $request)
     {
-        if ($request->ajax()) {
+        if ($request->ajax() && ! $request->inertia()) {
             $data = Tag::get();
             return DataTables::of($data)
                 ->addIndexColumn()
@@ -25,7 +26,18 @@ class TagController extends Controller
                 ->rawColumns(['action'])
                 ->make(true);
         }
-        return view('article/tag/index');
+        return Inertia::render('Table/Index', [
+            'title' => 'Tag',
+            'breadcrumbs' => [['label' => 'Artikel', 'url' => route('menu.artikel')]],
+            'createUrl' => route('tag.create'),
+            'table' => [
+                'url' => $request->url(),
+                'columns' => [
+                    ['label' => 'Nama Tag', 'data' => 'nama_tag'],
+                    ['label' => 'Aksi', 'data' => 'action', 'orderable' => false, 'searchable' => false, 'raw' => true],
+                ],
+            ],
+        ]);
     }
 
     /**
@@ -33,7 +45,16 @@ class TagController extends Controller
      */
     public function create()
     {
-        return view('article/tag/create');
+        return Inertia::render('Form/Index', [
+            'title' => 'Tambah Tag',
+            'breadcrumbs' => [['label' => 'Artikel', 'url' => route('menu.artikel')], ['label' => 'Tag', 'url' => route('tag.index')]],
+            'backUrl' => route('tag.index'),
+            'method' => 'post',
+            'action' => route('tag.store'),
+            'fields' => [
+                ['name' => 'nama_tag', 'label' => 'Nama Tag', 'type' => 'text', 'value' => null],
+            ],
+        ]);
     }
 
     /**
@@ -46,7 +67,7 @@ class TagController extends Controller
             $tag = Tag::create($this->tagData());
         }
 
-        return redirect('/artikel/tag/' . $tag->tag_id)->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> Data Tag sudah ditambah.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
+        return redirect('/artikel/tag')->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> Data Tag sudah ditambah.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
     }
 
     /**
@@ -54,7 +75,16 @@ class TagController extends Controller
      */
     public function show(Tag $tag)
     {
-        return view('article/tag/show', compact('tag'));
+        return Inertia::render('Show/Index', [
+            'title' => 'Detail Tag',
+            'breadcrumbs' => [['label' => 'Artikel', 'url' => route('menu.artikel')], ['label' => 'Tag', 'url' => route('tag.index')]],
+            'backUrl' => route('tag.index'),
+            'fields' => [
+                ['label' => 'Nama Tag', 'value' => $tag->nama_tag],
+            ],
+            'actions' => [['label' => 'Ubah', 'url' => route('tag.edit', $tag), 'color' => 'primary', 'icon' => 'pen']],
+            'deleteUrl' => route('tag.delete', $tag),
+        ]);
     }
 
     /**
@@ -62,7 +92,16 @@ class TagController extends Controller
      */
     public function edit(Tag $tag)
     {
-        return view('article/tag/edit', compact('tag'));
+        return Inertia::render('Form/Index', [
+            'title' => 'Ubah Tag',
+            'breadcrumbs' => [['label' => 'Artikel', 'url' => route('menu.artikel')], ['label' => 'Tag', 'url' => route('tag.index')]],
+            'backUrl' => route('tag.index'),
+            'method' => 'put',
+            'action' => route('tag.update', $tag),
+            'fields' => [
+                ['name' => 'nama_tag', 'label' => 'Nama Tag', 'type' => 'text', 'value' => $tag->nama_tag],
+            ],
+        ]);
     }
 
     /**
@@ -72,7 +111,7 @@ class TagController extends Controller
     {
         $tag->update($this->tagData());
 
-        return redirect('/artikel/tag/' . $tag->tag_id)->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> Data Tag sudah diubah.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
+        return redirect('/artikel/tag')->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> Data Tag sudah diubah.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
     }
 
     /**

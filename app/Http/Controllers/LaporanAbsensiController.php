@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use Inertia\Inertia;
 use Illuminate\Http\Request;
 
 class LaporanAbsensiController extends Controller
@@ -11,7 +12,13 @@ class LaporanAbsensiController extends Controller
      */
     public function index()
     {
-        //
+        return Inertia::render('Show/Index', [
+            'title' => 'Laporan Absensi',
+            'breadcrumbs' => [['label' => 'Jadwal & Absensi', 'url' => route('menu.jadwal_absensi')]],
+            'backUrl' => route('menu.jadwal_absensi'),
+            'notice' => ['text' => 'Fitur Laporan Absensi masih dalam pengembangan.', 'color' => 'info'],
+            'fields' => [],
+        ]);
     }
 
     /**

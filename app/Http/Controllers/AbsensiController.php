@@ -8,6 +8,7 @@ use App\Models\Penjadwalan;
 use App\Models\StatusKehadiran;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Inertia\Inertia;
 use Yajra\DataTables\DataTables;
 
 class AbsensiController extends Controller
@@ -33,7 +34,7 @@ class AbsensiController extends Controller
         $waktuMulai = $waktuMulai->format('Y-m-d');
         $waktuSelesai = $waktuSelesai->format('Y-m-d');
 
-        if ($request->ajax()) {
+        if ($request->ajax() && ! $request->inertia()) {
             $data = null;
             if ($statusKehadiranSelected === 'all') {
                 if ($jamKerjaSelected === 'all') {
@@ -162,7 +163,28 @@ class AbsensiController extends Controller
                 ->rawColumns(['action', 'is_attended', 'is_confirm'])
                 ->make(true);
         }
-        return view('jadwal_absensi/absensi/index', compact('waktuMulai', 'waktuSelesai', 'statusKehadiran', 'statusKehadiranSelected', 'jamKerja', 'jamKerjaSelected', 'jabatan', 'jabatanSelected'));
+        return Inertia::render('Table/Index', [
+            'title' => 'Absensi',
+            'breadcrumbs' => [['label' => 'Jadwal & Absensi', 'url' => route('menu.jadwal_absensi')]],
+            'dateFilter' => ['mulai' => $waktuMulai, 'selesai' => $waktuSelesai],
+            'selectFilters' => [
+                ['name' => 'status_kehadiran_id', 'label' => 'Status Kehadiran', 'value' => $statusKehadiranSelected, 'options' => array_merge([['value' => 'all', 'label' => 'Semua']], $statusKehadiran->map(fn ($x) => ['value' => $x->status_kehadiran_id, 'label' => $x->nama_kehadiran])->all())],
+                ['name' => 'jam_kerja_id', 'label' => 'Jam Kerja', 'value' => $jamKerjaSelected, 'options' => array_merge([['value' => 'all', 'label' => 'Semua']], $jamKerja->map(fn ($x) => ['value' => $x->jam_kerja_id, 'label' => $x->nama_jam_kerja])->all())],
+                ['name' => 'jabatan_id', 'label' => 'Jabatan', 'value' => $jabatanSelected, 'options' => array_merge([['value' => 'all', 'label' => 'Semua']], $jabatan->map(fn ($x) => ['value' => $x->jabatan_id, 'label' => $x->nama_jabatan])->all())],
+            ],
+            'table' => [
+                'url' => $request->fullUrl(),
+                'columns' => [
+                    ['label' => 'Status Kehadiran', 'data' => 'status_kehadiran'],
+                    ['label' => 'Tanggal', 'data' => 'tanggal'],
+                    ['label' => 'Jam Kerja', 'data' => 'jam_kerja'],
+                    ['label' => 'Jabatan', 'data' => 'jabatan'],
+                    ['label' => 'Konfirmasi', 'data' => 'is_attended', 'raw' => true],
+                    ['label' => 'Hadir', 'data' => 'is_confirm', 'raw' => true],
+                    ['label' => 'Aksi', 'data' => 'action', 'orderable' => false, 'searchable' => false, 'raw' => true],
+                ],
+            ],
+        ]);
     }
 
     public function show(Penjadwalan $penjadwalan)

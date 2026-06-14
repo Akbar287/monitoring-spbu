@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use Inertia\Inertia;
 use Illuminate\Http\Request;
 
 class BukuBesarController extends Controller
@@ -11,7 +12,13 @@ class BukuBesarController extends Controller
      */
     public function index()
     {
-        return view('other/buku_besar/index');
+return Inertia::render('Show/Index', [
+            'title' => 'Buku Besar',
+            'breadcrumbs' => [['label' => 'Financial', 'url' => route('menu.financial')]],
+            'backUrl' => route('menu.financial'),
+            'notice' => ['text' => 'Fitur laporan Buku Besar masih dalam pengembangan.', 'color' => 'info'],
+            'fields' => [],
+        ]);
     }
 
     /**

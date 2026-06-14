@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Support\Charts;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Inertia\Inertia;
 
 class SetoranController extends Controller
 {
@@ -55,17 +56,44 @@ class SetoranController extends Controller
             ->get();
 
         $charts = [
-            'bulanan' => Charts::monthly('penjualan', 'tanggal', 'SUM(total_penjualan)'),
-            'status' => [
-                'labels' => $status->pluck('nama_status'),
-                'data' => $status->pluck('total'),
+            [
+                'id' => 'bulanan',
+                'title' => 'Total Penjualan per Bulan',
+                'icon' => 'chart-line',
+                'color' => 'primary',
+                'badge' => 'Rupiah',
+                'col' => 'col-lg-6 col-12',
+                'type' => 'bar',
+                'data' => Charts::monthly('penjualan', 'tanggal', 'SUM(total_penjualan)'),
+                'opts' => ['money' => true, 'colorEach' => false, 'colorIndex' => 0, 'label' => 'Penjualan'],
             ],
-            'jamKerja' => [
-                'labels' => $jamKerja->pluck('nama_jam_kerja'),
-                'data' => $jamKerja->pluck('total'),
+            [
+                'id' => 'status',
+                'title' => 'Penjualan per Status',
+                'icon' => 'tasks',
+                'color' => 'info',
+                'col' => 'col-lg-3 col-md-6 col-12',
+                'type' => 'doughnut',
+                'data' => ['labels' => $status->pluck('nama_status'), 'data' => $status->pluck('total')],
+            ],
+            [
+                'id' => 'jamKerja',
+                'title' => 'Penjualan per Shift',
+                'icon' => 'business-time',
+                'color' => 'success',
+                'badge' => 'Rupiah',
+                'col' => 'col-lg-3 col-md-6 col-12',
+                'type' => 'bar',
+                'data' => ['labels' => $jamKerja->pluck('nama_jam_kerja'), 'data' => $jamKerja->pluck('total')],
+                'opts' => ['money' => true],
             ],
         ];
 
-        return view('setoran/index', compact('allMenu', 'charts'));
+        return Inertia::render('Menu/Index', [
+            'title' => 'Setoran',
+            'description' => 'Tren penjualan, status setoran, dan kontribusi tiap shift.',
+            'menus' => $allMenu,
+            'charts' => $charts,
+        ]);
     }
 }

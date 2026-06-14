@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\ProdukRequest;
 use App\Models\Produk;
 use App\Models\Spbu;
+use Inertia\Inertia;
 use Yajra\DataTables\DataTables;
 use Illuminate\Http\Request;
 
@@ -15,7 +16,7 @@ class ProdukController extends Controller
      */
     public function index(Request $request)
     {
-        if ($request->ajax()) {
+        if ($request->ajax() && ! $request->inertia()) {
             $data = Produk::select('produk.produk_id')->addSelect('produk.nama_produk')->addSelect('produk.is_aktif')->addSelect('detail_produk.nama_jenis')->addSelect('detail_produk.oktan')->join('detail_produk', 'produk.produk_id', 'detail_produk.produk_id');
             return DataTables::of($data)
                 ->addIndexColumn()
@@ -30,7 +31,21 @@ class ProdukController extends Controller
                 ->rawColumns(['action'])
                 ->make(true);
         }
-        return view('master/produk/index');
+        return Inertia::render('Table/Index', [
+            'title' => 'Produk',
+            'breadcrumbs' => [['label' => 'Master Data', 'url' => route('menu.master')]],
+            'createUrl' => route('produk.create'),
+            'table' => [
+                'url' => $request->url(),
+                'columns' => [
+                    ['label' => 'Nama Produk', 'data' => 'nama_produk'],
+                    ['label' => 'Nama Jenis', 'data' => 'nama_jenis'],
+                    ['label' => 'Oktan', 'data' => 'oktan'],
+                    ['label' => 'Aktif', 'data' => 'is_aktif', 'name' => 'keterangan'],
+                    ['label' => 'Aksi', 'data' => 'action', 'orderable' => false, 'searchable' => false, 'raw' => true],
+                ],
+            ],
+        ]);
     }
 
     /**
@@ -39,7 +54,21 @@ class ProdukController extends Controller
     public function create()
     {
         $spbu = Spbu::all();
-        return view('master/produk/create', compact('spbu'));
+        return Inertia::render('Form/Index', [
+            'title' => 'Tambah Produk',
+            'breadcrumbs' => [['label' => 'Master Data', 'url' => route('menu.master')], ['label' => 'Produk', 'url' => route('produk.index')]],
+            'backUrl' => route('produk.index'),
+            'method' => 'post',
+            'action' => route('produk.store'),
+            'fields' => [
+                ['name' => 'spbu_id', 'label' => 'SPBU', 'type' => 'select', 'value' => null, 'options' => $spbu->map(fn ($x) => ['value' => $x->spbu_id, 'label' => $x->nama_spbu . ' - ' . $x->nomor_spbu])->values()->all()],
+                ['name' => 'nama_produk', 'label' => 'Nama Produk', 'type' => 'text', 'value' => null],
+                ['name' => 'singkatan', 'label' => 'Singkatan', 'type' => 'text', 'value' => null, 'col' => 'col-md-6'],
+                ['name' => 'nama_jenis', 'label' => 'Jenis', 'type' => 'text', 'value' => null, 'col' => 'col-md-6'],
+                ['name' => 'oktan', 'label' => 'Oktan', 'type' => 'text', 'value' => null, 'col' => 'col-md-6'],
+                ['name' => 'is_aktif', 'label' => 'Status', 'type' => 'select', 'value' => null, 'options' => [['value' => 'true', 'label' => 'Aktifkan'], ['value' => 'false', 'label' => 'Jangan Aktifkan']], 'col' => 'col-md-6'],
+            ],
+        ]);
     }
 
     /**
@@ -58,7 +87,7 @@ class ProdukController extends Controller
             $detail = $produk->detail_produk()->create($this->detailProdukData());
         }
 
-        return redirect('/master/produk/' . $produk->produk_id)->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> Data Produk sudah ditambah.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
+        return redirect('/master/produk')->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> Data Produk sudah ditambah.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
     }
 
     /**
@@ -66,7 +95,21 @@ class ProdukController extends Controller
      */
     public function show(Produk $produk)
     {
-        return view('master/produk/show', compact('produk'));
+        return Inertia::render('Show/Index', [
+            'title' => 'Detail Produk',
+            'breadcrumbs' => [['label' => 'Master Data', 'url' => route('menu.master')], ['label' => 'Produk', 'url' => route('produk.index')]],
+            'backUrl' => route('produk.index'),
+            'fields' => [
+                ['label' => 'SPBU', 'value' => optional(\Illuminate\Support\Facades\DB::table('spbu')->where('spbu_id', $produk->spbu_id)->first())->nama_spbu],
+                ['label' => 'Nama Produk', 'value' => $produk->nama_produk],
+                ['label' => 'Singkatan', 'value' => $produk->singkatan],
+                ['label' => 'Jenis', 'value' => optional($produk->detail_produk()->first())->nama_jenis],
+                ['label' => 'Oktan', 'value' => optional($produk->detail_produk()->first())->oktan],
+                ['label' => 'Status', 'value' => filter_var($produk->is_aktif, FILTER_VALIDATE_BOOLEAN) ? 'Aktif' : 'Tidak Aktif'],
+            ],
+            'actions' => [['label' => 'Ubah', 'url' => route('produk.edit', $produk), 'color' => 'primary', 'icon' => 'pen']],
+            'deleteUrl' => route('produk.destroy', $produk),
+        ]);
     }
 
     /**
@@ -75,7 +118,21 @@ class ProdukController extends Controller
     public function edit(Produk $produk)
     {
         $spbu = Spbu::all();
-        return view('master/produk/edit', compact('spbu', 'produk'));
+        return Inertia::render('Form/Index', [
+            'title' => 'Ubah Produk',
+            'breadcrumbs' => [['label' => 'Master Data', 'url' => route('menu.master')], ['label' => 'Produk', 'url' => route('produk.index')]],
+            'backUrl' => route('produk.index'),
+            'method' => 'put',
+            'action' => route('produk.update', $produk),
+            'fields' => [
+                ['name' => 'spbu_id', 'label' => 'SPBU', 'type' => 'select', 'value' => $produk->spbu_id, 'options' => $spbu->map(fn ($x) => ['value' => $x->spbu_id, 'label' => $x->nama_spbu . ' - ' . $x->nomor_spbu])->values()->all()],
+                ['name' => 'nama_produk', 'label' => 'Nama Produk', 'type' => 'text', 'value' => $produk->nama_produk],
+                ['name' => 'singkatan', 'label' => 'Singkatan', 'type' => 'text', 'value' => $produk->singkatan, 'col' => 'col-md-6'],
+                ['name' => 'nama_jenis', 'label' => 'Jenis', 'type' => 'text', 'value' => optional($produk->detail_produk()->first())->nama_jenis, 'col' => 'col-md-6'],
+                ['name' => 'oktan', 'label' => 'Oktan', 'type' => 'text', 'value' => optional($produk->detail_produk()->first())->oktan, 'col' => 'col-md-6'],
+                ['name' => 'is_aktif', 'label' => 'Status', 'type' => 'select', 'value' => filter_var($produk->is_aktif, FILTER_VALIDATE_BOOLEAN) ? 'true' : 'false', 'options' => [['value' => 'true', 'label' => 'Aktifkan'], ['value' => 'false', 'label' => 'Jangan Aktifkan']], 'col' => 'col-md-6'],
+            ],
+        ]);
     }
 
     /**
@@ -86,7 +143,7 @@ class ProdukController extends Controller
         $produk->update($this->produkData());
         $produk->detail_produk()->update($this->detailProdukData());
 
-        return redirect('/master/produk/' . $produk->produk_id)->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> Data Produk sudah diubah.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
+        return redirect('/master/produk')->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> Data Produk sudah diubah.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
     }
 
     /**

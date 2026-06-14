@@ -9,6 +9,7 @@ use App\Models\Produk;
 use App\Models\StokInventory;
 use App\Models\TypeDokumenStok;
 use Carbon\Carbon;
+use Inertia\Inertia;
 use Yajra\DataTables\DataTables;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -26,7 +27,7 @@ class MonitoringController extends Controller
      */
     public function index(Request $request)
     {
-        if ($request->ajax()) {
+        if ($request->ajax() && ! $request->inertia()) {
             $data = StokInventory::select('*');
             return DataTables::of($data)
                 ->addIndexColumn()
@@ -45,7 +46,19 @@ class MonitoringController extends Controller
                 ->rawColumns(['action'])
                 ->make(true);
         }
-        return view('stok/monitoring/index');
+        return Inertia::render('Table/Index', [
+            'title' => 'Monitoring Stok',
+            'breadcrumbs' => [['label' => 'Manajemen Persediaan', 'url' => route('menu.stok')]],
+            'createUrl' => route('monitoring.create'),
+            'table' => [
+                'url' => $request->url(),
+                'columns' => [
+                    ['label' => 'Nama Produk', 'data' => 'nama_produk'],
+                    ['label' => 'Stok', 'data' => 'stok'],
+                    ['label' => 'Aksi', 'data' => 'action', 'orderable' => false, 'searchable' => false, 'raw' => true],
+                ],
+            ],
+        ]);
     }
 
     /**
@@ -197,7 +210,7 @@ class MonitoringController extends Controller
 
     public function dombak_index(Request $request, StokInventory $stok)
     {
-        if ($request->ajax()) {
+        if ($request->ajax() && ! $request->inertia()) {
             $data = $stok->stok_inventory_dombak()->get();
             return DataTables::of($data)
                 ->addIndexColumn()
@@ -225,7 +238,7 @@ class MonitoringController extends Controller
 
     public function dombak_create(Request $request, StokInventory $stok)
     {
-        if ($request->ajax()) {
+        if ($request->ajax() && ! $request->inertia()) {
             $data = Dombak::select('*');
             return DataTables::of($data)
                 ->addIndexColumn()
@@ -282,7 +295,7 @@ class MonitoringController extends Controller
         $waktuMulai = $waktuMulai->format('Y-m-d');
         $waktuSelesai = $waktuSelesai->format('Y-m-d');
 
-        if ($request->ajax()) {
+        if ($request->ajax() && ! $request->inertia()) {
             $data = $dombakSelected == 'all' ? $stok->dokumen_stok()
                 ->select([
                     'stok_inventory.stok_inventory_id',
@@ -293,7 +306,8 @@ class MonitoringController extends Controller
                     'type_dokumen_stok.type_movement',
                     'dombak.nama_dombak',
                     'jam_kerja.nama_jam_kerja',
-                    DB::raw('GROUP_CONCAT(losses.simbol) as loss_symbols'),
+                    'jam_kerja.jam_datang_in',
+                    DB::raw("STRING_AGG(losses.simbol, ',') as loss_symbols"),
                     DB::raw('SUM(losses.jumlah) as total_loss')
                 ])
                 ->join('stok_inventory', 'stok_inventory.stok_inventory_id', 'dokumen_stok.stok_inventory_id')
@@ -311,7 +325,8 @@ class MonitoringController extends Controller
                     'dokumen_stok.stok_akhir',
                     'type_dokumen_stok.type_movement',
                     'dombak.nama_dombak',
-                    'jam_kerja.nama_jam_kerja'
+                    'jam_kerja.nama_jam_kerja',
+                    'jam_kerja.jam_datang_in'
                 ])
                 ->orderBy('tanggal', 'desc')
                 ->orderBy('jam_datang_in', 'desc')
@@ -325,7 +340,8 @@ class MonitoringController extends Controller
                     'type_dokumen_stok.type_movement',
                     'dombak.nama_dombak',
                     'jam_kerja.nama_jam_kerja',
-                    DB::raw('GROUP_CONCAT(losses.simbol) as loss_symbols'),
+                    'jam_kerja.jam_datang_in',
+                    DB::raw("STRING_AGG(losses.simbol, ',') as loss_symbols"),
                     DB::raw('SUM(losses.jumlah) as total_loss')
                 ])
                 ->join('stok_inventory', 'stok_inventory.stok_inventory_id', 'dokumen_stok.stok_inventory_id')
@@ -346,7 +362,8 @@ class MonitoringController extends Controller
                     'dokumen_stok.stok_akhir',
                     'type_dokumen_stok.type_movement',
                     'dombak.nama_dombak',
-                    'jam_kerja.nama_jam_kerja'
+                    'jam_kerja.nama_jam_kerja',
+                    'jam_kerja.jam_datang_in'
                 ])
                 ->orderBy('tanggal', 'desc')
                 ->orderBy('jam_datang_in', 'desc')
@@ -357,6 +374,12 @@ class MonitoringController extends Controller
                 ->addColumn('tanggal', function ($row) {
                     $actionBtn = Carbon::createFromFormat('Y-m-d', $row->tanggal)->format('d F Y');
                     return $actionBtn . ' ' . $row->nama_jam_kerja;
+                })
+                ->addColumn('type_movement', function ($row) {
+                    return number_format($row->type_movement, 6, ".", ",");
+                })
+                ->addColumn('nama_dombak', function ($row) {
+                    return number_format($row->nama_dombak, 6, ".", ",");
                 })
                 ->addColumn('stok_awal', function ($row) {
                     return number_format($row->stok_awal, 6, ".", ",");

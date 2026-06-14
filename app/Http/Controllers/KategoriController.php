@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\KategoriRequest;
 use App\Models\Kategori;
 use Illuminate\Http\Request;
+use Inertia\Inertia;
 use Yajra\DataTables\DataTables;
 
 class KategoriController extends Controller
@@ -14,7 +15,7 @@ class KategoriController extends Controller
      */
     public function index(Request $request)
     {
-        if ($request->ajax()) {
+        if ($request->ajax() && ! $request->inertia()) {
             $data = Kategori::get();
             return DataTables::of($data)
                 ->addIndexColumn()
@@ -25,7 +26,18 @@ class KategoriController extends Controller
                 ->rawColumns(['action'])
                 ->make(true);
         }
-        return view('article/kategori/index');
+        return Inertia::render('Table/Index', [
+            'title' => 'Kategori',
+            'breadcrumbs' => [['label' => 'Artikel', 'url' => route('menu.artikel')]],
+            'createUrl' => route('kategori.create'),
+            'table' => [
+                'url' => $request->url(),
+                'columns' => [
+                    ['label' => 'Nama Kategori', 'data' => 'nama_kategori'],
+                    ['label' => 'Aksi', 'data' => 'action', 'orderable' => false, 'searchable' => false, 'raw' => true],
+                ],
+            ],
+        ]);
     }
 
     /**
@@ -33,7 +45,17 @@ class KategoriController extends Controller
      */
     public function create()
     {
-        return view('article/kategori/create');
+        return Inertia::render('Form/Index', [
+            'title' => 'Tambah Kategori',
+            'breadcrumbs' => [['label' => 'Artikel', 'url' => route('menu.artikel')], ['label' => 'Kategori', 'url' => route('kategori.index')]],
+            'backUrl' => route('kategori.index'),
+            'method' => 'post',
+            'action' => route('kategori.store'),
+            'fields' => [
+                ['name' => 'nama_kategori', 'label' => 'Nama Kategori', 'type' => 'text', 'value' => null],
+                ['name' => 'detail', 'label' => 'Detail', 'type' => 'textarea', 'value' => null],
+            ],
+        ]);
     }
 
     /**
@@ -46,7 +68,7 @@ class KategoriController extends Controller
             $kategori = Kategori::create($this->kategoriData());
         }
 
-        return redirect('/artikel/kategori/' . $kategori->kategori_id)->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> Data Kategori sudah ditambah.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
+        return redirect('/artikel/kategori')->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> Data Kategori sudah ditambah.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
     }
 
     /**
@@ -54,7 +76,17 @@ class KategoriController extends Controller
      */
     public function show(Kategori $kategori)
     {
-        return view('article/kategori/show', compact('kategori'));
+        return Inertia::render('Show/Index', [
+            'title' => 'Detail Kategori',
+            'breadcrumbs' => [['label' => 'Artikel', 'url' => route('menu.artikel')], ['label' => 'Kategori', 'url' => route('kategori.index')]],
+            'backUrl' => route('kategori.index'),
+            'fields' => [
+                ['label' => 'Nama Kategori', 'value' => $kategori->nama_kategori],
+                ['label' => 'Detail', 'value' => $kategori->detail],
+            ],
+            'actions' => [['label' => 'Ubah', 'url' => route('kategori.edit', $kategori), 'color' => 'primary', 'icon' => 'pen']],
+            'deleteUrl' => route('kategori.delete', $kategori),
+        ]);
     }
 
     /**
@@ -62,7 +94,17 @@ class KategoriController extends Controller
      */
     public function edit(Kategori $kategori)
     {
-        return view('article/kategori/edit', compact('kategori'));
+        return Inertia::render('Form/Index', [
+            'title' => 'Ubah Kategori',
+            'breadcrumbs' => [['label' => 'Artikel', 'url' => route('menu.artikel')], ['label' => 'Kategori', 'url' => route('kategori.index')]],
+            'backUrl' => route('kategori.index'),
+            'method' => 'put',
+            'action' => route('kategori.update', $kategori),
+            'fields' => [
+                ['name' => 'nama_kategori', 'label' => 'Nama Kategori', 'type' => 'text', 'value' => $kategori->nama_kategori],
+                ['name' => 'detail', 'label' => 'Detail', 'type' => 'textarea', 'value' => $kategori->detail],
+            ],
+        ]);
     }
 
     /**
@@ -72,7 +114,7 @@ class KategoriController extends Controller
     {
         $kategori->update($this->kategoriData());
 
-        return redirect('/artikel/kategori/' . $kategori->kategori_id)->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> Data Kategori sudah diubah.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
+        return redirect('/artikel/kategori')->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> Data Kategori sudah diubah.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
     }
 
     /**

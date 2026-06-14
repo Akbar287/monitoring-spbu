@@ -8,6 +8,7 @@ use App\Models\Dombak;
 use App\Models\Konversi;
 use App\Models\SatuanUkurTinggi;
 use App\Models\SatuanUkurVolume;
+use Inertia\Inertia;
 use Yajra\DataTables\DataTables;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -20,7 +21,7 @@ class KonversiController extends Controller
      */
     public function index(Request $request, Dombak $dombak)
     {
-        if ($request->ajax()) {
+        if ($request->ajax() && ! $request->inertia()) {
             $data = $dombak->konversi()->select('konversi.konversi_id', 'dombak.dombak_id', 'satuan_ukur_tinggi.nama_satuan as nama_satuan_tinggi', 'satuan_ukur_volume.nama_satuan as nama_satuan_volume', 'konversi.tinggi', 'konversi.volume')
                 ->join('dombak', 'dombak.dombak_id', 'konversi.dombak_id')
                 ->join('satuan_ukur_tinggi', 'satuan_ukur_tinggi.satuan_ukur_tinggi_id', 'konversi.satuan_ukur_tinggi_id')
@@ -43,7 +44,23 @@ class KonversiController extends Controller
                 ->rawColumns(['action'])
                 ->make(true);
         }
-        return view('master/konversi/index', compact('dombak'));
+        return Inertia::render('Table/Index', [
+            'title' => 'Konversi Dombak',
+            'breadcrumbs' => [['label' => 'Master Data', 'url' => route('menu.master')], ['label' => 'Dombak', 'url' => route('dombak.index')], ['label' => $dombak->nama_dombak, 'url' => route('dombak.show', $dombak)]],
+            'createUrl' => route('konversi.create', $dombak),
+            'headerActions' => [
+                ['label' => 'Upload', 'url' => route('konversi.upload_show', $dombak), 'color' => 'info', 'icon' => 'upload'],
+                ['label' => 'Hapus Semua', 'url' => route('konversi.destroy.all', $dombak), 'method' => 'delete', 'color' => 'danger', 'icon' => 'trash', 'confirm' => 'Yakin menghapus SEMUA data konversi dombak ini?'],
+            ],
+            'table' => [
+                'url' => $request->url(),
+                'columns' => [
+                    ['label' => 'Tinggi', 'data' => 'tinggi'],
+                    ['label' => 'Volume', 'data' => 'volume'],
+                    ['label' => 'Aksi', 'data' => 'action', 'orderable' => false, 'searchable' => false, 'raw' => true],
+                ],
+            ],
+        ]);
     }
 
     /**
@@ -53,7 +70,19 @@ class KonversiController extends Controller
     {
         $satuanUkurTinggi = SatuanUkurTinggi::all();
         $satuanUkurVolume = SatuanUkurVolume::all();
-        return view('master/konversi/create', compact('dombak', 'satuanUkurTinggi', 'satuanUkurVolume'));
+        return Inertia::render('Form/Index', [
+            'title' => 'Tambah Konversi',
+            'breadcrumbs' => [['label' => 'Master Data', 'url' => route('menu.master')], ['label' => 'Dombak', 'url' => route('dombak.index')], ['label' => 'Konversi', 'url' => route('konversi.index', $dombak)]],
+            'backUrl' => route('konversi.index', $dombak),
+            'method' => 'post',
+            'action' => route('konversi.store', $dombak),
+            'fields' => [
+                ['name' => 'tinggi', 'label' => 'Tinggi', 'type' => 'text', 'value' => null, 'col' => 'col-md-6'],
+                ['name' => 'satuan_ukur_tinggi_id', 'label' => 'Satuan Tinggi', 'type' => 'select', 'value' => null, 'col' => 'col-md-6', 'options' => $satuanUkurTinggi->map(fn ($x) => ['value' => $x->satuan_ukur_tinggi_id, 'label' => $x->nama_satuan . ' (' . $x->singkatan . ')'])->values()->all()],
+                ['name' => 'volume', 'label' => 'Volume', 'type' => 'text', 'value' => null, 'col' => 'col-md-6'],
+                ['name' => 'satuan_ukur_volume_id', 'label' => 'Satuan Volume', 'type' => 'select', 'value' => null, 'col' => 'col-md-6', 'options' => $satuanUkurVolume->map(fn ($x) => ['value' => $x->satuan_ukur_volume_id, 'label' => $x->nama_satuan . ' (' . $x->singkatan . ')'])->values()->all()],
+            ],
+        ]);
     }
 
     /**
@@ -67,7 +96,7 @@ class KonversiController extends Controller
             $konversi = $dombak->konversi()->create($this->konversiData($konversiRequest->satuan_ukur_tinggi_id, $konversiRequest->satuan_ukur_volume_id));
         }
 
-        return redirect('/master/dombak/' . $dombak->dombak_id . '/konversi/' . $konversi->konversi_id)->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> Data Konversi sudah ditambah.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
+        return redirect('/master/dombak/' . $dombak->dombak_id . '/konversi')->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> Data Konversi sudah ditambah.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
     }
 
     /**
@@ -75,7 +104,20 @@ class KonversiController extends Controller
      */
     public function show(Dombak $dombak, Konversi $konversi)
     {
-        return view('master/konversi/show', compact('dombak', 'konversi'));
+        return Inertia::render('Show/Index', [
+            'title' => 'Detail Konversi',
+            'breadcrumbs' => [['label' => 'Master Data', 'url' => route('menu.master')], ['label' => 'Dombak', 'url' => route('dombak.index')], ['label' => 'Konversi', 'url' => route('konversi.index', $dombak)]],
+            'backUrl' => route('konversi.index', $dombak),
+            'fields' => [
+                ['label' => 'Dombak', 'value' => $dombak->nama_dombak],
+                ['label' => 'Tinggi', 'value' => $konversi->tinggi],
+                ['label' => 'Satuan Tinggi', 'value' => optional(\Illuminate\Support\Facades\DB::table('satuan_ukur_tinggi')->where('satuan_ukur_tinggi_id', $konversi->satuan_ukur_tinggi_id)->first())->nama_satuan],
+                ['label' => 'Volume', 'value' => $konversi->volume],
+                ['label' => 'Satuan Volume', 'value' => optional(\Illuminate\Support\Facades\DB::table('satuan_ukur_volume')->where('satuan_ukur_volume_id', $konversi->satuan_ukur_volume_id)->first())->nama_satuan],
+            ],
+            'actions' => [['label' => 'Ubah', 'url' => route('konversi.edit', [$dombak, $konversi]), 'color' => 'primary', 'icon' => 'pen']],
+            'deleteUrl' => route('konversi.destroy', [$dombak, $konversi]),
+        ]);
     }
 
     /**
@@ -85,7 +127,19 @@ class KonversiController extends Controller
     {
         $satuanUkurTinggi = SatuanUkurTinggi::all();
         $satuanUkurVolume = SatuanUkurVolume::all();
-        return view('master/konversi/edit', compact('dombak', 'konversi', 'satuanUkurTinggi', 'satuanUkurVolume'));
+        return Inertia::render('Form/Index', [
+            'title' => 'Ubah Konversi',
+            'breadcrumbs' => [['label' => 'Master Data', 'url' => route('menu.master')], ['label' => 'Dombak', 'url' => route('dombak.index')], ['label' => 'Konversi', 'url' => route('konversi.index', $dombak)]],
+            'backUrl' => route('konversi.index', $dombak),
+            'method' => 'put',
+            'action' => route('konversi.update', [$dombak, $konversi]),
+            'fields' => [
+                ['name' => 'tinggi', 'label' => 'Tinggi', 'type' => 'text', 'value' => $konversi->tinggi, 'col' => 'col-md-6'],
+                ['name' => 'satuan_ukur_tinggi_id', 'label' => 'Satuan Tinggi', 'type' => 'select', 'value' => $konversi->satuan_ukur_tinggi_id, 'col' => 'col-md-6', 'options' => $satuanUkurTinggi->map(fn ($x) => ['value' => $x->satuan_ukur_tinggi_id, 'label' => $x->nama_satuan . ' (' . $x->singkatan . ')'])->values()->all()],
+                ['name' => 'volume', 'label' => 'Volume', 'type' => 'text', 'value' => $konversi->volume, 'col' => 'col-md-6'],
+                ['name' => 'satuan_ukur_volume_id', 'label' => 'Satuan Volume', 'type' => 'select', 'value' => $konversi->satuan_ukur_volume_id, 'col' => 'col-md-6', 'options' => $satuanUkurVolume->map(fn ($x) => ['value' => $x->satuan_ukur_volume_id, 'label' => $x->nama_satuan . ' (' . $x->singkatan . ')'])->values()->all()],
+            ],
+        ]);
     }
 
     /**
@@ -95,7 +149,7 @@ class KonversiController extends Controller
     {
         $konversi->update($this->konversiData($konversiRequest->satuan_ukur_tinggi_id, $konversiRequest->satuan_ukur_volume_id));
 
-        return redirect('/master/dombak/' . $dombak->dombak_id . '/konversi/' . $konversi->konversi_id)->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> Data Konversi sudah diubah.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
+        return redirect('/master/dombak/' . $dombak->dombak_id . '/konversi')->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> Data Konversi sudah diubah.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
     }
 
     /**
@@ -129,7 +183,18 @@ class KonversiController extends Controller
     {
         $satuanUkurTinggi = SatuanUkurTinggi::all();
         $satuanUkurVolume = SatuanUkurVolume::all();
-        return view('master/konversi/upload_show', compact('dombak', 'satuanUkurTinggi', 'satuanUkurVolume'));
+        return Inertia::render('Form/Index', [
+            'title' => 'Upload Konversi',
+            'breadcrumbs' => [['label' => 'Master Data', 'url' => route('menu.master')], ['label' => 'Dombak', 'url' => route('dombak.index')], ['label' => 'Konversi', 'url' => route('konversi.index', $dombak)]],
+            'backUrl' => route('konversi.index', $dombak),
+            'method' => 'post',
+            'action' => route('konversi.upload_store', $dombak),
+            'fields' => [
+                ['name' => 'satuan_ukur_tinggi_id', 'label' => 'Satuan Tinggi', 'type' => 'select', 'value' => null, 'col' => 'col-md-6', 'options' => $satuanUkurTinggi->map(fn ($x) => ['value' => $x->satuan_ukur_tinggi_id, 'label' => $x->nama_satuan . ' (' . $x->singkatan . ')'])->values()->all()],
+                ['name' => 'satuan_ukur_volume_id', 'label' => 'Satuan Volume', 'type' => 'select', 'value' => null, 'col' => 'col-md-6', 'options' => $satuanUkurVolume->map(fn ($x) => ['value' => $x->satuan_ukur_volume_id, 'label' => $x->nama_satuan . ' (' . $x->singkatan . ')'])->values()->all()],
+                ['name' => 'upload', 'label' => 'File Excel', 'type' => 'file', 'value' => null, 'accept' => '.xlsx,.xls,.csv', 'hint' => 'Kolom: tinggi & volume. Format: .xlsx, .xls, .csv'],
+            ],
+        ]);
     }
 
     public function upload_store(Request $request, Dombak $dombak)

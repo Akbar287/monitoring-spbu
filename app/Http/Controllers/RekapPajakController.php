@@ -9,6 +9,7 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Maatwebsite\Excel\Facades\Excel;
+use Inertia\Inertia;
 use Yajra\DataTables\DataTables;
 
 class RekapPajakController extends Controller
@@ -30,7 +31,7 @@ class RekapPajakController extends Controller
         $waktuMulai = $waktuMulai->format('Y-m-d');
         $waktuSelesai = $waktuSelesai->format('Y-m-d');
 
-        if ($request->ajax()) {
+        if ($request->ajax() && ! $request->inertia()) {
             $data = is_null($request->spbu_id) ?
                 PajakPembelian::select('pajak_pembelian.pajak_pembelian_id', 'pajak_pembelian.ppn', 'pajak_pembelian.ppbkb', 'pajak_pembelian.pph', 'rencana_pembelian.tanggal_pembelian', 'rencana_pembelian.kode_pembelian')
                 ->join('rencana_pembelian', 'rencana_pembelian.rencana_pembelian_id', 'pajak_pembelian.rencana_pembelian_id')
@@ -74,7 +75,27 @@ class RekapPajakController extends Controller
                 ->rawColumns(['action'])
                 ->make(true);
         }
-        return view('financial/rekap_pajak/index', compact('waktuMulai', 'waktuSelesai', 'spbu', 'spbuSelected'));
+        return Inertia::render('Table/Index', [
+            'title' => 'Rekap Pajak',
+            'breadcrumbs' => [['label' => 'Financial', 'url' => route('menu.financial')]],
+            'headerActions' => [['label' => 'Export', 'url' => route('rekap-pajak.export'), 'color' => 'success', 'icon' => 'file-excel']],
+            'dateFilter' => ['mulai' => $waktuMulai, 'selesai' => $waktuSelesai],
+            'selectFilters' => [
+                ['name' => 'spbu_id', 'label' => 'SPBU', 'value' => $spbuSelected, 'nullable' => true, 'options' => array_merge([['value' => 'all', 'label' => 'Semua']], $spbu->map(fn ($x) => ['value' => $x->spbu_id, 'label' => $x->nama_spbu])->all())],
+            ],
+            'table' => [
+                'url' => $request->fullUrl(),
+                'columns' => [
+                    ['label' => 'Tanggal', 'data' => 'tanggal'],
+                    ['label' => 'Kode Pembelian', 'data' => 'kode_pembelian'],
+                    ['label' => 'PPN', 'data' => 'ppn'],
+                    ['label' => 'PPH', 'data' => 'pph'],
+                    ['label' => 'PPBKB', 'data' => 'ppbkb'],
+                    ['label' => 'Total Pajak', 'data' => 'total_pajak'],
+                    ['label' => 'Aksi', 'data' => 'action', 'orderable' => false, 'searchable' => false, 'raw' => true],
+                ],
+            ],
+        ]);
     }
 
     public function show(PajakPembelian $pajakPembelian)

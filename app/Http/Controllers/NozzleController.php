@@ -7,6 +7,7 @@ use App\Models\Dispenser;
 use App\Models\Nozzle;
 use App\Models\Produk;
 use Illuminate\Http\Request;
+use Inertia\Inertia;
 use Yajra\DataTables\DataTables;
 
 class NozzleController extends Controller
@@ -16,7 +17,7 @@ class NozzleController extends Controller
      */
     public function index(Request $request)
     {
-        if ($request->ajax()) {
+        if ($request->ajax() && ! $request->inertia()) {
             $data = Nozzle::select('*')->addSelect('dispenser.nama_dispenser')->addSelect('nozzle.keterangan')->join('dispenser', 'nozzle.dispenser_id', 'dispenser.dispenser_id');
             return DataTables::of($data)
                 ->addIndexColumn()
@@ -39,7 +40,23 @@ class NozzleController extends Controller
                 ->rawColumns(['action'])
                 ->make(true);
         }
-        return view('master/nozzle/index');
+        return Inertia::render('Table/Index', [
+            'title' => 'Nozzle',
+            'breadcrumbs' => [['label' => 'Master Data', 'url' => route('menu.master')]],
+            'createUrl' => route('nozzle.create'),
+            'table' => [
+                'url' => $request->url(),
+                'columns' => [
+                    ['label' => 'Nama Payung', 'data' => 'nama_payung'],
+                    ['label' => 'Nama Dispenser', 'data' => 'nama_dispenser'],
+                    ['label' => 'Nama Produk', 'data' => 'nama_produk', 'name' => 'nama_payung'],
+                    ['label' => 'Nama Nozzle', 'data' => 'nama_nozzle'],
+                    ['label' => 'Aktif', 'data' => 'is_aktif'],
+                    ['label' => 'Keterangan', 'data' => 'keterangan'],
+                    ['label' => 'Aksi', 'data' => 'action', 'orderable' => false, 'searchable' => false, 'raw' => true],
+                ],
+            ],
+        ]);
     }
 
     /**
@@ -49,7 +66,20 @@ class NozzleController extends Controller
     {
         $dispenser = Dispenser::all();
         $produk = Produk::all();
-        return view('master/nozzle/create', compact('dispenser', 'produk'));
+        return Inertia::render('Form/Index', [
+            'title' => 'Tambah Nozzle',
+            'breadcrumbs' => [['label' => 'Master Data', 'url' => route('menu.master')], ['label' => 'Nozzle', 'url' => route('nozzle.index')]],
+            'backUrl' => route('nozzle.index'),
+            'method' => 'post',
+            'action' => route('nozzle.store'),
+            'fields' => [
+                ['name' => 'dispenser_id', 'label' => 'Dispenser', 'type' => 'select', 'value' => null, 'options' => $dispenser->map(fn ($x) => ['value' => $x->dispenser_id, 'label' => $x->nama_dispenser])->values()->all(), 'col' => 'col-md-6'],
+                ['name' => 'produk_id', 'label' => 'Produk', 'type' => 'select', 'value' => null, 'options' => $produk->map(fn ($x) => ['value' => $x->produk_id, 'label' => $x->nama_produk])->values()->all(), 'col' => 'col-md-6'],
+                ['name' => 'nama_nozzle', 'label' => 'Nama Nozzle', 'type' => 'text', 'value' => null],
+                ['name' => 'is_aktif', 'label' => 'Status', 'type' => 'select', 'value' => null, 'options' => [['value' => 'true', 'label' => 'Aktifkan'], ['value' => 'false', 'label' => 'Jangan Aktifkan']]],
+                ['name' => 'keterangan', 'label' => 'Keterangan', 'type' => 'textarea', 'value' => null],
+            ],
+        ]);
     }
 
     /**
@@ -64,7 +94,7 @@ class NozzleController extends Controller
             $nozzle = $dispenser->nozzle()->create($this->nozzleData());
         }
 
-        return redirect('/master/nozzle/' . $nozzle->nozzle_id)->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> Data Nozzle sudah ditambah.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
+        return redirect('/master/nozzle')->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> Data Nozzle sudah ditambah.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
     }
 
     /**
@@ -72,7 +102,20 @@ class NozzleController extends Controller
      */
     public function show(Nozzle $nozzle)
     {
-        return view('master/nozzle/show', compact('nozzle'));
+        return Inertia::render('Show/Index', [
+            'title' => 'Detail Nozzle',
+            'breadcrumbs' => [['label' => 'Master Data', 'url' => route('menu.master')], ['label' => 'Nozzle', 'url' => route('nozzle.index')]],
+            'backUrl' => route('nozzle.index'),
+            'fields' => [
+                ['label' => 'Dispenser', 'value' => optional(\Illuminate\Support\Facades\DB::table('dispenser')->where('dispenser_id', $nozzle->dispenser_id)->first())->nama_dispenser],
+                ['label' => 'Produk', 'value' => optional(\Illuminate\Support\Facades\DB::table('produk')->where('produk_id', $nozzle->produk_id)->first())->nama_produk],
+                ['label' => 'Nama Nozzle', 'value' => $nozzle->nama_nozzle],
+                ['label' => 'Status', 'value' => filter_var($nozzle->is_aktif, FILTER_VALIDATE_BOOLEAN) ? 'Aktif' : 'Tidak Aktif'],
+                ['label' => 'Keterangan', 'value' => $nozzle->keterangan],
+            ],
+            'actions' => [['label' => 'Ubah', 'url' => route('nozzle.edit', $nozzle), 'color' => 'primary', 'icon' => 'pen']],
+            'deleteUrl' => route('nozzle.destroy', $nozzle),
+        ]);
     }
 
     /**
@@ -82,7 +125,20 @@ class NozzleController extends Controller
     {
         $dispenser = Dispenser::all();
         $produk = Produk::all();
-        return view('master/nozzle/edit', compact('dispenser', 'nozzle', 'produk'));
+        return Inertia::render('Form/Index', [
+            'title' => 'Ubah Nozzle',
+            'breadcrumbs' => [['label' => 'Master Data', 'url' => route('menu.master')], ['label' => 'Nozzle', 'url' => route('nozzle.index')]],
+            'backUrl' => route('nozzle.index'),
+            'method' => 'put',
+            'action' => route('nozzle.update', $nozzle),
+            'fields' => [
+                ['name' => 'dispenser_id', 'label' => 'Dispenser', 'type' => 'select', 'value' => $nozzle->dispenser_id, 'options' => $dispenser->map(fn ($x) => ['value' => $x->dispenser_id, 'label' => $x->nama_dispenser])->values()->all(), 'col' => 'col-md-6'],
+                ['name' => 'produk_id', 'label' => 'Produk', 'type' => 'select', 'value' => $nozzle->produk_id, 'options' => $produk->map(fn ($x) => ['value' => $x->produk_id, 'label' => $x->nama_produk])->values()->all(), 'col' => 'col-md-6'],
+                ['name' => 'nama_nozzle', 'label' => 'Nama Nozzle', 'type' => 'text', 'value' => $nozzle->nama_nozzle],
+                ['name' => 'is_aktif', 'label' => 'Status', 'type' => 'select', 'value' => filter_var($nozzle->is_aktif, FILTER_VALIDATE_BOOLEAN) ? 'true' : 'false', 'options' => [['value' => 'true', 'label' => 'Aktifkan'], ['value' => 'false', 'label' => 'Jangan Aktifkan']]],
+                ['name' => 'keterangan', 'label' => 'Keterangan', 'type' => 'textarea', 'value' => $nozzle->keterangan],
+            ],
+        ]);
     }
 
     /**
@@ -92,7 +148,7 @@ class NozzleController extends Controller
     {
         $nozzle->update($this->nozzleData());
 
-        return redirect('/master/nozzle/' . $nozzle->nozzle_id)->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> Data Nozzle sudah diubah.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
+        return redirect('/master/nozzle')->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> Data Nozzle sudah diubah.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
     }
 
     /**

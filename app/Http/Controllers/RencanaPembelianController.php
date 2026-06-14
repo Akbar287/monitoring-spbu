@@ -10,6 +10,7 @@ use App\Models\StatusPurchase;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Inertia\Inertia;
 use Yajra\DataTables\DataTables;
 
 class RencanaPembelianController extends Controller
@@ -26,7 +27,7 @@ class RencanaPembelianController extends Controller
         $waktuMulai = $waktuMulai->format('Y-m-d');
         $waktuSelesai = $waktuSelesai->format('Y-m-d');
 
-        if ($request->ajax()) {
+        if ($request->ajax() && ! $request->inertia()) {
             $data = RencanaPembelian::where('is_confirmation', 0)->where('is_denied', 0)->whereBetween('created_at', [$waktuMulai, $waktuSelesai])->get();
             return DataTables::of($data)
                 ->addIndexColumn()
@@ -62,12 +63,29 @@ class RencanaPembelianController extends Controller
                 ->rawColumns(['action', 'is_confirmation'])
                 ->make(true);
         }
-        return view('procurement/perencanaan/index', compact('waktuMulai', 'waktuSelesai'));
+        return Inertia::render('Table/Index', [
+            'title' => 'Perencanaan',
+            'breadcrumbs' => [['label' => 'Procurement', 'url' => route('menu.procurement')]],
+            'createUrl' => route('perencanaan.create'),
+            'headerActions' => [['label' => 'Ditolak', 'url' => route('perencanaan.ditolak'), 'color' => 'danger', 'icon' => 'ban']],
+            'dateFilter' => ['mulai' => $waktuMulai, 'selesai' => $waktuSelesai],
+            'table' => [
+                'url' => $request->fullUrl(),
+                'columns' => [
+                    ['label' => 'Kode', 'data' => 'kode_pembelian'],
+                    ['label' => 'Tanggal', 'data' => 'created_at'],
+                    ['label' => 'Diajukan Oleh', 'data' => 'member_id'],
+                    ['label' => 'Total Produk', 'data' => 'produk_id'],
+                    ['label' => 'Status', 'data' => 'is_confirmation', 'raw' => true],
+                    ['label' => 'Aksi', 'data' => 'action', 'orderable' => false, 'searchable' => false, 'raw' => true],
+                ],
+            ],
+        ]);
     }
 
     public function index_ditolak(Request $request)
     {
-        if ($request->ajax()) {
+        if ($request->ajax() && ! $request->inertia()) {
             $data = StatusPurchase::where("nama_status", "Rencana")->first()->rencana_pembelian()->where('is_confirmation', 1)->where('is_denied', 1)->orderBy('created_at', 'desc')->get();
             return DataTables::of($data)
                 ->addIndexColumn()
@@ -100,7 +118,22 @@ class RencanaPembelianController extends Controller
                 ->rawColumns(['action', 'is_confirmation'])
                 ->make(true);
         }
-        return view('procurement/perencanaan/ditolak');
+        return Inertia::render('Table/Index', [
+            'title' => 'Perencanaan Ditolak',
+            'breadcrumbs' => [['label' => 'Procurement', 'url' => route('menu.procurement')]],
+            'headerActions' => [['label' => 'Perencanaan', 'url' => route('perencanaan.index'), 'color' => 'primary', 'icon' => 'arrow-left']],
+            'table' => [
+                'url' => $request->url(),
+                'columns' => [
+                    ['label' => 'Kode', 'data' => 'kode_pembelian'],
+                    ['label' => 'Tanggal', 'data' => 'created_at'],
+                    ['label' => 'Diajukan Oleh', 'data' => 'member_id'],
+                    ['label' => 'Total Produk', 'data' => 'produk_id'],
+                    ['label' => 'Status', 'data' => 'is_confirmation', 'raw' => true],
+                    ['label' => 'Aksi', 'data' => 'action', 'orderable' => false, 'searchable' => false, 'raw' => true],
+                ],
+            ],
+        ]);
     }
 
     /**
@@ -110,8 +143,20 @@ class RencanaPembelianController extends Controller
     {
         $spbu = Spbu::all();
         $kode = $this->generateKodePembelian();
-        $produk = Produk::all();
-        return view('procurement/perencanaan/create', compact('spbu', 'produk', 'kode'));
+
+        return Inertia::render('Form/Index', [
+            'title' => 'Tambah Perencanaan',
+            'breadcrumbs' => [['label' => 'Procurement', 'url' => route('menu.procurement')], ['label' => 'Perencanaan', 'url' => route('perencanaan.index')]],
+            'backUrl' => route('perencanaan.index'),
+            'method' => 'post',
+            'action' => route('perencanaan.store'),
+            'fields' => [
+                ['name' => 'kode_pembelian', 'label' => 'Kode', 'type' => 'hidden', 'value' => $kode],
+                ['name' => 'spbu_id', 'label' => 'SPBU', 'type' => 'select', 'value' => null,
+                    'options' => $spbu->map(fn ($s) => ['value' => $s->spbu_id, 'label' => $s->nama_spbu . ' - ' . $s->nomor_spbu])->values()->all()],
+                ['name' => 'keterangan', 'label' => 'Keterangan', 'type' => 'textarea', 'value' => null],
+            ],
+        ]);
     }
 
     /**
@@ -157,12 +202,61 @@ class RencanaPembelianController extends Controller
      */
     public function show(RencanaPembelian $rencana)
     {
-        return view('procurement/perencanaan/show', compact('rencana'));
+        $statusKonfirmasi = $rencana->is_confirmation
+            ? ($rencana->is_denied ? 'Ditolak' : 'Terkonfirmasi')
+            : 'Belum Terkonfirmasi';
+        $fields = [
+            ['label' => 'Id Rencana Pembelian', 'value' => $rencana->rencana_pembelian_id],
+            ['label' => 'Kode', 'value' => $rencana->kode_pembelian],
+            ['label' => 'SPBU', 'value' => optional($rencana->spbu()->first())->nama_spbu],
+            ['label' => 'Keterangan', 'value' => $rencana->keterangan],
+            ['label' => 'Jenis Konfirmasi', 'value' => $statusKonfirmasi],
+        ];
+        if ($rencana->is_confirmation && $rencana->is_denied) {
+            $fields[] = ['label' => 'Catatan', 'value' => $rencana->keterangan_denied];
+        }
+
+        $actions = [
+            ['label' => 'Detail Produk', 'url' => route('perencanaan.detail.index', $rencana->rencana_pembelian_id), 'color' => 'warning', 'icon' => 'box'],
+            ['label' => $rencana->is_confirmation ? 'Konfirmasi Ulang' : 'Konfirmasi', 'url' => route('perencanaan.konfirmasi', $rencana->rencana_pembelian_id), 'color' => 'info', 'icon' => 'check'],
+        ];
+        if (! $rencana->is_confirmation) {
+            $actions[] = ['label' => 'Ubah', 'url' => route('perencanaan.edit', $rencana->rencana_pembelian_id), 'color' => 'success', 'icon' => 'pen'];
+        }
+
+        return Inertia::render('Show/Index', [
+            'title' => 'Detail Perencanaan',
+            'breadcrumbs' => [['label' => 'Procurement', 'url' => route('menu.procurement')], ['label' => 'Perencanaan', 'url' => route('perencanaan.index')]],
+            'backUrl' => route('perencanaan.index'),
+            'fields' => $fields,
+            'actions' => $actions,
+            'deleteUrl' => $rencana->is_confirmation ? null : route('perencanaan.destroy', $rencana->rencana_pembelian_id),
+            'deleteConfirm' => "Rencana Pembelian akan dihapus!\n Lanjutkan?",
+        ]);
     }
 
     public function show_ditolak(RencanaPembelian $rencana)
     {
-        return view('procurement/perencanaan/ditolak_detail', compact('rencana'));
+        $statusKonfirmasi = $rencana->is_confirmation
+            ? ($rencana->is_denied ? 'Ditolak' : 'Terkonfirmasi')
+            : 'Belum Terkonfirmasi';
+        $fields = [
+            ['label' => 'Id Rencana Pembelian', 'value' => $rencana->rencana_pembelian_id],
+            ['label' => 'Kode', 'value' => $rencana->kode_pembelian],
+            ['label' => 'SPBU', 'value' => optional($rencana->spbu()->first())->nama_spbu],
+            ['label' => 'Keterangan', 'value' => $rencana->keterangan],
+            ['label' => 'Jenis Konfirmasi', 'value' => $statusKonfirmasi],
+        ];
+        if ($rencana->is_confirmation && $rencana->is_denied) {
+            $fields[] = ['label' => 'Catatan', 'value' => $rencana->keterangan_denied];
+        }
+
+        return Inertia::render('Show/Index', [
+            'title' => 'Detail Perencanaan Ditolak',
+            'breadcrumbs' => [['label' => 'Procurement', 'url' => route('menu.procurement')], ['label' => 'Perencanaan', 'url' => route('perencanaan.index')]],
+            'backUrl' => route('perencanaan.ditolak'),
+            'fields' => $fields,
+        ]);
     }
 
     /**
@@ -170,9 +264,18 @@ class RencanaPembelianController extends Controller
      */
     public function edit(RencanaPembelian $rencana)
     {
-        $spbu = Spbu::all();
-        $produk = Produk::all();
-        return view('procurement/perencanaan/edit', compact('rencana', 'spbu', 'produk'));
+        return Inertia::render('Form/Index', [
+            'title' => 'Ubah Perencanaan',
+            'breadcrumbs' => [['label' => 'Procurement', 'url' => route('menu.procurement')], ['label' => 'Perencanaan', 'url' => route('perencanaan.index')]],
+            'backUrl' => route('perencanaan.show', $rencana->rencana_pembelian_id),
+            'method' => 'put',
+            'action' => route('perencanaan.update', $rencana->rencana_pembelian_id),
+            'fields' => [
+                ['name' => 'nama_spbu', 'label' => 'SPBU', 'type' => 'text', 'readonly' => true,
+                    'value' => optional($rencana->spbu()->first())->nama_spbu],
+                ['name' => 'keterangan', 'label' => 'Keterangan', 'type' => 'textarea', 'value' => $rencana->keterangan],
+            ],
+        ]);
     }
 
     /**
@@ -235,7 +338,19 @@ class RencanaPembelianController extends Controller
 
     public function konfirmasi(RencanaPembelian $rencana)
     {
-        return view('procurement/perencanaan/konfirmasi', compact('rencana'));
+        return Inertia::render('Form/Index', [
+            'title' => 'Konfirmasi Perencanaan',
+            'breadcrumbs' => [['label' => 'Procurement', 'url' => route('menu.procurement')], ['label' => 'Perencanaan', 'url' => route('perencanaan.index')], ['label' => 'Detail', 'url' => route('perencanaan.show', $rencana->rencana_pembelian_id)]],
+            'backUrl' => route('perencanaan.show', $rencana->rencana_pembelian_id),
+            'method' => 'put',
+            'action' => route('perencanaan.konfirmasi.update', $rencana->rencana_pembelian_id),
+            'fields' => [
+                ['name' => 'jenis', 'label' => 'Jenis Konfirmasi', 'type' => 'select', 'value' => 'false',
+                    'options' => [['value' => 'true', 'label' => 'Terima — lanjut ke Pembelian'], ['value' => 'false', 'label' => 'Tolak']]],
+                ['name' => 'keterangan', 'label' => 'Keterangan', 'type' => 'textarea', 'value' => null,
+                    'hint' => 'Wajib diisi catatan bila perencanaan ditolak.'],
+            ],
+        ]);
     }
     public function konfirmasi_update(Request $request, RencanaPembelian $rencana)
     {

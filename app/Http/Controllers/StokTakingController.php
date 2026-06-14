@@ -13,6 +13,7 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Inertia\Inertia;
 use Yajra\DataTables\DataTables;
 
 class StokTakingController extends Controller
@@ -33,7 +34,7 @@ class StokTakingController extends Controller
         }
         $waktuMulai = $waktuMulai->format('Y-m-d');
         $waktuSelesai = $waktuSelesai->format('Y-m-d');
-        if ($request->ajax()) {
+        if ($request->ajax() && ! $request->inertia()) {
             $data = $produkSelected == 'all' ? DokumenStok::where('type_dokumen_stok_id', TypeDokumenStok::where('type_movement', 'Stok Taking')->first()->type_dokumen_stok_id)->where('is_confirmation', 0)->whereBetween('tanggal', [$waktuMulai, $waktuSelesai])->orderBy('created_at', 'desc')->get() : DokumenStok::join('stok_inventory', 'stok_inventory.stok_inventory_id', 'dokumen_stok.stok_inventory_id')->where('type_dokumen_stok_id', TypeDokumenStok::where('type_movement', 'Stok Taking')->first()->type_dokumen_stok_id)->where('stok_inventory.produk_id', $request->produkSelected)->where('is_confirmation', 0)->whereBetween('tanggal', [$waktuMulai, $waktuSelesai])->orderBy('tanggal', 'desc')->get();
             return DataTables::of($data)
                 ->addIndexColumn()
@@ -55,7 +56,26 @@ class StokTakingController extends Controller
                 ->rawColumns(['action'])
                 ->make(true);
         }
-        return view('stok/stok-taking/index', compact('waktuMulai', 'waktuSelesai', 'produk', 'produkSelected'));
+        return Inertia::render('Table/Index', [
+            'title' => 'Stok Taking',
+            'breadcrumbs' => [['label' => 'Manajemen Persediaan', 'url' => route('menu.stok')]],
+            'createUrl' => route('stok-taking.create'),
+            'headerActions' => [['label' => 'Riwayat', 'url' => route('stok-taking.riwayat'), 'color' => 'info', 'icon' => 'history']],
+            'dateFilter' => ['mulai' => $waktuMulai, 'selesai' => $waktuSelesai],
+            'selectFilters' => [
+                ['name' => 'produkSelected', 'label' => 'Produk', 'value' => $produkSelected, 'options' => array_merge([['value' => 'all', 'label' => 'Semua']], $produk->map(fn ($x) => ['value' => $x->produk_id, 'label' => $x->nama_produk])->all())],
+            ],
+            'table' => [
+                'url' => $request->fullUrl(),
+                'columns' => [
+                    ['label' => 'Tanggal', 'data' => 'tanggal'],
+                    ['label' => 'Tipe Dokumen', 'data' => 'type_dokumen'],
+                    ['label' => 'Nama Produk', 'data' => 'nama_produk'],
+                    ['label' => 'Jam Kerja', 'data' => 'jam_kerja'],
+                    ['label' => 'Aksi', 'data' => 'action', 'orderable' => false, 'searchable' => false, 'raw' => true],
+                ],
+            ],
+        ]);
     }
 
     public function riwayat(Request $request)
@@ -69,7 +89,7 @@ class StokTakingController extends Controller
         }
         $waktuMulai = $waktuMulai->format('Y-m-d');
         $waktuSelesai = $waktuSelesai->format('Y-m-d');
-        if ($request->ajax()) {
+        if ($request->ajax() && ! $request->inertia()) {
             $data = DokumenStok::where('type_dokumen_stok_id', TypeDokumenStok::where('type_movement', 'Stok Taking')->first()->type_dokumen_stok_id)->where('is_confirmation', 1)->whereBetween('tanggal', [$waktuMulai, $waktuSelesai])->orderBy('created_at', 'desc')->get();
             return DataTables::of($data)
                 ->addIndexColumn()
@@ -91,7 +111,22 @@ class StokTakingController extends Controller
                 ->rawColumns(['action'])
                 ->make(true);
         }
-        return view('stok/stok-taking/riwayat', compact('waktuMulai', 'waktuSelesai'));
+        return Inertia::render('Table/Index', [
+            'title' => 'Riwayat Stok Taking',
+            'breadcrumbs' => [['label' => 'Manajemen Persediaan', 'url' => route('menu.stok')]],
+            'headerActions' => [['label' => 'Stok Taking', 'url' => route('stok-taking.index'), 'color' => 'primary', 'icon' => 'thermometer-full']],
+            'dateFilter' => ['mulai' => $waktuMulai, 'selesai' => $waktuSelesai],
+            'table' => [
+                'url' => $request->fullUrl(),
+                'columns' => [
+                    ['label' => 'Tanggal', 'data' => 'tanggal'],
+                    ['label' => 'Tipe Dokumen', 'data' => 'type_dokumen'],
+                    ['label' => 'Nama Produk', 'data' => 'nama_produk'],
+                    ['label' => 'Jam Kerja', 'data' => 'jam_kerja'],
+                    ['label' => 'Aksi', 'data' => 'action', 'orderable' => false, 'searchable' => false, 'raw' => true],
+                ],
+            ],
+        ]);
     }
 
     /**
@@ -102,7 +137,32 @@ class StokTakingController extends Controller
         $jamKerja = JamKerja::select('nama_jam_kerja')->addSelect('jam_kerja_id')->addSelect('batas_akhir_in')->addSelect('batas_awal_in')->get();
         $dombak = Dombak::where('is_aktif', 1)->get();
         $typeDokumen = TypeDokumenStok::where('type_movement', 'Stok Taking')->get();
-        return view('stok/stok-taking/create', compact('jamKerja', 'dombak', 'typeDokumen'));
+        $dombakOpts = $dombak->map(function ($s) {
+            $sid = $s->stok_inventory_dombak()->first();
+            $si = $sid ? $sid->stok_inventory()->first() : null;
+            $prod = $si ? $si->produk()->first() : null;
+
+            return [
+                'value' => $s->dombak_id,
+                'label' => $s->nama_dombak . ($prod ? ' (' . $prod->nama_produk . '-' . $sid->stok . 'Liter)' : ''),
+            ];
+        })->values()->all();
+
+        return Inertia::render('StokTaking/Create', [
+            'title' => 'Tambah Stok Taking',
+            'breadcrumbs' => [['label' => 'Manajemen Persediaan', 'url' => route('menu.stok')], ['label' => 'Stok Taking', 'url' => route('stok-taking.index')]],
+            'backUrl' => route('stok-taking.index'),
+            'action' => route('stok-taking.store'),
+            'options' => [
+                'typeDokumen' => $typeDokumen->map(fn ($s) => ['value' => $s->type_dokumen_stok_id, 'label' => $s->type_movement])->values()->all(),
+                'dombak' => $dombakOpts,
+                'jamKerja' => $jamKerja->map(fn ($s) => ['value' => $s->jam_kerja_id, 'label' => $s->nama_jam_kerja . ' (' . $s->batas_awal_in . '-' . $s->batas_akhir_in . ')'])->values()->all(),
+            ],
+            'api' => [
+                'dombak' => url('/master/dombak/api'),
+                'konversi' => url('/master/dombak/konversi/api'),
+            ],
+        ]);
     }
 
     /**
@@ -217,12 +277,66 @@ class StokTakingController extends Controller
      */
     public function show(DokumenStok $stok)
     {
-        return view('stok/stok-taking/show', compact('stok'));
+        $fields = [
+            ['label' => 'Tipe Dokumen', 'value' => optional($stok->type_dokumen_stok()->first())->type_movement],
+            ['label' => 'Dombak', 'value' => $stok->dombak()->first()->nama_dombak . ' (' . $stok->stok_inventory()->first()->produk()->first()->nama_produk . '-' . $stok->dombak()->first()->stok_inventory_dombak()->first()->stok . 'Liter)'],
+            ['label' => 'Tanggal', 'value' => $stok->tanggal],
+            ['label' => 'Jam Kerja', 'value' => $stok->jam_kerja()->first()->nama_jam_kerja . ' (' . $stok->jam_kerja()->first()->batas_awal_in . '-' . $stok->jam_kerja()->first()->batas_akhir_in . ')'],
+            ['label' => 'Tinggi Dombak', 'value' => $stok->dombak()->first()->konversi()->where('volume', $stok->stok_akhir)->first()->tinggi ?? 0],
+            ['label' => 'Volume Sebelumnya', 'value' => $stok->stok_awal],
+            ['label' => 'Volume', 'value' => $stok->stok_akhir],
+            ['label' => 'Selisih (Losses)', 'value' => is_null($stok->losses()->first()) ? 0 : (($stok->losses()->first()->simbol == 'kurang' ? '-' : '+') . $stok->losses()->first()->jumlah)],
+        ];
+
+        $actions = [
+            ['label' => 'File', 'url' => route('stok-taking.file.index', $stok->dokumen_stok_id), 'color' => 'info', 'icon' => 'folder-open'],
+        ];
+        $bolehAksi = ! $stok->is_confirmation && \Illuminate\Support\Facades\Auth::user()->member()->first()->jabatan()->first()->level()->first()->nama_level == 'Penanggung Jawab';
+        if ($bolehAksi) {
+            $actions[] = ['label' => 'Konfirmasi', 'url' => route('stok-taking.confirmation', $stok->dokumen_stok_id), 'method' => 'put', 'confirm' => 'Stok Inventory akan dikonfirmasi! Lanjutkan?', 'color' => 'success', 'icon' => 'check'];
+        }
+
+        return Inertia::render('Show/Index', [
+            'title' => 'Detail Stok Taking',
+            'breadcrumbs' => [['label' => 'Manajemen Persediaan', 'url' => route('menu.stok')], ['label' => 'Stok Taking', 'url' => route('stok-taking.index')]],
+            'backUrl' => route('stok-taking.index'),
+            'fields' => $fields,
+            'actions' => $actions,
+            'deleteUrl' => $bolehAksi ? route('stok-taking.delete', $stok->dokumen_stok_id) : null,
+            'deleteConfirm' => 'Stok Inventory akan dihapus! Lanjutkan?',
+        ]);
     }
 
     public function riwayat_show(DokumenStok $stok)
     {
-        return view('stok/stok-taking/riwayat_show', compact('stok'));
+        $fields = [
+            ['label' => 'Tipe Dokumen', 'value' => optional($stok->type_dokumen_stok()->first())->type_movement],
+            ['label' => 'Dombak', 'value' => $stok->dombak()->first()->nama_dombak . ' (' . $stok->stok_inventory()->first()->produk()->first()->nama_produk . '-' . $stok->dombak()->first()->stok_inventory_dombak()->first()->stok . 'Liter)'],
+            ['label' => 'Tanggal', 'value' => $stok->tanggal],
+            ['label' => 'Jam Kerja', 'value' => $stok->jam_kerja()->first()->nama_jam_kerja . ' (' . $stok->jam_kerja()->first()->batas_awal_in . '-' . $stok->jam_kerja()->first()->batas_akhir_in . ')'],
+            ['label' => 'Tinggi Dombak', 'value' => $stok->dombak()->first()->konversi()->where('volume', $stok->stok_akhir)->first()->tinggi ?? 0],
+            ['label' => 'Volume Sebelumnya', 'value' => $stok->stok_awal],
+            ['label' => 'Volume', 'value' => $stok->stok_akhir],
+            ['label' => 'Selisih (Losses)', 'value' => is_null($stok->losses()->first()) ? 0 : (($stok->losses()->first()->simbol == 'kurang' ? '-' : '+') . $stok->losses()->first()->jumlah)],
+        ];
+
+        $actions = [
+            ['label' => 'File', 'url' => route('stok-taking.file.index', $stok->dokumen_stok_id), 'color' => 'info', 'icon' => 'folder-open'],
+        ];
+        if (! $stok->is_confirmation) {
+            $actions[] = ['label' => 'Ubah', 'url' => route('stok-taking.edit', $stok->dokumen_stok_id), 'color' => 'success', 'icon' => 'pen'];
+            $actions[] = ['label' => 'Konfirmasi', 'url' => route('stok-taking.confirmation', $stok->dokumen_stok_id), 'method' => 'put', 'confirm' => 'Stok Inventory akan dikonfirmasi! Lanjutkan?', 'color' => 'info', 'icon' => 'check'];
+        }
+
+        return Inertia::render('Show/Index', [
+            'title' => 'Detail Riwayat Stok Taking',
+            'breadcrumbs' => [['label' => 'Manajemen Persediaan', 'url' => route('menu.stok')], ['label' => 'Riwayat Stok Taking', 'url' => route('stok-taking.riwayat')]],
+            'backUrl' => route('stok-taking.index'),
+            'fields' => $fields,
+            'actions' => $actions,
+            'deleteUrl' => $stok->is_confirmation ? null : route('stok-taking.delete', $stok->dokumen_stok_id),
+            'deleteConfirm' => 'Stok Inventory akan dihapus! Lanjutkan?',
+        ]);
     }
 
     /**

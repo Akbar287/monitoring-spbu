@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use Inertia\Inertia;
 use App\Models\Penjadwalan;
 use Carbon\Carbon;
 use DateTime;
@@ -28,7 +29,7 @@ class KehadiranOperatorController extends Controller
         $waktuSelesai = $waktuSelesai->format('Y-m-d');
         $ongoing = Auth::user()->member()->first()->penjadwalan()->whereNotNull('start_time')->whereNull('finish_time')->first();
 
-        if ($request->ajax()) {
+        if ($request->ajax() && ! $request->inertia()) {
             $data = Penjadwalan::select('penjadwalan.penjadwalan_id', 'penjadwalan.tanggal', 'jam_kerja.nama_jam_kerja', 'nozzle.nama_nozzle', 'jam_kerja.urutan', 'penjadwalan.deskripsi', 'status_kehadiran.nama_kehadiran')
                 ->join('jam_kerja', 'penjadwalan.jam_kerja_id', 'jam_kerja.jam_kerja_id')
                 ->join('status_kehadiran', 'penjadwalan.status_kehadiran_id', 'status_kehadiran.status_kehadiran_id')
@@ -62,7 +63,28 @@ class KehadiranOperatorController extends Controller
                 ->make(true);
         }
 
-        return view('absensi.presensi.index', compact('waktuMulai', 'waktuSelesai', 'ongoing'));
+        return Inertia::render('Kehadiran/Index', [
+            'title' => 'Kehadiran',
+            'breadcrumbs' => [],
+            'dateFilter' => ['mulai' => $waktuMulai, 'selesai' => $waktuSelesai],
+            'ongoing' => $ongoing ? [
+                'nama' => optional(optional($ongoing->member()->first())->ktp()->first())->nama,
+                'jamKerja' => optional($ongoing->jam_kerja()->first())->nama_jam_kerja,
+                'startTime' => $ongoing->start_time,
+                'tanggal' => $ongoing->tanggal,
+                'url' => route('kehadiran.show', $ongoing->penjadwalan_id),
+            ] : null,
+            'table' => [
+                'url' => $request->fullUrl(),
+                'columns' => [
+                    ['label' => 'Status', 'data' => 'status'],
+                    ['label' => 'Tanggal', 'data' => 'tanggal'],
+                    ['label' => 'Jam Kerja', 'data' => 'jam_kerja'],
+                    ['label' => 'Nozzle', 'data' => 'nozzle'],
+                    ['label' => 'Aksi', 'data' => 'action', 'orderable' => false, 'searchable' => false, 'raw' => true],
+                ],
+            ],
+        ]);
     }
 
     public function store(Request $request, Penjadwalan $penjadwalan)

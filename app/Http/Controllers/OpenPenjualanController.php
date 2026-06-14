@@ -10,6 +10,7 @@ use App\Models\Spbu;
 use App\Models\StatusSetoran;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Inertia\Inertia;
 use Yajra\DataTables\DataTables;
 
 class OpenPenjualanController extends Controller
@@ -29,7 +30,7 @@ class OpenPenjualanController extends Controller
         $waktuMulai = $waktuMulai->format('Y-m-d');
         $waktuSelesai = $waktuSelesai->format('Y-m-d');
 
-        if ($request->ajax()) {
+        if ($request->ajax() && ! $request->inertia()) {
             $data = StatusSetoran::where('nama_status', 'Open Penjualan')->first()->penjualan()->whereBetween('penjualan.tanggal', [$waktuMulai, $waktuSelesai])->get();
             return DataTables::of($data)
                 ->addIndexColumn()
@@ -51,7 +52,21 @@ class OpenPenjualanController extends Controller
                 ->rawColumns(['action'])
                 ->make(true);
         }
-        return view('setoran/open_penjualan/index', compact('waktuMulai', 'waktuSelesai'));
+        return Inertia::render('Table/Index', [
+            'title' => 'Open Penjualan',
+            'breadcrumbs' => [['label' => 'Setoran', 'url' => route('menu.setoran')]],
+            'createUrl' => route('setoran.open.create'),
+            'dateFilter' => ['mulai' => $waktuMulai, 'selesai' => $waktuSelesai],
+            'table' => [
+                'url' => $request->fullUrl(),
+                'columns' => [
+                    ['label' => 'Tanggal', 'data' => 'tanggal'],
+                    ['label' => 'Jam Kerja', 'data' => 'jam_kerja'],
+                    ['label' => 'Stand Meter', 'data' => 'total_stand_meter'],
+                    ['label' => 'Aksi', 'data' => 'action', 'orderable' => false, 'searchable' => false, 'raw' => true],
+                ],
+            ],
+        ]);
     }
 
     /**
@@ -62,7 +77,17 @@ class OpenPenjualanController extends Controller
         $spbu = Spbu::select('spbu_id')->addSelect('nama_spbu')->addSelect('nomor_spbu')->orderBy('nama_spbu', 'asc')->get();
         $jamKerja = JamKerja::orderBy('nama_jam_kerja', 'asc')->get();
         $nozzle = Nozzle::orderBy('nama_nozzle', 'asc')->get();
-        return view('setoran/open_penjualan/create', compact('spbu', 'nozzle', 'jamKerja'));
+
+        return Inertia::render('Setoran/OpenCreate', [
+            'title' => 'Tambah Open Penjualan',
+            'breadcrumbs' => [['label' => 'Setoran', 'url' => route('menu.setoran')], ['label' => 'Open Penjualan', 'url' => route('setoran.open')]],
+            'backUrl' => route('setoran.open'),
+            'action' => route('setoran.open.store'),
+            'spbuOptions' => $spbu->map(fn ($s) => ['value' => $s->spbu_id, 'label' => $s->nama_spbu . ' (' . $s->nomor_spbu . ')'])->values()->all(),
+            'jamKerjaOptions' => $jamKerja->map(fn ($s) => ['value' => $s->jam_kerja_id, 'label' => $s->nama_jam_kerja])->values()->all(),
+            'nozzleOptions' => $nozzle->map(fn ($s) => ['value' => $s->nozzle_id, 'label' => $s->nama_nozzle . ' (' . optional($s->produk()->first())->nama_produk . ')'])->values()->all(),
+            'api' => ['standMeter' => url('/api/setoran/open-penjualan/create')],
+        ]);
     }
 
     /**
@@ -130,7 +155,48 @@ class OpenPenjualanController extends Controller
      */
     public function show(Penjualan $penjualan)
     {
-        return view('setoran/open_penjualan/show', compact('penjualan'));
+        $level = optional(optional(optional(auth()->user()->member()->first())->jabatan()->first())->level()->first())->nama_level;
+
+        $pj = $penjualan->pj_operasional_setoran()
+            ->distinct('pj_operasional_setoran.jabatan_id')
+            ->join('jabatan', 'pj_operasional_setoran.jabatan_id', 'jabatan.jabatan_id')
+            ->orderBy('nama_jabatan', 'asc')
+            ->get()
+            ->map(fn ($p) => [
+                'jabatan' => optional($p->jabatan()->first())->nama_jabatan,
+                'nama' => optional(optional(optional($p->member()->first())->ktp())->first())->nama,
+            ])->values()->all();
+
+        $standMeters = $penjualan->detail_penjualan()->get()->map(function ($dp) {
+            $sm = $dp->stand_meter()->first();
+            $nozzle = $sm ? $sm->nozzle()->first() : null;
+
+            return [
+                'nozzle' => $nozzle ? $nozzle->nama_nozzle . ' (' . optional($nozzle->produk()->first())->nama_produk . ')' : '-',
+                'awal' => $sm ? number_format($sm->stand_meter_awal, 6, '.', ',') : '-',
+                'akhir' => $sm ? number_format($sm->stand_meter_akhir, 6, '.', ',') : '-',
+            ];
+        })->values()->all();
+
+        return Inertia::render('Setoran/OpenShow', [
+            'title' => 'Open Penjualan',
+            'breadcrumbs' => [['label' => 'Setoran', 'url' => route('menu.setoran')], ['label' => 'Open Penjualan', 'url' => route('setoran.open')]],
+            'backUrl' => route('setoran.open'),
+            'info' => [
+                'spbu' => optional($penjualan->spbu()->first())->nama_spbu . ' (' . optional($penjualan->spbu()->first())->nomor_spbu . ')',
+                'tanggal' => $penjualan->tanggal,
+                'jam_kerja' => optional($penjualan->jam_kerja()->first())->nama_jam_kerja,
+            ],
+            'pj' => $pj,
+            'standMeters' => $standMeters,
+            'isPJ' => $level === 'Penanggung Jawab',
+            'actions' => [
+                'pj' => route('setoran.open.pj', $penjualan->penjualan_id),
+                'detail' => route('setoran.open.detail', $penjualan->penjualan_id),
+                'konfirmasi' => route('setoran.open.update.status_to', $penjualan->penjualan_id),
+                'delete' => route('setoran.open.delete', $penjualan->penjualan_id),
+            ],
+        ]);
     }
 
     /**

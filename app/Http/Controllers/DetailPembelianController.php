@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use Inertia\Inertia;
 use App\Models\DetailRencanaPembelian;
 use App\Models\PajakPembelianLib;
 use App\Models\RencanaPembelian;
@@ -15,7 +16,7 @@ class DetailPembelianController extends Controller
      */
     public function index(Request $request, RencanaPembelian $pembelian)
     {
-        if ($request->ajax()) {
+        if ($request->ajax() && ! $request->inertia()) {
             $data = DetailRencanaPembelian::select('*')->where('rencana_pembelian_id', $pembelian->rencana_pembelian_id);
             return DataTables::of($data)
                 ->addIndexColumn()
@@ -39,7 +40,23 @@ class DetailPembelianController extends Controller
                 ->make(true);
         }
         $pajakLib = PajakPembelianLib::where('is_aktif', 1)->first();
-        return view('procurement/pembelian_detail/index', compact('pembelian', 'pajakLib'));
+        return Inertia::render('Table/Index', [
+            'title' => 'Detail Produk Pembelian',
+            'breadcrumbs' => [['label' => 'Procurement', 'url' => route('menu.procurement')], ['label' => 'Pembelian', 'url' => route('pembelian.index')], ['label' => $pembelian->kode_pembelian, 'url' => route('pembelian.show', $pembelian->rencana_pembelian_id)]],
+            'headerActions' => [['label' => 'Pajak', 'url' => route('pembelian.detail.edit_pajak', $pembelian->rencana_pembelian_id), 'color' => 'info', 'icon' => 'percent']],
+            'table' => [
+                'url' => $request->url(),
+                'columns' => [
+                    ['label' => 'Nama Produk', 'data' => 'nama_produk'],
+                    ['label' => 'Rit', 'data' => 'rit'],
+                    ['label' => 'Quantity', 'data' => 'jumlah'],
+                    ['label' => 'Satuan', 'data' => 'satuan_jumlah'],
+                    ['label' => 'Harga', 'data' => 'harga'],
+                    ['label' => 'Total Harga', 'data' => 'total_harga'],
+                    ['label' => 'Aksi', 'data' => 'action', 'orderable' => false, 'searchable' => false, 'raw' => true],
+                ],
+            ],
+        ]);
     }
 
     /**
@@ -47,7 +64,22 @@ class DetailPembelianController extends Controller
      */
     public function show(RencanaPembelian $pembelian, DetailRencanaPembelian $detail)
     {
-        return view('procurement/pembelian_detail/show', compact('pembelian', 'detail'));
+        return Inertia::render('Show/Index', [
+            'title' => 'Detail Produk',
+            'breadcrumbs' => [['label' => 'Procurement', 'url' => route('menu.procurement')], ['label' => 'Pembelian', 'url' => route('pembelian.index')], ['label' => $pembelian->kode_pembelian, 'url' => route('pembelian.show', $pembelian->rencana_pembelian_id)]],
+            'backUrl' => route('pembelian.detail.index', $pembelian->rencana_pembelian_id),
+            'fields' => [
+                ['label' => 'Produk', 'value' => optional($detail->produk()->first())->nama_produk],
+                ['label' => 'Rit', 'value' => number_format($detail->rit, 6, '.', ',')],
+                ['label' => 'Quantity', 'value' => number_format($detail->jumlah, 6, '.', ',')],
+                ['label' => 'Satuan', 'value' => $detail->satuan_jumlah],
+                ['label' => 'Harga', 'value' => 'Rp ' . number_format($detail->harga, 6, '.', ',')],
+                ['label' => 'Total Harga', 'value' => 'Rp ' . number_format($detail->total_harga, 6, '.', ',')],
+            ],
+            'actions' => [
+                ['label' => 'Ubah Harga', 'url' => route('pembelian.detail.edit', [$pembelian->rencana_pembelian_id, $detail->detail_rencana_pembelian_id]), 'color' => 'primary', 'icon' => 'pen'],
+            ],
+        ]);
     }
 
     /**
@@ -55,7 +87,19 @@ class DetailPembelianController extends Controller
      */
     public function edit(RencanaPembelian $pembelian, DetailRencanaPembelian $detail)
     {
-        return view('procurement/pembelian_detail/edit', compact('pembelian', 'detail'));
+        return Inertia::render('Pembelian/DetailEdit', [
+            'title' => 'Ubah Harga Produk',
+            'breadcrumbs' => [['label' => 'Procurement', 'url' => route('menu.procurement')], ['label' => 'Pembelian', 'url' => route('pembelian.index')], ['label' => $pembelian->kode_pembelian, 'url' => route('pembelian.show', $pembelian->rencana_pembelian_id)]],
+            'backUrl' => route('pembelian.detail.show', [$pembelian->rencana_pembelian_id, $detail->detail_rencana_pembelian_id]),
+            'action' => route('pembelian.detail.update', [$pembelian->rencana_pembelian_id, $detail->detail_rencana_pembelian_id]),
+            'info' => [
+                'produk' => optional($detail->produk()->first())->nama_produk,
+                'rit' => number_format($detail->rit, 6, '.', ','),
+                'jumlah' => number_format($detail->jumlah, 6, '.', ','),
+                'satuan' => $detail->satuan_jumlah,
+                'harga' => number_format($detail->harga, 6, '.', ','),
+            ],
+        ]);
     }
 
     /**
@@ -113,7 +157,19 @@ class DetailPembelianController extends Controller
     public function edit_pajak(RencanaPembelian $pembelian)
     {
         $pajakLib = PajakPembelianLib::where('is_aktif', 1)->first();
-        return view('procurement/pembelian_detail/pajak', compact('pembelian', 'pajakLib'));
+        return Inertia::render('Pembelian/PajakEdit', [
+            'title' => 'Ubah Pajak Pembelian',
+            'breadcrumbs' => [['label' => 'Procurement', 'url' => route('menu.procurement')], ['label' => 'Pembelian', 'url' => route('pembelian.index')], ['label' => $pembelian->kode_pembelian, 'url' => route('pembelian.show', $pembelian->rencana_pembelian_id)]],
+            'backUrl' => route('pembelian.detail.index', $pembelian->rencana_pembelian_id),
+            'action' => route('pembelian.detail.update_pajak', $pembelian->rencana_pembelian_id),
+            'values' => [
+                'net_price' => number_format($pembelian->pajak_pembelian()->first()->net_price ?? $pembelian->grand_total, 6, '.', ','),
+                'ppn' => number_format($pembelian->pajak_pembelian()->first()->ppn ?? $pembelian->grand_total * ($pajakLib->ppn / 100), 6, '.', ','),
+                'ppbkb' => number_format($pembelian->pajak_pembelian()->first()->ppbkb ?? $pembelian->grand_total * ($pajakLib->ppbkb / 100), 6, '.', ','),
+                'pph' => number_format($pembelian->pajak_pembelian()->first()->pph ?? $pembelian->grand_total * ($pajakLib->pph / 100), 6, '.', ','),
+                'total_amount' => number_format($pembelian->pajak_pembelian()->first()->total_amount ?? $pembelian->grand_total + ($pembelian->grand_total * ($pajakLib->ppn / 100)) + ($pembelian->grand_total * ($pajakLib->ppbkb / 100)) + ($pembelian->grand_total * ($pajakLib->pph / 100)), 6, '.', ','),
+            ],
+        ]);
     }
     public function update_pajak(RencanaPembelian $pembelian)
     {

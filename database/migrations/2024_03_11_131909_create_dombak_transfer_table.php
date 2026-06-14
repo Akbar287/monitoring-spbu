@@ -16,6 +16,7 @@ return new class extends Migration
             $table->uuid('produk_id');
             $table->uuid('jam_kerja_id');
             $table->date('tanggal');
+            $table->timestamp('waktu');
             $table->boolean('is_confirmation');
             $table->timestamps();
 

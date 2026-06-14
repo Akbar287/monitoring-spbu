@@ -8,13 +8,14 @@ use App\Models\JamKerja;
 use App\Models\Produk;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Inertia\Inertia;
 use Yajra\DataTables\DataTables;
 
 class HargaController extends Controller
 {
     public function riwayat_index(Request $request)
     {
-        if ($request->ajax()) {
+        if ($request->ajax() && ! $request->inertia()) {
             $data = Harga::where('is_default', 0)->orderBy('tanggal', 'desc')->get();
             return DataTables::of($data)
                 ->addIndexColumn()
@@ -40,7 +41,22 @@ class HargaController extends Controller
                 ->rawColumns(['action'])
                 ->make(true);
         }
-        return view('master/harga/index_riwayat');
+        return Inertia::render('Table/Index', [
+            'title' => 'Riwayat Harga',
+            'breadcrumbs' => [['label' => 'Master Data', 'url' => route('menu.master')]],
+            'headerActions' => [['label' => 'Harga Aktif', 'url' => route('harga.index'), 'color' => 'primary', 'icon' => 'tags']],
+            'table' => [
+                'url' => $request->url(),
+                'columns' => [
+                    ['label' => 'Produk', 'data' => 'produk'],
+                    ['label' => 'Tanggal', 'data' => 'tanggal'],
+                    ['label' => 'Jam Kerja', 'data' => 'jam_kerja'],
+                    ['label' => 'Harga Jual', 'data' => 'harga_jual'],
+                    ['label' => 'Harga Beli', 'data' => 'harga_beli'],
+                    ['label' => 'Aksi', 'data' => 'action', 'orderable' => false, 'searchable' => false, 'raw' => true],
+                ],
+            ],
+        ]);
     }
     public function riwayat_show(Harga $harga)
     {
@@ -51,7 +67,7 @@ class HargaController extends Controller
      */
     public function index(Request $request)
     {
-        if ($request->ajax()) {
+        if ($request->ajax() && ! $request->inertia()) {
             $data = Harga::where('is_default', 1)->get();
             return DataTables::of($data)
                 ->addIndexColumn()
@@ -77,7 +93,23 @@ class HargaController extends Controller
                 ->rawColumns(['action'])
                 ->make(true);
         }
-        return view('master/harga/index');
+        return Inertia::render('Table/Index', [
+            'title' => 'Harga',
+            'breadcrumbs' => [['label' => 'Master Data', 'url' => route('menu.master')]],
+            'createUrl' => route('harga.create'),
+            'headerActions' => [['label' => 'Riwayat', 'url' => route('harga.riwayat.index'), 'color' => 'info', 'icon' => 'history']],
+            'table' => [
+                'url' => $request->url(),
+                'columns' => [
+                    ['label' => 'Produk', 'data' => 'produk'],
+                    ['label' => 'Tanggal', 'data' => 'tanggal'],
+                    ['label' => 'Jam Kerja', 'data' => 'jam_kerja'],
+                    ['label' => 'Harga Jual', 'data' => 'harga_jual'],
+                    ['label' => 'Harga Beli', 'data' => 'harga_beli'],
+                    ['label' => 'Aksi', 'data' => 'action', 'orderable' => false, 'searchable' => false, 'raw' => true],
+                ],
+            ],
+        ]);
     }
 
     /**
@@ -87,7 +119,20 @@ class HargaController extends Controller
     {
         $jamKerja = JamKerja::get();
         $produk = Produk::where('is_aktif', 1)->get();
-        return view('master/harga/create', compact('jamKerja', 'produk'));
+        return Inertia::render('Form/Index', [
+            'title' => 'Tambah Harga',
+            'breadcrumbs' => [['label' => 'Master Data', 'url' => route('menu.master')], ['label' => 'Harga', 'url' => route('harga.index')]],
+            'backUrl' => route('harga.index'),
+            'method' => 'post',
+            'action' => route('harga.store'),
+            'fields' => [
+                ['name' => 'produk_id', 'label' => 'Produk', 'type' => 'select', 'value' => null, 'options' => $produk->map(fn ($x) => ['value' => $x->produk_id, 'label' => $x->nama_produk])->values()->all(), 'col' => 'col-md-6'],
+                ['name' => 'jam_kerja_id', 'label' => 'Jam Kerja', 'type' => 'select', 'value' => null, 'options' => $jamKerja->map(fn ($x) => ['value' => $x->jam_kerja_id, 'label' => $x->nama_jam_kerja])->values()->all(), 'col' => 'col-md-6'],
+                ['name' => 'tanggal', 'label' => 'Tanggal', 'type' => 'date', 'value' => null],
+                ['name' => 'harga_jual', 'label' => 'Harga Jual', 'type' => 'text', 'value' => null, 'col' => 'col-md-6'],
+                ['name' => 'harga_beli', 'label' => 'Harga Beli', 'type' => 'text', 'value' => null, 'col' => 'col-md-6'],
+            ],
+        ]);
     }
 
     /**
@@ -110,7 +155,7 @@ class HargaController extends Controller
             $harga = $produk->harga()->create($this->hargaData());
         }
 
-        return redirect('/master/harga/' . $harga->harga_id)->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> Data Harga sudah ditambah.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
+        return redirect('/master/harga')->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> Data Harga sudah ditambah.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
     }
 
     /**
@@ -118,7 +163,20 @@ class HargaController extends Controller
      */
     public function show(Harga $harga)
     {
-        return view('master/harga/show', compact('harga'));
+        return Inertia::render('Show/Index', [
+            'title' => 'Detail Harga',
+            'breadcrumbs' => [['label' => 'Master Data', 'url' => route('menu.master')], ['label' => 'Harga', 'url' => route('harga.index')]],
+            'backUrl' => route('harga.index'),
+            'fields' => [
+                ['label' => 'Produk', 'value' => optional(\Illuminate\Support\Facades\DB::table('produk')->where('produk_id', $harga->produk_id)->first())->nama_produk],
+                ['label' => 'Jam Kerja', 'value' => optional(\Illuminate\Support\Facades\DB::table('jam_kerja')->where('jam_kerja_id', $harga->jam_kerja_id)->first())->nama_jam_kerja],
+                ['label' => 'Tanggal', 'value' => $harga->tanggal],
+                ['label' => 'Harga Jual', 'value' => $harga->harga_jual],
+                ['label' => 'Harga Beli', 'value' => $harga->harga_beli],
+            ],
+            'actions' => [['label' => 'Ubah', 'url' => route('harga.edit', $harga), 'color' => 'primary', 'icon' => 'pen']],
+            'deleteUrl' => route('harga.destroy', $harga),
+        ]);
     }
 
     /**
@@ -128,7 +186,20 @@ class HargaController extends Controller
     {
         $jamKerja = JamKerja::get();
         $produk = Produk::where('is_aktif', 1)->get();
-        return view('master/harga/edit', compact('harga', 'jamKerja', 'produk'));
+        return Inertia::render('Form/Index', [
+            'title' => 'Ubah Harga',
+            'breadcrumbs' => [['label' => 'Master Data', 'url' => route('menu.master')], ['label' => 'Harga', 'url' => route('harga.index')]],
+            'backUrl' => route('harga.index'),
+            'method' => 'put',
+            'action' => route('harga.update', $harga),
+            'fields' => [
+                ['name' => 'produk_id', 'label' => 'Produk', 'type' => 'select', 'value' => $harga->produk_id, 'options' => $produk->map(fn ($x) => ['value' => $x->produk_id, 'label' => $x->nama_produk])->values()->all(), 'col' => 'col-md-6'],
+                ['name' => 'jam_kerja_id', 'label' => 'Jam Kerja', 'type' => 'select', 'value' => $harga->jam_kerja_id, 'options' => $jamKerja->map(fn ($x) => ['value' => $x->jam_kerja_id, 'label' => $x->nama_jam_kerja])->values()->all(), 'col' => 'col-md-6'],
+                ['name' => 'tanggal', 'label' => 'Tanggal', 'type' => 'date', 'value' => $harga->tanggal],
+                ['name' => 'harga_jual', 'label' => 'Harga Jual', 'type' => 'text', 'value' => $harga->harga_jual, 'col' => 'col-md-6'],
+                ['name' => 'harga_beli', 'label' => 'Harga Beli', 'type' => 'text', 'value' => $harga->harga_beli, 'col' => 'col-md-6'],
+            ],
+        ]);
     }
 
     /**
@@ -138,7 +209,7 @@ class HargaController extends Controller
     {
         $harga->update($this->hargaData());
 
-        return redirect('/master/harga/' . $harga->harga_id)->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> Data Harga sudah diubah.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
+        return redirect('/master/harga')->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> Data Harga sudah diubah.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
     }
 
     /**

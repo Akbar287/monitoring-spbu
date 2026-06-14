@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Inertia\Inertia;
 
 class MasterController extends Controller
 {
@@ -107,20 +108,46 @@ class MasterController extends Controller
             ->get();
 
         $charts = [
-            'ringkasan' => [
-                'labels' => array_keys($ringkasan),
-                'data' => array_values($ringkasan),
+            [
+                'id' => 'ringkasan',
+                'title' => 'Jumlah Entitas Master',
+                'icon' => 'database',
+                'color' => 'primary',
+                'badge' => 'Unit',
+                'col' => 'col-lg-4 col-12',
+                'type' => 'bar',
+                'data' => ['labels' => array_keys($ringkasan), 'data' => array_values($ringkasan)],
+                'opts' => ['horizontal' => true],
             ],
-            'stok' => [
-                'labels' => $stok->pluck('nama_produk'),
-                'data' => $stok->pluck('total'),
+            [
+                'id' => 'stok',
+                'title' => 'Komposisi Stok per Produk',
+                'icon' => 'gas-pump',
+                'color' => 'info',
+                'badge' => 'Liter',
+                'col' => 'col-lg-4 col-12',
+                'type' => 'doughnut',
+                'data' => ['labels' => $stok->pluck('nama_produk'), 'data' => $stok->pluck('total')],
+                'opts' => ['unit' => 'L'],
             ],
-            'harga' => [
-                'labels' => $harga->pluck('nama_produk'),
-                'data' => $harga->pluck('harga'),
+            [
+                'id' => 'harga',
+                'title' => 'Harga Jual per Produk',
+                'icon' => 'tags',
+                'color' => 'success',
+                'badge' => 'Rupiah',
+                'col' => 'col-lg-4 col-12',
+                'type' => 'bar',
+                'data' => ['labels' => $harga->pluck('nama_produk'), 'data' => $harga->pluck('harga')],
+                'opts' => ['money' => true],
             ],
         ];
 
-        return view('master/index', compact('allMenu', 'charts'));
+        return Inertia::render('Menu/Index', [
+            'title' => 'Master Data',
+            'description' => 'Komposisi aset, persediaan, dan harga yang menjadi dasar operasional SPBU.',
+            'menus' => $allMenu,
+            'charts' => $charts,
+        ]);
     }
 }

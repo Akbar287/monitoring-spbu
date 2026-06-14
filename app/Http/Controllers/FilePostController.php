@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use Inertia\Inertia;
 use App\Models\FilePost;
 use App\Models\Post;
 use Illuminate\Http\Request;
@@ -15,7 +16,7 @@ class FilePostController extends Controller
      */
     public function index(Request $request, Post $post)
     {
-        if ($request->ajax()) {
+        if ($request->ajax() && ! $request->inertia()) {
             $data = $post->file_post()->get();
             return DataTables::of($data)
                 ->addIndexColumn()
@@ -29,7 +30,18 @@ class FilePostController extends Controller
                 ->rawColumns(['action', 'gambar'])
                 ->make(true);
         }
-        return view('article/file_post/index', compact('post'));
+        return Inertia::render('Table/Index', [
+            'title' => 'File Post',
+            'breadcrumbs' => [['label' => 'Artikel', 'url' => route('menu.artikel')], ['label' => 'Post', 'url' => route('post.index')]],
+            'createUrl' => route('file.post.create', $post),
+            'table' => [
+                'url' => $request->url(),
+                'columns' => [
+                    ['label' => 'Nama Dokumen', 'data' => 'nama_dokumen'],
+                    ['label' => 'Aksi', 'data' => 'action', 'orderable' => false, 'searchable' => false, 'raw' => true],
+                ],
+            ],
+        ]);
     }
 
     /**
@@ -37,7 +49,16 @@ class FilePostController extends Controller
      */
     public function create(Post $post)
     {
-        return view('article/file_post/create', compact('post'));
+        return Inertia::render('Form/Index', [
+            'title' => 'Tambah File Post',
+            'breadcrumbs' => [['label' => 'Artikel', 'url' => route('menu.artikel')], ['label' => 'Post', 'url' => route('post.index')], ['label' => 'File Post', 'url' => route('file.post.index', $post)]],
+            'backUrl' => route('file.post.index', $post),
+            'method' => 'post',
+            'action' => route('file.post.store', $post),
+            'fields' => [
+                ['name' => 'gambar', 'label' => 'File', 'type' => 'file', 'value' => null, 'hint' => 'Pilih file dokumen/gambar yang akan diunggah.'],
+            ],
+        ]);
     }
 
     /**
@@ -45,6 +66,8 @@ class FilePostController extends Controller
      */
     public function store(Request $request, Post $post)
     {
+        $request->validate(['gambar' => 'required|file|max:' . \App\Support\Upload::maxKb()]);
+
         $foto = 'default.png';
         if ($request->hasFile('file')) {
             $filenameWithExt = $request->file('file')->getClientOriginalName();
@@ -67,7 +90,22 @@ class FilePostController extends Controller
      */
     public function show(Post $post, FilePost $filePost)
     {
-        return view('article/file_post/show', compact('post', 'filePost'));
+        return Inertia::render('Show/Index', [
+            'title' => 'Detail File Post',
+            'breadcrumbs' => [['label' => 'Artikel', 'url' => route('menu.artikel')], ['label' => 'Post', 'url' => route('post.index')], ['label' => 'File Post', 'url' => route('file.post.index', $post)]],
+            'backUrl' => route('file.post.index', $post),
+            'fields' => [
+                ['label' => 'Nama Dokumen', 'value' => $filePost->nama_dokumen],
+                ['label' => 'Nama File', 'value' => $filePost->nama_file],
+                ['label' => 'Tanggal Upload', 'value' => $filePost->tanggal_upload],
+            ],
+            'image' => asset('storage/post/' . $filePost->nama_file),
+            'actions' => [
+                ['label' => 'Ubah', 'url' => route('file.post.edit', [$post, $filePost]), 'color' => 'primary', 'icon' => 'pen'],
+                ['label' => 'Download', 'url' => route('file.post.download', [$post, $filePost]), 'color' => 'info', 'icon' => 'download'],
+            ],
+            'deleteUrl' => route('file.post.delete', [$post, $filePost]),
+        ]);
     }
 
     /**
@@ -75,7 +113,16 @@ class FilePostController extends Controller
      */
     public function edit(Post $post, FilePost $filePost)
     {
-        return view('article/file_post/edit', compact('post', 'filePost'));
+        return Inertia::render('Form/Index', [
+            'title' => 'Ubah File Post',
+            'breadcrumbs' => [['label' => 'Artikel', 'url' => route('menu.artikel')], ['label' => 'Post', 'url' => route('post.index')], ['label' => 'File Post', 'url' => route('file.post.index', $post)]],
+            'backUrl' => route('file.post.show', [$post, $filePost]),
+            'method' => 'put',
+            'action' => route('file.post.update', [$post, $filePost]),
+            'fields' => [
+                ['name' => 'gambar', 'label' => 'File Pengganti', 'type' => 'file', 'value' => null, 'hint' => 'File saat ini: ' . $filePost->nama_dokumen],
+            ],
+        ]);
     }
 
     /**
@@ -83,6 +130,8 @@ class FilePostController extends Controller
      */
     public function update(Request $request, Post $post, FilePost $filePost)
     {
+        $request->validate(['gambar' => 'nullable|file|max:' . \App\Support\Upload::maxKb()]);
+
         $foto = $filePost->nama_file;
         $filenameWithExt = $filePost->nama_dokumen;
 

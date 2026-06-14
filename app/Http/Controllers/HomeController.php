@@ -16,6 +16,7 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Inertia\Inertia;
 use Yajra\DataTables\DataTables;
 
 class HomeController extends Controller
@@ -251,9 +252,54 @@ class HomeController extends Controller
         }
 
 
-        $pembayaran = StatusPurchase::where('nama_status', 'Pembayaran')->first()->rencana_pembelian()->get();
-        $delivery = Pengiriman::where('is_confirmation_admin', 1)->where('is_done', 0)->get();
-        return view('home', compact('data', 'allMenu', 'pembayaran', 'delivery', 'waktuMulai', 'waktuSelesai'));
+        $level = Auth::user()->member()->first()->jabatan()->first()->level()->first()->nama_level;
+        $isManagement = in_array($level, ['Penanggung Jawab', 'Komisaris', 'Direktur Utama', 'Direktur']);
+
+        $pembayaranRows = [];
+        $deliveryRows = [];
+        if ($isManagement) {
+            $pembayaran = StatusPurchase::where('nama_status', 'Pembayaran')->first()->rencana_pembelian()->get();
+            $pembayaranRows = $pembayaran->map(function ($pe) {
+                $produk = $pe->detail_rencana_pembelian()
+                    ->select('produk.nama_produk')
+                    ->join('produk', 'produk.produk_id', 'detail_rencana_pembelian.produk_id')
+                    ->pluck('nama_produk')->implode(', ');
+
+                return [
+                    'tanggal' => $pe->tanggal_pembelian,
+                    'produk' => $produk,
+                    'total' => number_format($pe->grand_total, 2, '.', ','),
+                    'url' => route('pembayaran.show', $pe->rencana_pembelian_id),
+                ];
+            })->values()->all();
+
+            $delivery = Pengiriman::where('is_confirmation_admin', 1)->where('is_done', 0)->get();
+            foreach ($delivery as $d) {
+                foreach ($d->file_lo as $lo) {
+                    $deliveryRows[] = [
+                        'produk' => optional($lo->produk()->first())->nama_produk,
+                        'jumlah' => number_format($lo->jumlah, 0, '.', ',') . ' ' . $lo->satuan_jumlah,
+                        'tanggal' => $lo->tanggal_upload,
+                        'url' => route('pengiriman.file_lo.show', [$lo->pengiriman()->first()->pengiriman_id, $lo->file_lo_id]),
+                    ];
+                }
+            }
+        }
+
+        return Inertia::render('Home/Index', [
+            'isManagement' => $isManagement,
+            'nama' => optional(Auth::user()->member()->first()->ktp()->first())->nama,
+            'level' => $level,
+            'stats' => $data,
+            'menus' => $allMenu,
+            'pembayaran' => $pembayaranRows,
+            'delivery' => $deliveryRows,
+            'links' => [
+                'chartApi' => url('/api/chart'),
+                'pembayaranIndex' => route('pembayaran.index'),
+                'pengirimanIndex' => route('pengiriman.index'),
+            ],
+        ]);
     }
 
     public function chart()
@@ -505,7 +551,7 @@ class HomeController extends Controller
         $waktuMulai = $waktuMulai->format('Y-m-d');
         $waktuSelesai = $waktuSelesai->format('Y-m-d');
 
-        if ($request->ajax()) {
+        if ($request->ajax() && ! $request->inertia()) {
             $data = Notifikasi::orderBy('created_at', 'desc')->get();
             return DataTables::of($data)
                 ->addIndexColumn()
@@ -524,6 +570,18 @@ class HomeController extends Controller
                 ->rawColumns(['action'])
                 ->make(true);
         }
-        return view('auth/notifikasi', compact('waktuMulai', 'waktuSelesai'));
+        return Inertia::render('Table/Index', [
+            'title' => 'Notifikasi',
+            'dateFilter' => ['mulai' => $waktuMulai, 'selesai' => $waktuSelesai],
+            'table' => [
+                'url' => $request->fullUrl(),
+                'columns' => [
+                    ['label' => 'Tanggal', 'data' => 'created_at'],
+                    ['label' => 'Judul', 'data' => 'judul'],
+                    ['label' => 'Status', 'data' => 'status'],
+                    ['label' => 'Aksi', 'data' => 'action', 'orderable' => false, 'searchable' => false, 'raw' => true],
+                ],
+            ],
+        ]);
     }
 }

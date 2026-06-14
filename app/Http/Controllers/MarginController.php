@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use Inertia\Inertia;
 use App\Exports\PenerimaanExport;
 use App\Exports\StokDombakExport;
 use App\Exports\TotalisatorExport;
@@ -49,7 +50,22 @@ class MarginController extends Controller
                 return $this->stok_dombak($waktuMulai, $waktuSelesai);
             }
         }
-        return view('financial/margin/index', compact('spbu', 'spbuSelected', 'monthSelected', 'produk', 'produkSelected', 'typeReport', 'typeReportSelected'));
+        return Inertia::render('Financial/Margin', [
+            'title' => 'Margin',
+            'breadcrumbs' => [['label' => 'Financial', 'url' => route('menu.financial')]],
+            'action' => route('margin.index'),
+            'options' => [
+                'spbu' => $spbu->map(fn ($s) => ['value' => $s->spbu_id, 'label' => $s->nama_spbu])->values()->all(),
+                'produk' => $produk->map(fn ($s) => ['value' => $s->produk_id, 'label' => $s->nama_produk])->values()->all(),
+                'typeReport' => collect($typeReport)->map(fn ($t) => ['value' => $t['type_report_id'], 'label' => $t['nama_type_report']])->values()->all(),
+            ],
+            'selected' => [
+                'spbu' => $spbuSelected,
+                'produk' => $produkSelected,
+                'month' => $monthSelected,
+                'typeReport' => $typeReportSelected,
+            ],
+        ]);
     }
     public function totalisator($mulai, $selesai)
     {

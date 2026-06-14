@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Inertia\Inertia;
 
 class KonfigurasiController extends Controller
 {
@@ -66,30 +67,60 @@ class KonfigurasiController extends Controller
             ->get();
 
         $charts = [
-            'ringkasan' => [
-                'labels' => ['SPBU', 'Divisi', 'Level', 'Jabatan', 'Hari', 'Jam Kerja'],
+            [
+                'id' => 'ringkasan',
+                'title' => 'Jumlah Data Konfigurasi',
+                'icon' => 'cogs',
+                'color' => 'primary',
+                'badge' => 'Data',
+                'col' => 'col-lg-5 col-12',
+                'type' => 'bar',
                 'data' => [
-                    DB::table('spbu')->whereNull('deleted_at')->count(),
-                    DB::table('divisi')->whereNull('deleted_at')->count(),
-                    DB::table('level')->whereNull('deleted_at')->count(),
-                    DB::table('jabatan')->whereNull('deleted_at')->count(),
-                    DB::table('hari')->count(),
-                    DB::table('jam_kerja')->count(),
+                    'labels' => ['SPBU', 'Divisi', 'Level', 'Jabatan', 'Hari', 'Jam Kerja'],
+                    'data' => [
+                        DB::table('spbu')->whereNull('deleted_at')->count(),
+                        DB::table('divisi')->whereNull('deleted_at')->count(),
+                        DB::table('level')->whereNull('deleted_at')->count(),
+                        DB::table('jabatan')->whereNull('deleted_at')->count(),
+                        DB::table('hari')->count(),
+                        DB::table('jam_kerja')->count(),
+                    ],
                 ],
+                'opts' => ['horizontal' => true],
             ],
-            'jabatanLevel' => [
-                'labels' => $jabatanLevel->pluck('nama_level'),
-                'data' => $jabatanLevel->pluck('total'),
+            [
+                'id' => 'jabatanLevel',
+                'title' => 'Jabatan per Level',
+                'icon' => 'sitemap',
+                'color' => 'warning',
+                'badge' => 'Jabatan',
+                'col' => 'col-lg-4 col-12',
+                'type' => 'bar',
+                'data' => ['labels' => $jabatanLevel->pluck('nama_level'), 'data' => $jabatanLevel->pluck('total')],
+                'opts' => ['colorEach' => false, 'colorIndex' => 2, 'label' => 'Jabatan'],
             ],
-            'hari' => [
-                'labels' => ['Hari Kerja', 'Hari Libur'],
+            [
+                'id' => 'hari',
+                'title' => 'Hari Kerja vs Libur',
+                'icon' => 'calendar-day',
+                'color' => 'info',
+                'col' => 'col-lg-3 col-12',
+                'type' => 'doughnut',
                 'data' => [
-                    DB::table('hari')->where('hari_kerja', 1)->count(),
-                    DB::table('hari')->where('hari_kerja', 0)->count(),
+                    'labels' => ['Hari Kerja', 'Hari Libur'],
+                    'data' => [
+                        DB::table('hari')->where('hari_kerja', 1)->count(),
+                        DB::table('hari')->where('hari_kerja', 0)->count(),
+                    ],
                 ],
             ],
         ];
 
-        return view('konfigurasi/index', compact('allMenu', 'charts'));
+        return Inertia::render('Menu/Index', [
+            'title' => 'Konfigurasi',
+            'description' => 'Struktur organisasi, jabatan, dan pengaturan hari kerja.',
+            'menus' => $allMenu,
+            'charts' => $charts,
+        ]);
     }
 }

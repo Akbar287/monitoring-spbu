@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\DispenserRequest;
 use App\Models\Dispenser;
+use Inertia\Inertia;
 use Yajra\DataTables\DataTables;
 use App\Models\Payung;
 use Illuminate\Http\Request;
@@ -15,7 +16,7 @@ class DispenserController extends Controller
      */
     public function index(Request $request)
     {
-        if ($request->ajax()) {
+        if ($request->ajax() && ! $request->inertia()) {
             $data = Dispenser::select('dispenser.*')->addSelect('payung.nama_payung')->join('payung', 'payung.payung_id', 'dispenser.payung_id');
             return DataTables::of($data)
                 ->addIndexColumn()
@@ -30,7 +31,21 @@ class DispenserController extends Controller
                 ->rawColumns(['action'])
                 ->make(true);
         }
-        return view('master/dispenser/index');
+        return Inertia::render('Table/Index', [
+            'title' => 'Dispenser',
+            'breadcrumbs' => [['label' => 'Master Data', 'url' => route('menu.master')]],
+            'createUrl' => route('dispenser.create'),
+            'table' => [
+                'url' => $request->url(),
+                'columns' => [
+                    ['label' => 'Nama Dispenser', 'data' => 'nama_dispenser'],
+                    ['label' => 'Nama Payung', 'data' => 'nama_payung'],
+                    ['label' => 'Aktif', 'data' => 'is_aktif'],
+                    ['label' => 'Keterangan', 'data' => 'keterangan'],
+                    ['label' => 'Aksi', 'data' => 'action', 'orderable' => false, 'searchable' => false, 'raw' => true],
+                ],
+            ],
+        ]);
     }
 
     /**
@@ -39,7 +54,19 @@ class DispenserController extends Controller
     public function create()
     {
         $payung = Payung::all();
-        return view('master/dispenser/create', compact('payung'));
+        return Inertia::render('Form/Index', [
+            'title' => 'Tambah Dispenser',
+            'breadcrumbs' => [['label' => 'Master Data', 'url' => route('menu.master')], ['label' => 'Dispenser', 'url' => route('dispenser.index')]],
+            'backUrl' => route('dispenser.index'),
+            'method' => 'post',
+            'action' => route('dispenser.store'),
+            'fields' => [
+                ['name' => 'payung_id', 'label' => 'Payung', 'type' => 'select', 'value' => null, 'options' => $payung->map(fn ($x) => ['value' => $x->payung_id, 'label' => $x->nama_payung])->values()->all()],
+                ['name' => 'nama_dispenser', 'label' => 'Nama Dispenser', 'type' => 'text', 'value' => null],
+                ['name' => 'is_aktif', 'label' => 'Status', 'type' => 'select', 'value' => null, 'options' => [['value' => 'true', 'label' => 'Aktifkan'], ['value' => 'false', 'label' => 'Jangan Aktifkan']]],
+                ['name' => 'keterangan', 'label' => 'Keterangan', 'type' => 'textarea', 'value' => null],
+            ],
+        ]);
     }
 
     /**
@@ -53,7 +80,7 @@ class DispenserController extends Controller
             $dispenser = $payung->dispenser()->create($this->dispenserData());
         }
 
-        return redirect('/master/dispenser/' . $dispenser->dispenser_id)->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> Data Dispenser sudah ditambah.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
+        return redirect('/master/dispenser')->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> Data Dispenser sudah ditambah.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
     }
 
     /**
@@ -61,7 +88,19 @@ class DispenserController extends Controller
      */
     public function show(Dispenser $dispenser)
     {
-        return view('master/dispenser/show', compact('dispenser'));
+        return Inertia::render('Show/Index', [
+            'title' => 'Detail Dispenser',
+            'breadcrumbs' => [['label' => 'Master Data', 'url' => route('menu.master')], ['label' => 'Dispenser', 'url' => route('dispenser.index')]],
+            'backUrl' => route('dispenser.index'),
+            'fields' => [
+                ['label' => 'Payung', 'value' => optional(\Illuminate\Support\Facades\DB::table('payung')->where('payung_id', $dispenser->payung_id)->first())->nama_payung],
+                ['label' => 'Nama Dispenser', 'value' => $dispenser->nama_dispenser],
+                ['label' => 'Status', 'value' => filter_var($dispenser->is_aktif, FILTER_VALIDATE_BOOLEAN) ? 'Aktif' : 'Tidak Aktif'],
+                ['label' => 'Keterangan', 'value' => $dispenser->keterangan],
+            ],
+            'actions' => [['label' => 'Ubah', 'url' => route('dispenser.edit', $dispenser), 'color' => 'primary', 'icon' => 'pen']],
+            'deleteUrl' => route('dispenser.destroy', $dispenser),
+        ]);
     }
 
     /**
@@ -70,7 +109,19 @@ class DispenserController extends Controller
     public function edit(Dispenser $dispenser)
     {
         $payung = Payung::all();
-        return view('master/dispenser/edit', compact('payung', 'dispenser'));
+        return Inertia::render('Form/Index', [
+            'title' => 'Ubah Dispenser',
+            'breadcrumbs' => [['label' => 'Master Data', 'url' => route('menu.master')], ['label' => 'Dispenser', 'url' => route('dispenser.index')]],
+            'backUrl' => route('dispenser.index'),
+            'method' => 'put',
+            'action' => route('dispenser.update', $dispenser),
+            'fields' => [
+                ['name' => 'payung_id', 'label' => 'Payung', 'type' => 'select', 'value' => $dispenser->payung_id, 'options' => $payung->map(fn ($x) => ['value' => $x->payung_id, 'label' => $x->nama_payung])->values()->all()],
+                ['name' => 'nama_dispenser', 'label' => 'Nama Dispenser', 'type' => 'text', 'value' => $dispenser->nama_dispenser],
+                ['name' => 'is_aktif', 'label' => 'Status', 'type' => 'select', 'value' => filter_var($dispenser->is_aktif, FILTER_VALIDATE_BOOLEAN) ? 'true' : 'false', 'options' => [['value' => 'true', 'label' => 'Aktifkan'], ['value' => 'false', 'label' => 'Jangan Aktifkan']]],
+                ['name' => 'keterangan', 'label' => 'Keterangan', 'type' => 'textarea', 'value' => $dispenser->keterangan],
+            ],
+        ]);
     }
 
     /**
@@ -80,7 +131,7 @@ class DispenserController extends Controller
     {
         $dispenser->update($this->dispenserData());
 
-        return redirect('/master/dispenser/' . $dispenser->dispenser_id)->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> Data Dispenser sudah diubah.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
+        return redirect('/master/dispenser')->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> Data Dispenser sudah diubah.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
     }
 
     /**

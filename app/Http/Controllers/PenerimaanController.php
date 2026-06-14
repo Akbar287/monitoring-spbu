@@ -12,6 +12,7 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Inertia\Inertia;
 use Yajra\DataTables\DataTables;
 
 class PenerimaanController extends Controller
@@ -21,7 +22,7 @@ class PenerimaanController extends Controller
      */
     public function index(Request $request)
     {
-        if ($request->ajax()) {
+        if ($request->ajax() && ! $request->inertia()) {
             $data = FileLo::select('file_lo.*', 'pengiriman.tanggal')->join('pengiriman', 'pengiriman.pengiriman_id', 'file_lo.pengiriman_id')->where('pengiriman.is_confirmation_top', 1)->where('pengiriman.is_confirmation_admin', 1)->where('pengiriman.is_done', 1)->leftJoin('penerimaan', 'penerimaan.file_lo_id', 'file_lo.file_lo_id')->whereNull('penerimaan.file_lo_id')->get();
             return DataTables::of($data)
                 ->addIndexColumn()
@@ -43,12 +44,27 @@ class PenerimaanController extends Controller
                 ->rawColumns(['action', 'is_confirmation'])
                 ->make(true);
         }
-        return view('stok/penerimaan/index');
+        return Inertia::render('Table/Index', [
+            'title' => 'Penerimaan BBM',
+            'breadcrumbs' => [['label' => 'Manajemen Persediaan', 'url' => route('menu.stok')]],
+            'headerActions' => [['label' => 'Verifikasi', 'url' => route('penerimaan.verifikasi'), 'color' => 'warning', 'icon' => 'check-double'], ['label' => 'Riwayat', 'url' => route('penerimaan.riwayat'), 'color' => 'info', 'icon' => 'history']],
+            'table' => [
+                'url' => $request->url(),
+                'columns' => [
+                    ['label' => 'Tanggal', 'data' => 'tanggal'],
+                    ['label' => 'No Faktur', 'data' => 'no_faktur'],
+                    ['label' => 'No LO', 'data' => 'no_lo'],
+                    ['label' => 'Nama Produk', 'data' => 'nama_produk'],
+                    ['label' => 'Jumlah', 'data' => 'jumlah'],
+                    ['label' => 'Aksi', 'data' => 'action', 'orderable' => false, 'searchable' => false, 'raw' => true],
+                ],
+            ],
+        ]);
     }
 
     public function verifikasi(Request $request)
     {
-        if ($request->ajax()) {
+        if ($request->ajax() && ! $request->inertia()) {
             $data = Penerimaan::join('dokumen_stok', 'dokumen_stok.dokumen_stok_id', 'penerimaan.dokumen_stok_id')->where('dokumen_stok.is_confirmation', '0')->get();
             return DataTables::of($data)
                 ->addIndexColumn()
@@ -82,7 +98,26 @@ class PenerimaanController extends Controller
                 ->rawColumns(['action', 'is_confirmation'])
                 ->make(true);
         }
-        return view('stok/penerimaan/verifikasi_index');
+        return Inertia::render('Table/Index', [
+            'title' => 'Verifikasi Penerimaan BBM',
+            'breadcrumbs' => [['label' => 'Manajemen Persediaan', 'url' => route('menu.stok')], ['label' => 'Penerimaan BBM', 'url' => route('penerimaan.index')]],
+            'headerActions' => [
+                ['label' => 'Penerimaan', 'url' => route('penerimaan.index'), 'color' => 'primary', 'icon' => 'arrow-down'],
+                ['label' => 'Riwayat', 'url' => route('penerimaan.riwayat'), 'color' => 'info', 'icon' => 'history'],
+            ],
+            'table' => [
+                'url' => $request->url(),
+                'columns' => [
+                    ['label' => 'Tanggal', 'data' => 'tanggal'],
+                    ['label' => 'Dombak', 'data' => 'dombak'],
+                    ['label' => 'No Faktur', 'data' => 'no_faktur'],
+                    ['label' => 'No LO', 'data' => 'no_lo'],
+                    ['label' => 'Nama Produk', 'data' => 'nama_produk'],
+                    ['label' => 'Jumlah', 'data' => 'jumlah'],
+                    ['label' => 'Aksi', 'data' => 'action', 'orderable' => false, 'searchable' => false, 'raw' => true],
+                ],
+            ],
+        ]);
     }
 
     public function riwayat(Request $request)
@@ -97,7 +132,7 @@ class PenerimaanController extends Controller
         $waktuMulai = $waktuMulai->format('Y-m-d');
         $waktuSelesai = $waktuSelesai->format('Y-m-d');
 
-        if ($request->ajax()) {
+        if ($request->ajax() && ! $request->inertia()) {
             $data = Penerimaan::join('dokumen_stok', 'dokumen_stok.dokumen_stok_id', 'penerimaan.dokumen_stok_id')->where('dokumen_stok.is_confirmation', '1')->whereBetween('dokumen_stok.tanggal', [$waktuMulai, $waktuSelesai])->get();
             return DataTables::of($data)
                 ->addIndexColumn()
@@ -131,7 +166,24 @@ class PenerimaanController extends Controller
                 ->rawColumns(['action', 'is_confirmation'])
                 ->make(true);
         }
-        return view('stok/penerimaan/riwayat_index', compact('waktuMulai', 'waktuSelesai'));
+        return Inertia::render('Table/Index', [
+            'title' => 'Riwayat Penerimaan BBM',
+            'breadcrumbs' => [['label' => 'Manajemen Persediaan', 'url' => route('menu.stok')]],
+            'headerActions' => [['label' => 'Penerimaan', 'url' => route('penerimaan.index'), 'color' => 'primary', 'icon' => 'arrow-down'], ['label' => 'Verifikasi', 'url' => route('penerimaan.verifikasi'), 'color' => 'warning', 'icon' => 'check-double']],
+            'dateFilter' => ['mulai' => $waktuMulai, 'selesai' => $waktuSelesai],
+            'table' => [
+                'url' => $request->fullUrl(),
+                'columns' => [
+                    ['label' => 'Tanggal', 'data' => 'tanggal'],
+                    ['label' => 'Dombak', 'data' => 'dombak'],
+                    ['label' => 'No Faktur', 'data' => 'no_faktur'],
+                    ['label' => 'No LO', 'data' => 'no_lo'],
+                    ['label' => 'Nama Produk', 'data' => 'nama_produk'],
+                    ['label' => 'Jumlah', 'data' => 'jumlah'],
+                    ['label' => 'Aksi', 'data' => 'action', 'orderable' => false, 'searchable' => false, 'raw' => true],
+                ],
+            ],
+        ]);
     }
 
     /**
@@ -145,21 +197,78 @@ class PenerimaanController extends Controller
         }
         $satuan_tinggi = $penerimaan->penerimaan_stok_taking()->first()->dokumen_stok()->first()->konversi()->first()->satuan_ukur_tinggi()->first()->nama_satuan;
         $satuan_volume = $penerimaan->penerimaan_stok_taking()->first()->dokumen_stok()->first()->konversi()->first()->satuan_ukur_volume()->first()->nama_satuan;
-        return view('stok/penerimaan/verifikasi_show', compact('penerimaan', 'satuan_tinggi', 'satuan_volume', 'aktual'));
+        $actions = $this->penerimaanShowActions($penerimaan, 'penerimaan.file.index');
+        $ds = $penerimaan->dokumen_stok()->first();
+
+        return Inertia::render('Show/Index', [
+            'title' => 'Verifikasi Penerimaan BBM',
+            'breadcrumbs' => [['label' => 'Manajemen Persediaan', 'url' => route('menu.stok')], ['label' => 'Penerimaan BBM', 'url' => route('penerimaan.index')], ['label' => 'Verifikasi', 'url' => route('penerimaan.verifikasi')]],
+            'backUrl' => route('penerimaan.verifikasi'),
+            'fields' => $this->penerimaanShowFields($penerimaan, $aktual),
+            'actions' => $actions,
+            'deleteUrl' => $ds && ! $ds->is_confirmation ? route('penerimaan.delete', $penerimaan->penerimaan_id) : null,
+            'deleteConfirm' => "Penerimaan akan dihapus!\n Lanjutkan?",
+        ]);
     }
 
     public function riwayat_show(Penerimaan $penerimaan)
     {
         $satuan_tinggi = $penerimaan->penerimaan_stok_taking()->first()->dokumen_stok()->first()->konversi()->first()->satuan_ukur_tinggi()->first()->nama_satuan;
         $satuan_volume = $penerimaan->penerimaan_stok_taking()->first()->dokumen_stok()->first()->konversi()->first()->satuan_ukur_volume()->first()->nama_satuan;
-        return view('stok/penerimaan/riwayat_show', compact('penerimaan', 'satuan_tinggi', 'satuan_volume'));
+        return Inertia::render('Show/Index', [
+            'title' => 'Riwayat Penerimaan BBM',
+            'breadcrumbs' => [['label' => 'Manajemen Persediaan', 'url' => route('menu.stok')], ['label' => 'Penerimaan BBM', 'url' => route('penerimaan.index')], ['label' => 'Riwayat', 'url' => route('penerimaan.riwayat')]],
+            'backUrl' => route('penerimaan.riwayat'),
+            'fields' => $this->penerimaanShowFields($penerimaan),
+            'actions' => [
+                ['label' => 'Dokumen', 'url' => route('penerimaan.file.riwayat.index', $penerimaan->penerimaan_id), 'color' => 'info', 'icon' => 'folder-open'],
+            ],
+        ]);
     }
 
     public function show(FileLo $fileLo)
     {
         $dombak = $fileLo->produk()->first()->stok_inventory()->first()->stok_inventory_dombak()->get();
         $jamKerja = JamKerja::get();
-        return view('stok/penerimaan/show', compact('fileLo', 'dombak', 'jamKerja'));
+
+        $drp = $fileLo->detail_rencana_pembelian()->first();
+        $rp = $drp ? $drp->rencana_pembelian()->first() : null;
+        $peng = $fileLo->pengiriman()->first();
+
+        $dombakRows = $dombak->map(function ($d) {
+            $master = $d->dombak()->first();
+            $min = $master ? optional($master->konversi()->orderBy('tinggi', 'asc')->first())->tinggi : null;
+            $max = $master ? optional($master->konversi()->orderBy('tinggi', 'desc')->first())->tinggi : null;
+
+            return [
+                'id' => $d->dombak_id,
+                'nama' => optional($master)->nama_dombak,
+                'min' => $min ?? 0,
+                'max' => $max ?? 0,
+            ];
+        })->values()->all();
+
+        return Inertia::render('Penerimaan/Process', [
+            'title' => 'Proses Penerimaan BBM',
+            'breadcrumbs' => [['label' => 'Manajemen Persediaan', 'url' => route('menu.stok')], ['label' => 'Penerimaan BBM', 'url' => route('penerimaan.index')]],
+            'backUrl' => route('penerimaan.index'),
+            'action' => route('penerimaan.store', $fileLo->file_lo_id),
+            'info' => [
+                ['label' => 'Id Rencana Pembelian', 'value' => optional($rp)->rencana_pembelian_id],
+                ['label' => 'SPBU', 'value' => $rp ? optional($rp->spbu()->first())->nama_spbu : null],
+                ['label' => 'Produk', 'value' => optional($fileLo->produk()->first())->nama_produk],
+                ['label' => 'Jumlah / Quantity', 'value' => number_format($fileLo->jumlah, 6, '.', ',') . ' ' . $fileLo->satuan_jumlah],
+                ['label' => 'No. Faktur', 'value' => $fileLo->no_faktur],
+                ['label' => 'No. LO', 'value' => $fileLo->no_lo],
+                ['label' => 'No DO', 'value' => optional($peng)->no_do],
+                ['label' => 'No Pol', 'value' => optional($peng)->no_pol],
+                ['label' => 'Tanggal Pengiriman', 'value' => optional($peng)->tanggal],
+            ],
+            'dombakRows' => $dombakRows,
+            'jamKerjaOptions' => $jamKerja->map(fn ($s) => ['value' => $s->jam_kerja_id, 'label' => $s->nama_jam_kerja])->values()->all(),
+            'volumeDibeli' => number_format($fileLo->jumlah, 6, '.', ','),
+            'api' => ['konversi' => url('/master/dombak/konversi/api')],
+        ]);
     }
 
     public function store(Request $request, FileLo $fileLo)
@@ -302,7 +411,18 @@ class PenerimaanController extends Controller
 
     public function show_penerimaan(Penerimaan $penerimaan)
     {
-        return view('stok/penerimaan/show_penerimaan', compact('penerimaan'));
+        $actions = $this->penerimaanShowActions($penerimaan, 'penerimaan.file.index');
+        $ds = $penerimaan->dokumen_stok()->first();
+
+        return Inertia::render('Show/Index', [
+            'title' => 'Detail Penerimaan BBM',
+            'breadcrumbs' => [['label' => 'Manajemen Persediaan', 'url' => route('menu.stok')], ['label' => 'Penerimaan BBM', 'url' => route('penerimaan.index')]],
+            'backUrl' => route('penerimaan.index'),
+            'fields' => $this->penerimaanShowFields($penerimaan),
+            'actions' => $actions,
+            'deleteUrl' => $ds && ! $ds->is_confirmation ? route('penerimaan.delete', $penerimaan->penerimaan_id) : null,
+            'deleteConfirm' => "Penerimaan akan dihapus!\n Lanjutkan?",
+        ]);
     }
 
     /**
@@ -310,7 +430,7 @@ class PenerimaanController extends Controller
      */
     public function edit(Penerimaan $penerimaan)
     {
-        return view('stok/penerimaan/edit');
+        return redirect()->route('penerimaan.show_penerimaan', $penerimaan->penerimaan_id);
     }
 
     public function confirmation(Penerimaan $penerimaan)
@@ -386,5 +506,66 @@ class PenerimaanController extends Controller
         $penerimaan->delete();
 
         return redirect('/stok/penerimaan')->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> Data Penerimaan sudah dihapus.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
+    }
+
+    /**
+     * Field detail penerimaan utk halaman show (verifikasi/riwayat/biasa).
+     * Rantai relasi diguard optional() — paritas label blade lama.
+     */
+    private function penerimaanShowFields(Penerimaan $penerimaan, $aktual = null): array
+    {
+        $fl = $penerimaan->file_lo()->first();
+        $drp = $fl ? $fl->detail_rencana_pembelian()->first() : null;
+        $rp = $drp ? $drp->rencana_pembelian()->first() : null;
+        $peng = $fl ? $fl->pengiriman()->first() : null;
+        $ds = $penerimaan->dokumen_stok()->first();
+        $pst = $penerimaan->penerimaan_stok_taking()->first();
+
+        $tinggiSebelum = $pst ? optional(optional($pst->dokumen_stok()->first())->konversi()->first())->tinggi : null;
+        $tinggiSetelah = $ds ? optional($ds->konversi()->first())->tinggi : null;
+
+        return [
+            ['label' => 'Id Rencana Pembelian', 'value' => optional($rp)->rencana_pembelian_id],
+            ['label' => 'SPBU', 'value' => $rp ? optional($rp->spbu()->first())->nama_spbu : null],
+            ['label' => 'Produk', 'value' => $drp ? optional($drp->produk()->first())->nama_produk : null],
+            ['label' => 'RIT', 'value' => $drp ? number_format($drp->rit, 2, '.', ',') : null],
+            ['label' => 'Jumlah / Quantity', 'value' => $drp ? number_format($drp->jumlah, 6, '.', ',') . ' ' . $drp->satuan_jumlah : null],
+            ['label' => 'Harga', 'value' => $drp ? 'Rp ' . number_format($drp->harga, 6, '.', ',') : null],
+            ['label' => 'Total Harga', 'value' => $drp ? 'Rp ' . number_format($drp->total_harga, 6, '.', ',') : null],
+            ['label' => 'Pengiriman — Yang Menerima', 'value' => $peng ? optional(optional($peng->member()->first())->ktp()->first())->nama : null],
+            ['label' => 'No DO', 'value' => optional($peng)->no_do],
+            ['label' => 'No Pol', 'value' => optional($peng)->no_pol],
+            ['label' => 'Tanggal Pengiriman', 'value' => optional($peng)->tanggal],
+            ['label' => 'File LO', 'value' => $fl ? optional($fl->produk()->first())->nama_produk . ' (' . number_format($fl->jumlah, 6, ',', '.') . ' ' . $fl->satuan_jumlah . ')' : null],
+            ['label' => 'No. Faktur', 'value' => optional($fl)->no_faktur],
+            ['label' => 'No. LO', 'value' => optional($fl)->no_lo],
+            ['label' => 'Dombak', 'value' => $ds ? optional($ds->dombak()->first())->nama_dombak : null],
+            ['label' => 'Tanggal Penerimaan', 'value' => optional($ds)->tanggal],
+            ['label' => 'Jam Kerja', 'value' => $ds ? optional($ds->jam_kerja()->first())->nama_jam_kerja : null],
+            ['label' => 'Tinggi Dombak (cm) Sebelum Penerimaan', 'value' => $tinggiSebelum ?? 0],
+            ['label' => 'Tinggi Dombak (cm) Setelah Penerimaan', 'value' => $tinggiSetelah ?? 0],
+            ['label' => 'Volume (liter) Sebelum', 'value' => number_format(optional($ds)->stok_awal ?? 0, 6, '.', ',')],
+            ['label' => 'Volume (liter) Setelah', 'value' => number_format(optional($ds)->stok_akhir ?? 0, 6, '.', ',')],
+            ['label' => 'Volume (liter) Diterima', 'value' => number_format((optional($ds)->stok_akhir ?? 0) - (optional($ds)->stok_awal ?? 0), 6, '.', ',')],
+            ['label' => 'Volume (liter) (Dibeli)', 'value' => $fl ? number_format($fl->jumlah, 6, '.', ',') : null],
+            ['label' => 'Volume (liter) (Loss/Profit)', 'value' => $aktual !== null ? number_format($aktual, 6, '.', ',') : null],
+            ['label' => 'Status Konfirmasi', 'value' => $ds && $ds->is_confirmation ? 'Terkonfirmasi' : 'Belum Terkonfirmasi'],
+        ];
+    }
+
+    private function penerimaanShowActions(Penerimaan $penerimaan, string $dokumenRoute): array
+    {
+        $ds = $penerimaan->dokumen_stok()->first();
+        $isPJ = optional(optional(optional(auth()->user()->member()->first())->jabatan()->first())->level()->first())->nama_level === 'Penanggung Jawab';
+
+        $actions = [
+            ['label' => 'Dokumen', 'url' => route($dokumenRoute, $penerimaan->penerimaan_id), 'color' => 'info', 'icon' => 'folder-open'],
+        ];
+        if ($ds && ! $ds->is_confirmation && $isPJ) {
+            $actions[] = ['label' => 'Konfirmasi', 'method' => 'put', 'url' => route('penerimaan.show_confirmation', $penerimaan->penerimaan_id),
+                'color' => 'success', 'icon' => 'check', 'confirm' => "Penerimaan ini akan dikonfirmasi!\n Lanjutkan?"];
+        }
+
+        return $actions;
     }
 }

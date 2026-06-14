@@ -6,6 +6,7 @@ use App\Http\Requests\PayungRequest;
 use App\Models\Dombak;
 use App\Models\Payung;
 use App\Models\Spbu;
+use Inertia\Inertia;
 use Yajra\DataTables\DataTables;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -18,7 +19,7 @@ class PayungController extends Controller
      */
     public function index(Request $request)
     {
-        if ($request->ajax()) {
+        if ($request->ajax() && ! $request->inertia()) {
             $data = Payung::select('*');
             return DataTables::of($data)
                 ->addIndexColumn()
@@ -33,7 +34,20 @@ class PayungController extends Controller
                 ->rawColumns(['action'])
                 ->make(true);
         }
-        return view('master/payung/index');
+        return Inertia::render('Table/Index', [
+            'title' => 'Payung',
+            'breadcrumbs' => [['label' => 'Master Data', 'url' => route('menu.master')]],
+            'createUrl' => route('payung.create'),
+            'table' => [
+                'url' => $request->url(),
+                'columns' => [
+                    ['label' => 'Nama Payung', 'data' => 'nama_payung'],
+                    ['label' => 'Aktif', 'data' => 'is_aktif'],
+                    ['label' => 'Keterangan', 'data' => 'keterangan'],
+                    ['label' => 'Aksi', 'data' => 'action', 'orderable' => false, 'searchable' => false, 'raw' => true],
+                ],
+            ],
+        ]);
     }
 
     /**
@@ -42,7 +56,19 @@ class PayungController extends Controller
     public function create()
     {
         $spbu = Spbu::all();
-        return view('master/payung/create', compact('spbu'));
+        return Inertia::render('Form/Index', [
+            'title' => 'Tambah Payung',
+            'breadcrumbs' => [['label' => 'Master Data', 'url' => route('menu.master')], ['label' => 'Payung', 'url' => route('payung.index')]],
+            'backUrl' => route('payung.index'),
+            'method' => 'post',
+            'action' => route('payung.store'),
+            'fields' => [
+                ['name' => 'spbu_id', 'label' => 'SPBU', 'type' => 'select', 'value' => null, 'options' => $spbu->map(fn ($x) => ['value' => $x->spbu_id, 'label' => $x->nama_spbu . ' - ' . $x->nomor_spbu])->values()->all()],
+                ['name' => 'nama_payung', 'label' => 'Nama Payung', 'type' => 'text', 'value' => null],
+                ['name' => 'is_aktif', 'label' => 'Status', 'type' => 'select', 'value' => null, 'options' => [['value' => 'true', 'label' => 'Aktifkan'], ['value' => 'false', 'label' => 'Jangan Aktifkan']]],
+                ['name' => 'keterangan', 'label' => 'Keterangan', 'type' => 'textarea', 'value' => null],
+            ],
+        ]);
     }
 
     /**
@@ -57,7 +83,7 @@ class PayungController extends Controller
             $payung = $spbu->payung()->create($this->payungData());
         }
 
-        return redirect('/master/payung/' . $payung->payung_id)->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> Data Payung sudah ditambah.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
+        return redirect('/master/payung')->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> Data Payung sudah ditambah.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
     }
 
     /**
@@ -65,7 +91,19 @@ class PayungController extends Controller
      */
     public function show(Payung $payung)
     {
-        return view('master/payung/show', compact('payung'));
+        return Inertia::render('Show/Index', [
+            'title' => 'Detail Payung',
+            'breadcrumbs' => [['label' => 'Master Data', 'url' => route('menu.master')], ['label' => 'Payung', 'url' => route('payung.index')]],
+            'backUrl' => route('payung.index'),
+            'fields' => [
+                ['label' => 'SPBU', 'value' => optional(\Illuminate\Support\Facades\DB::table('spbu')->where('spbu_id', $payung->spbu_id)->first())->nama_spbu],
+                ['label' => 'Nama Payung', 'value' => $payung->nama_payung],
+                ['label' => 'Status', 'value' => filter_var($payung->is_aktif, FILTER_VALIDATE_BOOLEAN) ? 'Aktif' : 'Tidak Aktif'],
+                ['label' => 'Keterangan', 'value' => $payung->keterangan],
+            ],
+            'actions' => [['label' => 'Ubah', 'url' => route('payung.edit', $payung), 'color' => 'primary', 'icon' => 'pen'], ['label' => 'Dombak', 'url' => route('payung.dombak', $payung), 'color' => 'info', 'icon' => 'link']],
+            'deleteUrl' => route('payung.destroy', $payung),
+        ]);
     }
 
     /**
@@ -74,7 +112,19 @@ class PayungController extends Controller
     public function edit(Payung $payung)
     {
         $spbu = Spbu::all();
-        return view('master/payung/edit', compact('spbu', 'payung'));
+        return Inertia::render('Form/Index', [
+            'title' => 'Ubah Payung',
+            'breadcrumbs' => [['label' => 'Master Data', 'url' => route('menu.master')], ['label' => 'Payung', 'url' => route('payung.index')]],
+            'backUrl' => route('payung.index'),
+            'method' => 'put',
+            'action' => route('payung.update', $payung),
+            'fields' => [
+                ['name' => 'spbu_id', 'label' => 'SPBU', 'type' => 'select', 'value' => $payung->spbu_id, 'options' => $spbu->map(fn ($x) => ['value' => $x->spbu_id, 'label' => $x->nama_spbu . ' - ' . $x->nomor_spbu])->values()->all()],
+                ['name' => 'nama_payung', 'label' => 'Nama Payung', 'type' => 'text', 'value' => $payung->nama_payung],
+                ['name' => 'is_aktif', 'label' => 'Status', 'type' => 'select', 'value' => filter_var($payung->is_aktif, FILTER_VALIDATE_BOOLEAN) ? 'true' : 'false', 'options' => [['value' => 'true', 'label' => 'Aktifkan'], ['value' => 'false', 'label' => 'Jangan Aktifkan']]],
+                ['name' => 'keterangan', 'label' => 'Keterangan', 'type' => 'textarea', 'value' => $payung->keterangan],
+            ],
+        ]);
     }
 
     /**
@@ -84,7 +134,7 @@ class PayungController extends Controller
     {
         $payung->update($this->payungData());
 
-        return redirect('/master/payung/' . $payung->payung_id)->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> Data Payung sudah diubah.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
+        return redirect('/master/payung')->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> Data Payung sudah diubah.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
     }
 
     /**
@@ -108,7 +158,7 @@ class PayungController extends Controller
 
     public function dombak(Request $request, Payung $payung)
     {
-        if ($request->ajax()) {
+        if ($request->ajax() && ! $request->inertia()) {
             $data = Payung::select('payung.nama_payung')->addSelect('payung.payung_id')->addSelect('dombak_payung.dombak_id')->addSelect('dombak.nama_dombak')->join('dombak_payung', 'dombak_payung.payung_id', 'payung.payung_id')->join('dombak', 'dombak.dombak_id', 'dombak_payung.dombak_id')->where('payung.payung_id', $payung->payung_id)->get();
             return DataTables::of($data)
                 ->addIndexColumn()
@@ -120,11 +170,23 @@ class PayungController extends Controller
                 ->make(true);
         }
         $dombak = Dombak::all();
-        return view('master/payung/dombak', compact('payung'));
+        return Inertia::render('Table/Index', [
+            'title' => 'Dombak pada Payung',
+            'breadcrumbs' => [['label' => 'Master Data', 'url' => route('menu.master')], ['label' => 'Payung', 'url' => route('payung.index')], ['label' => $payung->nama_payung, 'url' => route('payung.show', $payung)]],
+            'createUrl' => route('payung.dombak.create', $payung),
+            'table' => [
+                'url' => $request->url(),
+                'columns' => [
+                    ['label' => 'Nama Payung', 'data' => 'nama_payung'],
+                    ['label' => 'Nama Dombak', 'data' => 'nama_dombak'],
+                    ['label' => 'Aksi', 'data' => 'action', 'orderable' => false, 'searchable' => false, 'raw' => true],
+                ],
+            ],
+        ]);
     }
     public function dombak_create(Request $request, Payung $payung)
     {
-        if ($request->ajax()) {
+        if ($request->ajax() && ! $request->inertia()) {
             $data = Dombak::select('dombak.*');
             return DataTables::of($data)
                 ->addIndexColumn()
@@ -138,7 +200,20 @@ class PayungController extends Controller
                 ->rawColumns(['action'])
                 ->make(true);
         }
-        return view('master/payung/dombak_create', compact('payung'));
+        return Inertia::render('Table/Index', [
+            'title' => 'Tambah Dombak ke Payung',
+            'breadcrumbs' => [['label' => 'Master Data', 'url' => route('menu.master')], ['label' => 'Payung', 'url' => route('payung.index')], ['label' => $payung->nama_payung, 'url' => route('payung.show', $payung)]],
+            'headerActions' => [['label' => 'Kembali', 'url' => route('payung.dombak', $payung), 'color' => 'light', 'icon' => 'arrow-left']],
+            'table' => [
+                'url' => $request->url(),
+                'columns' => [
+                    ['label' => 'ID Dombak', 'data' => 'dombak_id'],
+                    ['label' => 'Nama Dombak', 'data' => 'nama_dombak'],
+                    ['label' => 'Status', 'data' => 'is_aktif'],
+                    ['label' => 'Aksi', 'data' => 'action', 'orderable' => false, 'searchable' => false, 'raw' => true],
+                ],
+            ],
+        ]);
     }
 
     public function dombak_store(Payung $payung, Dombak $dombak)

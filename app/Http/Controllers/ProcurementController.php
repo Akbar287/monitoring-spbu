@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Support\Charts;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Inertia\Inertia;
 
 class ProcurementController extends Controller
 {
@@ -59,17 +60,42 @@ class ProcurementController extends Controller
         $pengirimanProses = DB::table('pengiriman')->where('is_done', 0)->count();
 
         $charts = [
-            'status' => [
-                'labels' => $status->pluck('nama_status'),
-                'data' => $status->pluck('total'),
+            [
+                'id' => 'nilai',
+                'title' => 'Nilai Pengadaan per Bulan',
+                'icon' => 'chart-line',
+                'color' => 'primary',
+                'badge' => 'Rupiah',
+                'col' => 'col-lg-6 col-12',
+                'type' => 'line',
+                'data' => Charts::monthly('rencana_pembelian', 'tanggal_pembelian', 'SUM(grand_total)'),
+                'opts' => ['money' => true, 'label' => 'Nilai Pengadaan'],
             ],
-            'pengiriman' => [
-                'labels' => ['Selesai', 'Dalam Proses'],
-                'data' => [$pengirimanSelesai, $pengirimanProses],
+            [
+                'id' => 'status',
+                'title' => 'Rencana Pembelian per Status',
+                'icon' => 'tasks',
+                'color' => 'warning',
+                'col' => 'col-lg-3 col-md-6 col-12',
+                'type' => 'doughnut',
+                'data' => ['labels' => $status->pluck('nama_status'), 'data' => $status->pluck('total')],
             ],
-            'nilai' => Charts::monthly('rencana_pembelian', 'tanggal_pembelian', 'SUM(grand_total)'),
+            [
+                'id' => 'pengiriman',
+                'title' => 'Status Pengiriman',
+                'icon' => 'truck',
+                'color' => 'info',
+                'col' => 'col-lg-3 col-md-6 col-12',
+                'type' => 'doughnut',
+                'data' => ['labels' => ['Selesai', 'Dalam Proses'], 'data' => [$pengirimanSelesai, $pengirimanProses]],
+            ],
         ];
 
-        return view('procurement/index', compact('allMenu', 'charts'));
+        return Inertia::render('Menu/Index', [
+            'title' => 'Procurement',
+            'description' => 'Status pembelian, pengiriman, dan tren nilai pengadaan BBM.',
+            'menus' => $allMenu,
+            'charts' => $charts,
+        ]);
     }
 }
