@@ -49,4 +49,9 @@ class LoginController extends Controller
             'homeUrl' => url('/'),
         ]);
     }
+
+    public function username()
+    {
+        return 'username';
+    }
 }
