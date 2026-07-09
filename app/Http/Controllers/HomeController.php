@@ -15,6 +15,7 @@ use App\Models\UserLogin;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Inertia\Inertia;
 use Yajra\DataTables\DataTables;
@@ -304,147 +305,358 @@ class HomeController extends Controller
 
     public function chart()
     {
+        $today = Carbon::today();
         $jamKerja = JamKerja::orderBy('nama_jam_kerja', 'asc')->get();
-        $produk = Produk::where('is_aktif', 1)->get();
-        $nozzles = Nozzle::orderBy('nama_nozzle', 'asc')->get();
+        $produk = Produk::with([
+            'stok_inventory',
+            'harga' => function ($query) {
+                $query->where('is_default', 1);
+            },
+        ])->where('is_aktif', 1)->orderBy('nama_produk', 'asc')->get();
+        $nozzles = Nozzle::with([
+            'produk.harga' => function ($query) {
+                $query->where('is_default', 1);
+            },
+        ])->where('is_aktif', 1)
+            ->whereHas('produk', function ($query) {
+                $query->where('is_aktif', 1);
+            })
+            ->orderBy('nama_nozzle', 'asc')
+            ->get();
 
-        // Chart Kiri
-        $kamusWarna = [
-            'Pertamina Dex' => 'rgba(6, 107, 45, 0.5)',
-            'Pertamax' => 'rgba(0, 51, 102, 0.5)',
-            'Bio Solar' => 'rgba(193, 154, 107, 0.5)',
-            'Dexlite' => 'rgba(205, 213, 221, 0.5)',
-            'Pertalite' => 'rgba(127, 255, 0, 0.5)',
-            'Premium' => 'rgba(255, 255, 0, 0.5)',
-        ];
-        $label = [];
-        $temp = [];
-        $bg = [];
-        foreach ($produk as $p) {
-            $label[] = $p->nama_produk;
-            $bg[] = $kamusWarna[$p->nama_produk];
-            $temp[] = is_null($p->stok_inventory()) ? 0 : $p->stok_inventory()->first()->stok;
+        $productIds = $produk->pluck('produk_id')->values()->all();
+        $productLabels = $produk->pluck('nama_produk')->values()->all();
+        $nozzleIds = $nozzles->pluck('nozzle_id')->values()->all();
+        $nozzleLabels = $nozzles->pluck('nama_nozzle')->values()->all();
+        $priceByProduct = $produk->mapWithKeys(function ($row) {
+            return [$row->produk_id => (float) optional($row->harga->first())->harga_jual];
+        })->all();
+
+        $salesByProduct = array_fill_keys($productIds, 0);
+        $revenueByNozzle = array_fill_keys($nozzleIds, 0);
+        $salesByProductShift = [];
+        $revenueByNozzleShift = [];
+
+        foreach ($jamKerja as $shift) {
+            $salesByProductShift[$shift->jam_kerja_id] = array_fill_keys($productIds, 0);
+            $revenueByNozzleShift[$shift->jam_kerja_id] = array_fill_keys($nozzleIds, 0);
         }
 
-        $dataset[] = ['label' => 'Stok (dalam liter)', 'data' => $temp, 'borderWidth' => 1, "backgroundColor" => $bg];
+        $salesRows = DB::table('stand_meter')
+            ->select('nozzle.produk_id', 'stand_meter.nozzle_id', 'stand_meter.jam_kerja_id')
+            ->selectRaw('SUM(COALESCE(stand_meter.stand_meter_akhir, stand_meter.stand_meter_awal) - stand_meter.stand_meter_awal) as liter')
+            ->join('nozzle', 'stand_meter.nozzle_id', '=', 'nozzle.nozzle_id')
+            ->join('produk', 'produk.produk_id', '=', 'nozzle.produk_id')
+            ->whereDate('stand_meter.tanggal', $today->format('Y-m-d'))
+            ->where('nozzle.is_aktif', 1)
+            ->where('produk.is_aktif', 1)
+            ->groupBy('nozzle.produk_id', 'stand_meter.nozzle_id', 'stand_meter.jam_kerja_id')
+            ->get();
 
-        $chart_stok = [
-            "labels" => $label,
-            "datasets" => $dataset,
-        ];
-        unset($dataset);
-        unset($temp);
-        unset($bg);
-        unset($kamusWarna);
+        foreach ($salesRows as $row) {
+            $liter = round((float) $row->liter, 2);
+            $revenue = round($liter * ($priceByProduct[$row->produk_id] ?? 0));
 
-        // End Chart Kiri
-
-        // Chart Kanan
-        $temp_out_shift = [];
-        foreach ($jamKerja as $jk) {
-            $temp_diver_penjualan = [];
-
-            foreach ($produk as $p) {
-                $count = 0;
-                foreach ($p->nozzle()->get() as $nozzle) {
-                    $count += round(($nozzle->stand_meter()
-                        ->selectRaw('SUM(stand_meter.stand_meter_akhir - stand_meter.stand_meter_awal) as selisih')
-                        ->whereDate('tanggal', today())
-                        // ->whereDate('tanggal', '2024-01-20')
-                        ->where('jam_kerja_id', $jk->jam_kerja_id)
-                        ->first()->selisih ?? 0));
-                }
-                $temp_diver_penjualan[] = $count;
+            if (array_key_exists($row->produk_id, $salesByProduct)) {
+                $salesByProduct[$row->produk_id] += $liter;
             }
 
-            $temp_out_shift[] = [
-                "label" => $jk->nama_jam_kerja,
-                "data" => $temp_diver_penjualan,
-                "stack" => $jk->nama_jam_kerja == 'Shift 1' ? 'Stack 1' : ($jk->nama_jam_kerja == 'Shift 2' ? 'Stack 2' : 'Stack 3'),
-                "borderWidth" => 1,
-                "backgroundColor" => $jk->nama_jam_kerja == 'Shift 1' ? 'rgba(255, 0, 0, 0.5)' : ($jk->nama_jam_kerja == 'Shift 2' ? 'rgba(255, 255, 0, 0.5)' : 'rgba(0, 0, 255, 0.5)')
+            if (array_key_exists($row->nozzle_id, $revenueByNozzle)) {
+                $revenueByNozzle[$row->nozzle_id] += $revenue;
+            }
+
+            if (isset($salesByProductShift[$row->jam_kerja_id]) && array_key_exists($row->produk_id, $salesByProductShift[$row->jam_kerja_id])) {
+                $salesByProductShift[$row->jam_kerja_id][$row->produk_id] += $liter;
+            }
+
+            if (isset($revenueByNozzleShift[$row->jam_kerja_id]) && array_key_exists($row->nozzle_id, $revenueByNozzleShift[$row->jam_kerja_id])) {
+                $revenueByNozzleShift[$row->jam_kerja_id][$row->nozzle_id] += $revenue;
+            }
+        }
+
+        $stockValues = $produk->map(function ($row) {
+            return round((float) optional($row->stok_inventory)->stok, 2);
+        })->values()->all();
+        $productSalesValues = array_map(function ($productId) use ($salesByProduct) {
+            return round((float) ($salesByProduct[$productId] ?? 0), 2);
+        }, $productIds);
+        $nozzleRevenueValues = array_map(function ($nozzleId) use ($revenueByNozzle) {
+            return round((float) ($revenueByNozzle[$nozzleId] ?? 0));
+        }, $nozzleIds);
+
+        $stockDatasets = [[
+            'label' => 'Stok (liter)',
+            'data' => $stockValues,
+            'borderWidth' => 1,
+            'backgroundColor' => array_map(function ($label, $index) {
+                return $this->productColor($label, $index);
+            }, $productLabels, array_keys($productLabels)),
+        ]];
+
+        $literShiftDatasets = [];
+        $revenueShiftDatasets = [];
+        foreach ($jamKerja->values() as $index => $shift) {
+            $literShiftDatasets[] = [
+                'label' => $shift->nama_jam_kerja,
+                'data' => array_map(function ($productId) use ($salesByProductShift, $shift) {
+                    return round((float) ($salesByProductShift[$shift->jam_kerja_id][$productId] ?? 0), 2);
+                }, $productIds),
+                'stack' => 'total',
+                'borderWidth' => 1,
+                'backgroundColor' => $this->shiftColor($index),
+            ];
+
+            $revenueShiftDatasets[] = [
+                'label' => $shift->nama_jam_kerja,
+                'data' => array_map(function ($nozzleId) use ($revenueByNozzleShift, $shift) {
+                    return round((float) ($revenueByNozzleShift[$shift->jam_kerja_id][$nozzleId] ?? 0));
+                }, $nozzleIds),
+                'stack' => 'total',
+                'borderWidth' => 1,
+                'backgroundColor' => $this->shiftColor($index),
             ];
         }
 
-        $chart_stok_penjualan = [
-            "labels" => $label,
-            "datasets" => $temp_out_shift,
+        $shiftLabels = $jamKerja->pluck('nama_jam_kerja')->values()->all();
+        $shiftRevenueTotals = array_map(function ($dataset) {
+            return array_sum($dataset['data']);
+        }, $revenueShiftDatasets);
+
+        $chartStok = [
+            'labels' => $productLabels,
+            'datasets' => $stockDatasets,
+            'meta' => $this->chartMeta($productLabels, $stockValues, 'liter', 'Total Stok', 'Stok Terbesar', 'Stok Terkecil'),
         ];
 
-        $chart_stok_split = [
-            "labels" => $label,
-            "datasets" => $temp_out_shift,
+        $chartStokSplit = [
+            'labels' => $productLabels,
+            'datasets' => $literShiftDatasets,
+            'meta' => $this->stackedChartMeta($productLabels, $literShiftDatasets, 'liter', 'Total Liter', 'Produk Terlaris', 'Shift Terbesar'),
         ];
 
-        unset($label);
-        unset($temp_out_shift);
-        unset($temp_diver_stok);
-        unset($temp_loss);
-
-        // End Chart Kanan
-
-
-        // Chart Kiri Penjualan
-        $res = [];
-        $labelPenjualan = [];
-        foreach ($nozzles as $nozzle) {
-            $labelPenjualan[] = $nozzle->nama_nozzle;
-            $res[] = round(($nozzle->stand_meter()
-                ->selectRaw('SUM(stand_meter.stand_meter_akhir - stand_meter.stand_meter_awal) as selisih')
-                ->whereDate('tanggal', today())
-                // ->whereDate('tanggal', '2024-01-20')
-                ->first()->selisih ?? 0) * $nozzle->produk()->first()->harga()->where('is_default', 1)->first()->harga_jual);
-        }
-        $datasetPenjualan[] = ['label' => 'Penjualan (dalam Rupiah)', 'data' => $res, 'borderWidth' => 1];
-
-        $chart_penjualan = [
-            "labels" => $labelPenjualan,
-            "datasets" => $datasetPenjualan,
+        $chartPenjualan = [
+            'labels' => $nozzleLabels,
+            'datasets' => [[
+                'label' => 'Penjualan (Rupiah)',
+                'data' => $nozzleRevenueValues,
+                'borderWidth' => 1,
+            ]],
+            'meta' => $this->chartMeta($nozzleLabels, $nozzleRevenueValues, 'money', 'Total Omzet', 'Nozzle Terbesar', 'Nozzle Terkecil'),
         ];
 
-        unset($res);
-        unset($datasetPenjualan);
-        // End Chart Kiri Penjualan
-
-
-        // Chart Kanan Penjualan
-        $temp_out_shift = [];
-        foreach ($jamKerja as $jk) {
-            $temp_diver_penjualan = [];
-            foreach ($nozzles as $nozzle) {
-                $temp_diver_penjualan[] = round(($nozzle->stand_meter()
-                    ->selectRaw('SUM(stand_meter.stand_meter_akhir - stand_meter.stand_meter_awal) as selisih')
-                    ->whereDate('tanggal', today())
-                    // ->whereDate('tanggal', '2024-01-20')
-                    ->where('jam_kerja_id', $jk->jam_kerja_id)
-                    ->first()->selisih ?? 0) * $nozzle->produk()->first()->harga()->where('is_default', 1)->first()->harga_jual);
-            }
-            $temp_out_shift[] = [
-                "label" => $jk->nama_jam_kerja,
-                "data" => $temp_diver_penjualan,
-                "stack" => $jk->nama_jam_kerja == 'Shift 1' ? 'Stack 1' : ($jk->nama_jam_kerja == 'Shift 2' ? 'Stack 2' : 'Stack 3'),
-                "borderWidth" => 1,
-                "backgroundColor" => $jk->nama_jam_kerja == 'Shift 1' ? 'rgba(255, 0, 0, 0.5)' : ($jk->nama_jam_kerja == 'Shift 2' ? 'rgba(255, 255, 0, 0.5)' : 'rgba(0, 0, 255, 0.5)')
-            ];
-        }
-
-        $chart_stok_penjualan = [
-            "labels" => $labelPenjualan,
-            "datasets" => $temp_out_shift,
+        $chartPenjualanSplit = [
+            'labels' => $nozzleLabels,
+            'datasets' => $revenueShiftDatasets,
+            'meta' => $this->stackedChartMeta($nozzleLabels, $revenueShiftDatasets, 'money', 'Total Omzet', 'Nozzle Terbesar', 'Shift Terbesar'),
         ];
-        // End Chart Kanan Penjualan
-
 
         return response()->json([
-            "message" => 'success',
-            "data" => [
-                'chart_stok' => $chart_stok,
-                'chart_stok_split' => $chart_stok_split,
-                'chart_penjualan' => $chart_penjualan,
-                'chart_penjualan_split' => $chart_stok_penjualan,
+            'message' => 'success',
+            'data' => [
+                'summary' => [
+                    'tanggal' => $today->format('Y-m-d'),
+                    'generated_at' => Carbon::now()->toIso8601String(),
+                    'cards' => [
+                        [
+                            'label' => 'Total Stok',
+                            'value' => array_sum($stockValues),
+                            'type' => 'liter',
+                            'icon' => 'gas-pump',
+                            'tone' => 'primary',
+                        ],
+                        [
+                            'label' => 'Volume Terjual',
+                            'value' => array_sum($productSalesValues),
+                            'type' => 'liter',
+                            'name' => $this->peak($productLabels, $productSalesValues)['label'],
+                            'icon' => 'tint',
+                            'tone' => 'success',
+                        ],
+                        [
+                            'label' => 'Omzet Hari Ini',
+                            'value' => array_sum($nozzleRevenueValues),
+                            'type' => 'money',
+                            'name' => $this->peak($nozzleLabels, $nozzleRevenueValues)['label'],
+                            'icon' => 'coins',
+                            'tone' => 'warning',
+                        ],
+                        [
+                            'label' => 'Shift Terbesar',
+                            'value' => $this->peak($shiftLabels, $shiftRevenueTotals)['value'],
+                            'type' => 'money',
+                            'name' => $this->peak($shiftLabels, $shiftRevenueTotals)['label'],
+                            'icon' => 'clock',
+                            'tone' => 'danger',
+                        ],
+                    ],
+                ],
+                'chart_stok' => $chartStok,
+                'chart_stok_split' => $chartStokSplit,
+                'chart_penjualan' => $chartPenjualan,
+                'chart_penjualan_split' => $chartPenjualanSplit,
             ],
-            "status" => true
+            'status' => true,
         ], 200);
+    }
+
+    private function chartMeta(array $labels, array $values, string $type, string $totalLabel, string $topLabel, string $lowLabel): array
+    {
+        $peak = $this->peak($labels, $values);
+        $trough = $this->trough($labels, $values);
+
+        return [
+            'metrics' => [
+                [
+                    'label' => $totalLabel,
+                    'value' => array_sum($values),
+                    'type' => $type,
+                ],
+                [
+                    'label' => $topLabel,
+                    'name' => $peak['label'],
+                    'value' => $peak['value'],
+                    'type' => $type,
+                ],
+                [
+                    'label' => $lowLabel,
+                    'name' => $trough['label'],
+                    'value' => $trough['value'],
+                    'type' => $type,
+                ],
+            ],
+        ];
+    }
+
+    private function stackedChartMeta(array $labels, array $datasets, string $type, string $totalLabel, string $topLabel, string $shiftLabel): array
+    {
+        $totalsByLabel = array_fill(0, count($labels), 0);
+        $shiftLabels = [];
+        $shiftTotals = [];
+
+        foreach ($datasets as $dataset) {
+            $shiftLabels[] = $dataset['label'];
+            $shiftTotal = 0;
+            foreach ($dataset['data'] as $index => $value) {
+                $numericValue = (float) $value;
+                $totalsByLabel[$index] = ($totalsByLabel[$index] ?? 0) + $numericValue;
+                $shiftTotal += $numericValue;
+            }
+            $shiftTotals[] = $shiftTotal;
+        }
+
+        $peak = $this->peak($labels, $totalsByLabel);
+        $shiftPeak = $this->peak($shiftLabels, $shiftTotals);
+
+        return [
+            'metrics' => [
+                [
+                    'label' => $totalLabel,
+                    'value' => array_sum($totalsByLabel),
+                    'type' => $type,
+                ],
+                [
+                    'label' => $topLabel,
+                    'name' => $peak['label'],
+                    'value' => $peak['value'],
+                    'type' => $type,
+                ],
+                [
+                    'label' => $shiftLabel,
+                    'name' => $shiftPeak['label'],
+                    'value' => $shiftPeak['value'],
+                    'type' => $type,
+                ],
+            ],
+        ];
+    }
+
+    private function peak(array $labels, array $values): array
+    {
+        if (count($labels) === 0 || count($values) === 0) {
+            return ['label' => '-', 'value' => 0];
+        }
+
+        $peakIndex = 0;
+        foreach ($values as $index => $value) {
+            if ((float) $value > (float) ($values[$peakIndex] ?? 0)) {
+                $peakIndex = $index;
+            }
+        }
+
+        if ((float) ($values[$peakIndex] ?? 0) <= 0) {
+            return ['label' => '-', 'value' => 0];
+        }
+
+        return [
+            'label' => $labels[$peakIndex] ?? '-',
+            'value' => (float) ($values[$peakIndex] ?? 0),
+        ];
+    }
+
+    private function trough(array $labels, array $values): array
+    {
+        if (count($labels) === 0 || count($values) === 0) {
+            return ['label' => '-', 'value' => 0];
+        }
+
+        $hasValue = false;
+        foreach ($values as $value) {
+            if ((float) $value > 0) {
+                $hasValue = true;
+                break;
+            }
+        }
+
+        if (!$hasValue) {
+            return ['label' => '-', 'value' => 0];
+        }
+
+        $troughIndex = 0;
+        foreach ($values as $index => $value) {
+            if ((float) $value < (float) ($values[$troughIndex] ?? 0)) {
+                $troughIndex = $index;
+            }
+        }
+
+        return [
+            'label' => $labels[$troughIndex] ?? '-',
+            'value' => (float) ($values[$troughIndex] ?? 0),
+        ];
+    }
+
+    private function productColor(string $name, int $index): string
+    {
+        $colors = [
+            'Pertamina Dex' => 'rgba(6, 107, 45, 0.72)',
+            'Pertamax' => 'rgba(0, 51, 102, 0.72)',
+            'Bio Solar' => 'rgba(193, 154, 107, 0.72)',
+            'Dexlite' => 'rgba(130, 148, 166, 0.72)',
+            'Pertalite' => 'rgba(71, 195, 99, 0.72)',
+            'Premium' => 'rgba(255, 164, 38, 0.72)',
+        ];
+        $fallback = [
+            'rgba(103, 119, 239, 0.72)',
+            'rgba(252, 84, 75, 0.72)',
+            'rgba(255, 164, 38, 0.72)',
+            'rgba(71, 195, 99, 0.72)',
+            'rgba(58, 186, 244, 0.72)',
+            'rgba(155, 89, 182, 0.72)',
+        ];
+
+        return $colors[$name] ?? $fallback[$index % count($fallback)];
+    }
+
+    private function shiftColor(int $index): string
+    {
+        $colors = [
+            'rgba(103, 119, 239, 0.78)',
+            'rgba(252, 84, 75, 0.78)',
+            'rgba(255, 164, 38, 0.78)',
+            'rgba(71, 195, 99, 0.78)',
+            'rgba(58, 186, 244, 0.78)',
+        ];
+
+        return $colors[$index % count($colors)];
     }
 
     public function profil()

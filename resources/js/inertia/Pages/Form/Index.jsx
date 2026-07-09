@@ -9,7 +9,7 @@ import FileDropzone from '../../Components/FileDropzone';
 //   fields: [{name, label, type: text|number|date|time|textarea|select,
 //             value, options?: [{value,label}], placeholder?, hint?, rows?}]
 // Error validasi Laravel otomatis tampil per-field lewat shared prop `errors`.
-export default function Index({ title, breadcrumbs = [], backUrl, method = 'post', action, fields = [] }) {
+export default function Index({ title, breadcrumbs = [], backUrl, method = 'post', action, fields = [], downloads = [] }) {
     const { urls } = usePage().props;
     const { data, setData, post, put, processing, errors, transform } = useForm(
         Object.fromEntries(fields.map((f) => [f.name, f.value ?? '']))
@@ -143,6 +143,19 @@ export default function Index({ title, breadcrumbs = [], backUrl, method = 'post
                                 <h4>{title}</h4>
                             </div>
                             <div className="card-body">
+                                {downloads.length > 0 && (
+                                    <div className="mb-3 d-flex flex-wrap" style={{ gap: 8 }}>
+                                        {downloads.map((d) => (
+                                            <a
+                                                key={d.url}
+                                                href={d.url}
+                                                className="btn btn-outline-primary btn-sm"
+                                            >
+                                                <i className="fas fa-file-download mr-1"></i> {d.label}
+                                            </a>
+                                        ))}
+                                    </div>
+                                )}
                                 <form onSubmit={submit}>
                                     <div className="row">
                                         {fields.filter((f) => f.type !== 'hidden').map((f) => (

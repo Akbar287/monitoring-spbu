@@ -6,13 +6,15 @@ import { Chart } from 'chart.js/auto';
 
 const PALETTE = ['#6777ef', '#fc544b', '#ffa426', '#47c363', '#3abaf4', '#9b59b6', '#fdb45c', '#34395e', '#00c9a7', '#f55376'];
 const idr = new Intl.NumberFormat('id-ID', { maximumFractionDigits: 0 });
+const toNumber = (v) => Number(v) || 0;
 
 const fmtShort = (v) => {
-    const n = Math.abs(v || 0);
-    if (n >= 1e9) return (v / 1e9).toFixed(1).replace('.0', '') + ' M';
-    if (n >= 1e6) return (v / 1e6).toFixed(1).replace('.0', '') + ' jt';
-    if (n >= 1e3) return (v / 1e3).toFixed(1).replace('.0', '') + ' rb';
-    return idr.format(v || 0);
+    const value = toNumber(v);
+    const n = Math.abs(value);
+    if (n >= 1e9) return (value / 1e9).toFixed(1).replace('.0', '') + ' M';
+    if (n >= 1e6) return (value / 1e6).toFixed(1).replace('.0', '') + ' jt';
+    if (n >= 1e3) return (value / 1e3).toFixed(1).replace('.0', '') + ' rb';
+    return idr.format(value);
 };
 
 const fmtVal = (opt, v) => (opt.money ? 'Rp ' + idr.format(v ?? 0) : fmtShort(v) + (opt.unit ? ' ' + opt.unit : ''));
@@ -47,7 +49,9 @@ const GRID_X = { grid: { display: false }, border: { display: false } };
 
 export function isEmptyData(type, d) {
     if (!d || !d.labels || !d.labels.length) return true;
-    if (d.datasets) return !d.datasets.length;
+    if (d.datasets) {
+        return !(d.datasets || []).some((ds) => (ds.data || []).some((v) => toNumber(v) > 0));
+    }
     return !(d.data || []).some((v) => Number(v) > 0);
 }
 
@@ -62,7 +66,7 @@ export function buildChart(canvas, type, d, opt = {}) {
                 labels: d.labels,
                 datasets: [{
                     data: d.data,
-                    backgroundColor: d.labels.map((_, i) => PALETTE[i % PALETTE.length]),
+                    backgroundColor: d.backgroundColor || d.labels.map((_, i) => PALETTE[i % PALETTE.length]),
                     borderColor: '#ffffff',
                     borderWidth: 3,
                     hoverOffset: 10,
@@ -99,7 +103,7 @@ export function buildChart(canvas, type, d, opt = {}) {
                     label: opt.label || '',
                     data: d.data,
                     backgroundColor: colorEach
-                        ? d.labels.map((_, i) => PALETTE[i % PALETTE.length])
+                        ? (d.backgroundColor || d.labels.map((_, i) => PALETTE[i % PALETTE.length]))
                         : PALETTE[opt.colorIndex || 0],
                     borderRadius: 6,
                     borderSkipped: false,
@@ -176,7 +180,14 @@ export function buildChart(canvas, type, d, opt = {}) {
                     legend: { position: 'bottom' },
                     tooltip: {
                         ...TOOLTIP,
-                        callbacks: { label: (c) => '  ' + c.dataset.label + ': ' + fmtVal(opt, c.parsed.y) },
+                        callbacks: {
+                            label: (c) => '  ' + c.dataset.label + ': ' + fmtVal(opt, c.parsed.y),
+                            footer(items) {
+                                if (!items || items.length < 2) return '';
+                                const total = items.reduce((sum, item) => sum + toNumber(item.parsed.y), 0);
+                                return 'Total: ' + fmtVal(opt, total);
+                            },
+                        },
                     },
                 },
                 scales: {

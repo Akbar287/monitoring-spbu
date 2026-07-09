@@ -1,12 +1,34 @@
 import { useEffect, useRef, useState } from 'react';
 import AppLayout from '../../Layouts/AppLayout';
 import MenuTile from '../../Components/MenuTile';
-import { buildChart } from '../../lib/charts';
+import { buildChart, isEmptyData } from '../../lib/charts';
 
 // Dashboard /home.
 // Manajemen: kartu statistik + 4 chart (data dari endpoint lama /api/chart)
 // + menu + tabel pembayaran + daftar pengiriman. Operator/Keamanan: kartu
 // sambutan + menu. Paritas data & endpoint dengan home.blade.php lama.
+const numberFormatter = new Intl.NumberFormat('id-ID', { maximumFractionDigits: 0 });
+const compactFormatter = new Intl.NumberFormat('id-ID', { maximumFractionDigits: 1, notation: 'compact', compactDisplay: 'short' });
+const dateFormatter = new Intl.DateTimeFormat('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+const timeFormatter = new Intl.DateTimeFormat('id-ID', { hour: '2-digit', minute: '2-digit' });
+
+const asNumber = (v) => Number(v) || 0;
+const formatMetric = (item, compact = true) => {
+    const value = asNumber(item?.value);
+    const formatter = compact ? compactFormatter : numberFormatter;
+    if (item?.type === 'money') return `Rp ${formatter.format(value)}`;
+    if (item?.type === 'liter') return `${formatter.format(value)} L`;
+    return formatter.format(value);
+};
+const formatDate = (value) => {
+    if (!value) return 'Hari ini';
+    return dateFormatter.format(new Date(`${value}T00:00:00`));
+};
+const formatTime = (value) => {
+    if (!value) return null;
+    return timeFormatter.format(new Date(value));
+};
+
 function StatCard({ icon, color, label, value }) {
     return (
         <div className="col-lg-3 col-md-6 col-sm-6 col-12">
@@ -25,40 +47,113 @@ function StatCard({ icon, color, label, value }) {
     );
 }
 
-function HomeChart({ id, type, payload, opts }) {
-    const ref = useRef(null);
-    useEffect(() => {
-        if (!ref.current || !payload) return undefined;
-        const data =
-            type === 'doughnut' || (type === 'bar' && !payload.multi)
-                ? { labels: payload.labels, data: payload.datasets?.[0]?.data ?? [] }
-                : { labels: payload.labels, datasets: payload.datasets ?? [] };
-        const chart = buildChart(ref.current, payload.multi ? 'stackedBar' : type, data, opts || {});
-        return () => chart && chart.destroy();
-    }, [type, payload, opts]);
+function InsightCard({ item }) {
+    const context = item?.name && item.name !== '-' ? (item.label === 'Shift Terbesar' ? item.name : `Tertinggi: ${item.name}`) : null;
 
-    if (!payload) {
+    return (
+        <div className="col-xl-3 col-md-6 col-12">
+            <div className={`home-insight home-insight-${item?.tone || 'primary'}`}>
+                <span className="home-insight-icon">
+                    <i className={`fas fa-${item?.icon || 'chart-bar'}`}></i>
+                </span>
+                <span className="home-insight-body">
+                    <span>{item?.label}</span>
+                    <strong>{formatMetric(item)}</strong>
+                    {context && <small>{context}</small>}
+                </span>
+            </div>
+        </div>
+    );
+}
+
+function ChartMetrics({ metrics = [] }) {
+    if (!metrics.length) return null;
+
+    return (
+        <div className="chart-metrics">
+            {metrics.map((metric) => (
+                <div className="chart-metric" key={`${metric.label}-${metric.name || 'total'}`}>
+                    <span>{metric.label}</span>
+                    <strong>{formatMetric(metric)}</strong>
+                    {metric.name && metric.name !== '-' && <small>{metric.name}</small>}
+                </div>
+            ))}
+        </div>
+    );
+}
+
+function prepareChartPayload(type, payload) {
+    if (!payload) return null;
+    if (type === 'doughnut' || (type === 'bar' && !payload.multi)) {
+        return {
+            labels: payload.labels,
+            data: payload.datasets?.[0]?.data ?? [],
+            backgroundColor: payload.datasets?.[0]?.backgroundColor,
+        };
+    }
+
+    return { labels: payload.labels, datasets: payload.datasets ?? [] };
+}
+
+function HomeChart({ id, type, payload, opts, status, emptyMessage }) {
+    const ref = useRef(null);
+    const chartPayload = prepareChartPayload(type, payload);
+    const chartType = payload?.multi ? 'stackedBar' : type;
+    const empty = status === 'ready' && isEmptyData(chartType, chartPayload);
+
+    useEffect(() => {
+        if (!ref.current || !chartPayload || empty || status !== 'ready') return undefined;
+        const chart = buildChart(ref.current, chartType, chartPayload, opts || {});
+        return () => chart && chart.destroy();
+    }, [chartPayload, chartType, empty, opts, status]);
+
+    if (status === 'loading' || status === 'idle') {
         return <div className="chart-empty">Memuat chart...</div>;
     }
+
+    if (status === 'error') {
+        return <div className="chart-empty">Chart belum bisa dimuat</div>;
+    }
+
+    if (empty) {
+        return <div className="chart-empty">{emptyMessage || 'Belum ada data'}</div>;
+    }
+
     return <canvas id={id} ref={ref}></canvas>;
 }
 
 export default function Index({ isManagement, nama, level, stats, menus = [], pembayaran = [], delivery = [], links }) {
     const [charts, setCharts] = useState(null);
+    const [chartStatus, setChartStatus] = useState(isManagement ? 'loading' : 'idle');
 
     useEffect(() => {
         if (!isManagement) return;
+        const controller = new AbortController();
+        setChartStatus('loading');
         fetch(links.chartApi, {
             credentials: 'same-origin',
+            signal: controller.signal,
             headers: { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
         })
-            .then((r) => r.json())
-            .then((res) => setCharts(res.data))
-            .catch((err) => console.error(err));
+            .then((r) => {
+                if (!r.ok) throw new Error('Chart request failed');
+                return r.json();
+            })
+            .then((res) => {
+                setCharts(res.data);
+                setChartStatus('ready');
+            })
+            .catch((err) => {
+                if (err.name === 'AbortError') return;
+                console.error(err);
+                setChartStatus('error');
+            });
+
+        return () => controller.abort();
     }, [isManagement, links.chartApi]);
 
-    const chartCard = (title, icon, color, badge, child) => (
-        <div className="card">
+    const chartCard = (title, icon, color, badge, meta, child) => (
+        <div className="card dashboard-chart-card">
             <div className="card-header">
                 <h4>
                     <i className={`fas fa-${icon} text-${color} mr-2`}></i> {title}
@@ -70,6 +165,7 @@ export default function Index({ isManagement, nama, level, stats, menus = [], pe
                 )}
             </div>
             <div className="card-body">
+                <ChartMetrics metrics={meta?.metrics} />
                 <div className="chart-shell">{child}</div>
             </div>
         </div>
@@ -88,16 +184,29 @@ export default function Index({ isManagement, nama, level, stats, menus = [], pe
 
                     <div className="row">
                         <div className="col-12">
+                            <div className="section-title mb-0">Ringkasan Operasional Hari Ini</div>
+                            <p className="text-muted">
+                                {formatDate(charts?.summary?.tanggal)}
+                                {formatTime(charts?.summary?.generated_at) ? `, diperbarui ${formatTime(charts.summary.generated_at)}` : ''}
+                            </p>
+                        </div>
+                        {charts?.summary?.cards?.map((item) => (
+                            <InsightCard key={item.label} item={item} />
+                        ))}
+                    </div>
+
+                    <div className="row">
+                        <div className="col-12">
                             <div className="section-title mb-0">Dashboard Stok Hari Ini</div>
                             <p className="text-muted">Ringkasan persediaan BBM dan pergerakan stok per shift.</p>
                         </div>
                         <div className="col-lg-5 col-12">
-                            {chartCard('Komposisi Stok BBM', 'gas-pump', 'primary', 'Liter',
-                                <HomeChart id="chart-stok" type="doughnut" payload={charts?.chart_stok} opts={{ unit: 'L' }} />)}
+                            {chartCard('Komposisi Stok BBM', 'gas-pump', 'primary', 'Liter', charts?.chart_stok?.meta,
+                                <HomeChart id="chart-stok" type="doughnut" status={chartStatus} payload={charts?.chart_stok} opts={{ unit: 'L' }} emptyMessage="Belum ada stok tercatat" />)}
                         </div>
                         <div className="col-lg-7 col-12">
-                            {chartCard('Penjualan Stok per Shift', 'layer-group', 'warning', 'Liter',
-                                <HomeChart id="chart-stok-split" type="bar" payload={charts ? { ...charts.chart_stok_split, multi: true } : null} opts={{ unit: 'L' }} />)}
+                            {chartCard('Volume Terjual per Produk & Shift', 'layer-group', 'warning', 'Liter', charts?.chart_stok_split?.meta,
+                                <HomeChart id="chart-stok-split" type="bar" status={chartStatus} payload={charts ? { ...charts.chart_stok_split, multi: true } : null} opts={{ unit: 'L' }} emptyMessage="Belum ada penjualan liter hari ini" />)}
                         </div>
                     </div>
 
@@ -107,12 +216,12 @@ export default function Index({ isManagement, nama, level, stats, menus = [], pe
                             <p className="text-muted">Realisasi penjualan berdasarkan nozzle dan shift kerja.</p>
                         </div>
                         <div className="col-lg-7 col-12">
-                            {chartCard('Penjualan per Nozzle', 'coins', 'success', 'Rupiah',
-                                <HomeChart id="chart-penjualan" type="bar" payload={charts?.chart_penjualan} opts={{ money: true }} />)}
+                            {chartCard('Omzet per Nozzle', 'coins', 'success', 'Rupiah', charts?.chart_penjualan?.meta,
+                                <HomeChart id="chart-penjualan" type="bar" status={chartStatus} payload={charts?.chart_penjualan} opts={{ money: true }} emptyMessage="Belum ada omzet nozzle hari ini" />)}
                         </div>
                         <div className="col-lg-5 col-12">
-                            {chartCard('Penjualan per Shift', 'receipt', 'danger', 'Rupiah',
-                                <HomeChart id="chart-penjualan-split" type="bar" payload={charts ? { ...charts.chart_penjualan_split, multi: true } : null} opts={{ money: true }} />)}
+                            {chartCard('Omzet per Shift', 'receipt', 'danger', 'Rupiah', charts?.chart_penjualan_split?.meta,
+                                <HomeChart id="chart-penjualan-split" type="bar" status={chartStatus} payload={charts ? { ...charts.chart_penjualan_split, multi: true } : null} opts={{ money: true }} emptyMessage="Belum ada omzet shift hari ini" />)}
                         </div>
                     </div>
                 </>

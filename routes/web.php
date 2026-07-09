@@ -602,6 +602,7 @@ Route::middleware(['auth', 'cache.header'])->group(function ($route) {
     $route->delete('/konfigurasi/jam_kerja/{jamKerja}', [App\Http\Controllers\JamKerjaController::class, 'destroy'])->name('jam_kerja.destroy');
 
     $route->get('/konfigurasi/import', [App\Http\Controllers\ImportController::class, 'index'])->name('import.index');
+    $route->get('/konfigurasi/import/template', [App\Http\Controllers\ImportController::class, 'template'])->name('import.template');
     $route->post('/konfigurasi/import', [App\Http\Controllers\ImportController::class, 'store'])->name('import.store');
 
     $route->get('/kehadiran', [App\Http\Controllers\KehadiranOperatorController::class, 'index'])->name('menu.kehadiran');

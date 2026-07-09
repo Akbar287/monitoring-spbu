@@ -3,6 +3,24 @@ import { Head, Link, router, usePage } from '@inertiajs/react';
 
 // Breakpoint mobile stisla (media query max-width: 1024px di app.css)
 const MOBILE_BP = 1024;
+const THEME_KEY = 'spbu-theme';
+
+const getInitialTheme = () => {
+    if (typeof window === 'undefined') return 'light';
+    try {
+        const saved = window.localStorage.getItem(THEME_KEY);
+        if (saved === 'dark' || saved === 'light') return saved;
+    } catch {
+        return 'light';
+    }
+    return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+};
+
+const applyColorTheme = (theme) => {
+    if (typeof document === 'undefined') return;
+    document.documentElement.dataset.theme = theme;
+    document.documentElement.style.colorScheme = theme;
+};
 
 const pathOf = (u) => {
     try {
@@ -17,13 +35,13 @@ const prefixMatch = (current, path) => current === path || current.startsWith(pa
 // Halaman yang sudah Inertia diberi flag `inertia: true` dari Navigation.php
 // dan dinavigasi via <Link> (SPA + NProgress). Halaman yang masih Blade harus
 // memakai <a> biasa — <Link> ke Blade akan ditolak Inertia.
-function NavAnchor({ item, className, children }) {
+function NavAnchor({ item, className, children, ...props }) {
     return item.inertia ? (
-        <Link className={className} href={item.url}>
+        <Link className={className} href={item.url} {...props}>
             {children}
         </Link>
     ) : (
-        <a className={className} href={item.url}>
+        <a className={className} href={item.url} {...props}>
             {children}
         </a>
     );
@@ -84,6 +102,18 @@ function SidebarItem({ item, current }) {
 export default function AppLayout({ title, children }) {
     const { auth, navigation, urls, flash } = usePage().props;
     const current = pathOf(usePage().url);
+    const [menuSearch, setMenuSearch] = useState('');
+    const [searchOpen, setSearchOpen] = useState(false);
+    const [theme, setTheme] = useState(getInitialTheme);
+
+    useEffect(() => {
+        applyColorTheme(theme);
+        try {
+            window.localStorage.setItem(THEME_KEY, theme);
+        } catch {
+            // Theme still applies for the current session when storage is unavailable.
+        }
+    }, [theme]);
 
     // Di Blade, stisla.js yang mengatur kelas body utk responsive sidebar;
     // di halaman React tugas itu di sini: layar kecil -> sidebar tersembunyi
@@ -144,8 +174,35 @@ export default function AppLayout({ title, children }) {
         e.preventDefault();
         router.post(urls.logout);
     };
+    const toggleTheme = (e) => {
+        e.preventDefault();
+        setTheme((currentTheme) => (currentTheme === 'dark' ? 'light' : 'dark'));
+    };
 
     const menuHeader = useMemo(() => auth?.level ?? 'Menu Utama', [auth]);
+    const flatNavigation = useMemo(() => {
+        const items = [];
+        navigation.forEach((item) => {
+            items.push({ ...item, group: null });
+            (item.children || []).forEach((child) => {
+                items.push({ ...child, icon: item.icon, group: item.label });
+            });
+        });
+        return items;
+    }, [navigation]);
+    const activeItem = useMemo(() => {
+        const child = flatNavigation.find((item) => item.group && childIsActive(current, item));
+        if (child) return child;
+        return flatNavigation.find((item) => !item.group && prefixMatch(current, pathOf(item.url)));
+    }, [current, flatNavigation]);
+    const searchResults = useMemo(() => {
+        const q = menuSearch.trim().toLowerCase();
+        if (!q) return flatNavigation.slice(0, 6);
+
+        return flatNavigation
+            .filter((item) => `${item.group || ''} ${item.label}`.toLowerCase().includes(q))
+            .slice(0, 8);
+    }, [flatNavigation, menuSearch]);
 
     return (
         <div id="app">
@@ -153,22 +210,66 @@ export default function AppLayout({ title, children }) {
             <div className="main-wrapper">
                 <div className="navbar-bg"></div>
                 <nav className="navbar navbar-expand-lg main-navbar">
-                    <div className="div-inline mr-auto">
-                        <ul className="navbar-nav mr-3">
-                            <li>
-                                <a href="#" onClick={toggleSidebar} data-sidebar-toggle className="nav-link nav-link-lg">
-                                    <i className="fas fa-bars"></i>
-                                </a>
-                            </li>
-                        </ul>
+                    <div className="topbar-left">
+                        <a href="#" onClick={toggleSidebar} data-sidebar-toggle className="nav-link nav-link-lg topbar-icon-btn">
+                            <i className="fas fa-bars"></i>
+                        </a>
+                        <div className="topbar-title">
+                            <span>{activeItem?.group || 'Dashboard'}</span>
+                            <strong>{title || activeItem?.label || 'Dashboard'}</strong>
+                        </div>
+                    </div>
+                    <div className="topbar-search">
+                        <i className="fas fa-search"></i>
+                        <input
+                            value={menuSearch}
+                            onChange={(e) => setMenuSearch(e.target.value)}
+                            onFocus={() => setSearchOpen(true)}
+                            onBlur={() => window.setTimeout(() => setSearchOpen(false), 120)}
+                            placeholder="Cari menu..."
+                        />
+                        {searchOpen && (
+                            <div className="topbar-search-results">
+                                {searchResults.length > 0 ? (
+                                    searchResults.map((item) => (
+                                        <NavAnchor
+                                            key={`${item.group || 'root'}-${item.label}-${item.url}`}
+                                            item={item}
+                                            className="topbar-search-result"
+                                            onClick={() => {
+                                                setMenuSearch('');
+                                                setSearchOpen(false);
+                                            }}
+                                        >
+                                            <i className={`fas fa-${item.icon || 'circle'}`}></i>
+                                            <span>
+                                                <strong>{item.label}</strong>
+                                                {item.group && <small>{item.group}</small>}
+                                            </span>
+                                        </NavAnchor>
+                                    ))
+                                ) : (
+                                    <div className="topbar-search-empty">Menu tidak ditemukan</div>
+                                )}
+                            </div>
+                        )}
                     </div>
                     <ul className="navbar-nav navbar-right">
-                        <li className="dropdown d-flex">
-                            <a href={urls.profil} className="nav-link nav-link-lg nav-link-user">
-                                <img alt="profile" src={auth?.avatar} className="rounded-circle mr-1" />
+                        <li className="dropdown d-flex align-items-center">
+                            <a
+                                href="#"
+                                onClick={toggleTheme}
+                                className="nav-link nav-link-lg nav-link-user topbar-icon-btn theme-toggle-btn"
+                                title={theme === 'dark' ? 'Gunakan mode terang' : 'Gunakan mode gelap'}
+                                aria-label={theme === 'dark' ? 'Gunakan mode terang' : 'Gunakan mode gelap'}
+                            >
+                                <i className={`fas fa-${theme === 'dark' ? 'sun' : 'moon'}`}></i>
                             </a>
-                            <a href={urls.notifikasi} className="nav-link nav-link-lg nav-link-user">
+                            <a href={urls.notifikasi} className="nav-link nav-link-lg nav-link-user topbar-icon-btn">
                                 <i className="fas fa-bell"></i>
+                            </a>
+                            <a href={urls.profil} className="nav-link nav-link-lg nav-link-user topbar-profile" title={auth?.nama || 'Profil'} aria-label="Profil">
+                                <img alt="profile" src={auth?.avatar} className="rounded-circle mr-1" />
                             </a>
                             <a href={urls.logout} onClick={logout} className="nav-link nav-link-lg nav-link-user" id="logout-btn">
                                 <i className="fas fa-sign-out-alt"></i>
@@ -181,12 +282,20 @@ export default function AppLayout({ title, children }) {
                     <aside id="sidebar-wrapper">
                         <div className="sidebar-brand align-items-center">
                             <a href={urls.home}>
-                                <img src="/images/logo.jpg" alt="logo" className="img-responsive" width="30" /> SPBU
+                                <span className="brand-mark">
+                                    <img src="/images/logo.jpg" alt="logo" className="img-responsive" width="30" />
+                                </span>
+                                <span className="brand-copy">
+                                    <strong>SPBU</strong>
+                                    <small>Sistem Monitoring</small>
+                                </span>
                             </a>
                         </div>
                         <div className="sidebar-brand sidebar-brand-sm">
                             <a href={urls.home}>
-                                <img src="/images/logo.jpg" alt="logo" className="img-responsive" width="30" />
+                                <span className="brand-mark">
+                                    <img src="/images/logo.jpg" alt="logo" className="img-responsive" width="30" />
+                                </span>
                             </a>
                         </div>
                         <ul className="sidebar-menu">

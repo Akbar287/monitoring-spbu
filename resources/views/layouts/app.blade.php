@@ -15,6 +15,67 @@
 
     <title>{{ config('app.name', 'Monitoring SPBU') }}</title>
 
+    <script>
+        (function () {
+            var key = 'spbu-theme';
+
+            function preferredTheme() {
+                try {
+                    var saved = localStorage.getItem(key);
+                    if (saved === 'dark' || saved === 'light') return saved;
+                    return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+                } catch (e) {
+                    return 'light';
+                }
+            }
+
+            function applyTheme(theme, persist) {
+                document.documentElement.dataset.theme = theme;
+                document.documentElement.style.colorScheme = theme;
+                if (persist) {
+                    try {
+                        localStorage.setItem(key, theme);
+                    } catch (e) {}
+                }
+            }
+
+            function syncButtons() {
+                var theme = document.documentElement.dataset.theme || preferredTheme();
+                document.querySelectorAll('[data-theme-toggle]').forEach(function (button) {
+                    button.setAttribute('aria-label', theme === 'dark' ? 'Gunakan mode terang' : 'Gunakan mode gelap');
+                    button.setAttribute('title', theme === 'dark' ? 'Gunakan mode terang' : 'Gunakan mode gelap');
+                    button.innerHTML = '<i class="fas fa-' + (theme === 'dark' ? 'sun' : 'moon') + '"></i>';
+                });
+            }
+
+            window.spbuTheme = {
+                get: preferredTheme,
+                set: function (theme) {
+                    applyTheme(theme, true);
+                    syncButtons();
+                },
+                toggle: function () {
+                    var next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+                    applyTheme(next, true);
+                    syncButtons();
+                    return next;
+                }
+            };
+
+            applyTheme(preferredTheme(), false);
+
+            document.addEventListener('DOMContentLoaded', function () {
+                syncButtons();
+                document.querySelectorAll('[data-theme-toggle]').forEach(function (button) {
+                    button.addEventListener('click', function (event) {
+                        event.preventDefault();
+                        window.spbuTheme.toggle();
+                    });
+                });
+            });
+        })();
+    </script>
+
     <!-- Scripts -->
     <script src="{{ asset('js/app.js') }}" defer></script>
     <!-- Styles -->
@@ -48,6 +109,10 @@
                 </div>
                 <ul class="navbar-nav navbar-right">
                     <li class="dropdown d-flex">
+                        <a href="#" class="nav-link nav-link-lg nav-link-user topbar-icon-btn theme-toggle-btn"
+                            data-theme-toggle aria-label="Gunakan mode gelap" title="Gunakan mode gelap">
+                            <i class="fas fa-moon"></i>
+                        </a>
                         <a href="{{ url('/profil') }}" class="nav-link nav-link-lg nav-link-user">
                             <img alt="profile"
                                 src="{{ asset('/storage/profile_img/' . Auth::user()->member()->first()->avatar) }}"

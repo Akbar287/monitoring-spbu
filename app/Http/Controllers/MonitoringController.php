@@ -196,6 +196,10 @@ class MonitoringController extends Controller
      */
     public function destroy(StokInventory $stok)
     {
+        if($stok->stok_inventory_dombak()->count() > 0) {
+            return redirect('/stok/monitoring')->with('msg', '<div class="alert alert-danger alert-dismissible fade show" role="alert"><strong>Gagal!</strong> Data Stok Inventory masih digunakan oleh Dombak.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
+        }
+        $stok->stok_inventory_dombak()->delete();
         $stok->delete();
 
         return redirect('/stok/monitoring')->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> Data Dombak sudah dihapus.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');

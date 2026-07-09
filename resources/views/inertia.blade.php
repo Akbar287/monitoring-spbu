@@ -8,6 +8,44 @@
 
     <title inertia>{{ config('app.name', 'Monitoring SPBU') }}</title>
 
+    <script>
+        (function () {
+            var key = 'spbu-theme';
+
+            function preferredTheme() {
+                try {
+                    var saved = localStorage.getItem(key);
+                    if (saved === 'dark' || saved === 'light') return saved;
+                    return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+                } catch (e) {
+                    return 'light';
+                }
+            }
+
+            function applyTheme(theme, persist) {
+                document.documentElement.dataset.theme = theme;
+                document.documentElement.style.colorScheme = theme;
+                if (persist) {
+                    try {
+                        localStorage.setItem(key, theme);
+                    } catch (e) {}
+                }
+            }
+
+            window.spbuTheme = {
+                get: preferredTheme,
+                set: function (theme) { applyTheme(theme, true); },
+                toggle: function () {
+                    var next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+                    applyTheme(next, true);
+                    return next;
+                }
+            };
+
+            applyTheme(preferredTheme(), false);
+        })();
+    </script>
+
     <!-- Stisla + FontAwesome (hasil build Mix) & tema bersama -->
     <link href="{{ asset('css/app.css') }}" rel="stylesheet">
     <link href="{{ asset('css/theme.css') }}?v={{ filemtime(public_path('css/theme.css')) }}" rel="stylesheet">
