@@ -16,6 +16,24 @@ class FinancialController extends Controller
     {
         $allMenu = [
             [
+                "nama" => "COA (Master Akun)",
+                "icon" => "sitemap",
+                "url" => route('coa.index'),
+                "color" => "dark"
+            ],
+            [
+                "nama" => "Jurnal Umum",
+                "icon" => "book",
+                "url" => route('jurnal.index'),
+                "color" => "secondary"
+            ],
+            [
+                "nama" => "Saldo Awal",
+                "icon" => "balance-scale",
+                "url" => route('saldo-awal.index'),
+                "color" => "warning"
+            ],
+            [
                 "nama" => "Petty Cash",
                 "icon" => "th",
                 "url" => route('financial.petty-cash'),
@@ -50,6 +68,12 @@ class FinancialController extends Controller
                 "icon" => "file",
                 "url" => route('buku-besar.index'),
                 "color" => "info"
+            ],
+            [
+                "nama" => "Neraca Saldo",
+                "icon" => "list-ol",
+                "url" => route('neraca-saldo.index'),
+                "color" => "success"
             ],
             [
                 "nama" => "Arus Kas",

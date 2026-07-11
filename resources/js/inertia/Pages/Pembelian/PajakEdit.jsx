@@ -15,6 +15,7 @@ export default function PajakEdit({ title, breadcrumbs = [], backUrl, action, va
         pph: values.pph ?? '',
         ppbkb: values.ppbkb ?? '',
         total_amount: values.total_amount ?? '',
+        metode_posting_pajak: values.metode_posting_pajak ?? 'hpp',
     });
 
     const recompute = (patch) => {
@@ -79,6 +80,26 @@ export default function PajakEdit({ title, breadcrumbs = [], backUrl, action, va
                                     {row('pph', 'PPH')}
                                     {row('ppbkb', 'PPBKB')}
                                     {row('total_amount', 'Total Amount', true)}
+
+                                    <div className="form-group row align-items-center">
+                                        <label htmlFor="metode_posting_pajak" className="col-md-4 col-form-label text-md-right">
+                                            Posting Pajak (Akuntansi)
+                                        </label>
+                                        <div className="col-md-6">
+                                            <select
+                                                id="metode_posting_pajak"
+                                                className={`custom-select ${errors.metode_posting_pajak ? 'is-invalid' : ''}`}
+                                                value={data.metode_posting_pajak}
+                                                onChange={(e) => setData('metode_posting_pajak', e.target.value)}
+                                            >
+                                                <option value="hpp">Include ke HPP (PPN & PPBKB masuk nilai persediaan)</option>
+                                                <option value="terpisah">Terpisah (PPN Masukan & Beban PPBKB tersendiri)</option>
+                                            </select>
+                                            <small className="form-text text-muted">
+                                                Menentukan jurnal pembelian ini. PPh 22 selalu dicatat sebagai Beban PPh Final sesuai standar akuntansi.
+                                            </small>
+                                        </div>
+                                    </div>
 
                                     <div className="form-group row">
                                         <div className="col-md-6 offset-md-4 d-flex" style={{ gap: 10 }}>

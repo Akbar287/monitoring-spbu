@@ -21,6 +21,12 @@ class PettyCash extends Model
         static::creating(function ($model) {
             $model->{$model->getKeyName()} = Uuid::uuid4()->toString();
         });
+
+        // petty cash langsung dijurnal saat dicatat/diubah; batal saat dihapus
+        // (soft delete). Restore memicu event updated sehingga terposting lagi.
+        static::created(fn ($model) => \App\Support\PostingKeuangan::pettyCashBerubah($model));
+        static::updated(fn ($model) => \App\Support\PostingKeuangan::pettyCashBerubah($model));
+        static::deleted(fn ($model) => \App\Support\PostingKeuangan::batalPettyCash($model));
     }
     protected $fillable = [
         'spbu_id',

@@ -493,6 +493,7 @@ class PembayaranController extends Controller
                 'ppbkb' => number_format($rencana->pajak_pembelian()->first()->ppbkb ?? $rencana->grand_total * ($pajakLib->ppbkb / 100), 6, '.', ','),
                 'pph' => number_format($rencana->pajak_pembelian()->first()->pph ?? $rencana->grand_total * ($pajakLib->pph / 100), 6, '.', ','),
                 'total_amount' => number_format($rencana->pajak_pembelian()->first()->total_amount ?? $rencana->grand_total + ($rencana->grand_total * ($pajakLib->ppn / 100)) + ($rencana->grand_total * ($pajakLib->ppbkb / 100)) + ($rencana->grand_total * ($pajakLib->pph / 100)), 6, '.', ','),
+                'metode_posting_pajak' => $rencana->pajak_pembelian()->first()->metode_posting_pajak ?? 'hpp',
             ],
         ]);
     }
@@ -504,6 +505,7 @@ class PembayaranController extends Controller
             'ppn' => ['required'],
             'ppbkb' => ['required'],
             'pph' => ['required'],
+            'metode_posting_pajak' => ['required', 'in:hpp,terpisah'],
         ]);
 
         if ($rencana->pajak_pembelian()->count() > 0) {
@@ -522,7 +524,8 @@ class PembayaranController extends Controller
             'ppn' => str_replace(',', '', request('ppn')),
             'ppbkb' => str_replace(',', '', request('ppbkb')),
             'pph' => str_replace(',', '', request('pph')),
-            'total_amount' => $grand_total
+            'total_amount' => $grand_total,
+            'metode_posting_pajak' => request('metode_posting_pajak', 'hpp'),
         ];
     }
 }

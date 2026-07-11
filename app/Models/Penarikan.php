@@ -20,6 +20,11 @@ class Penarikan extends Model
         static::creating(function ($model) {
             $model->{$model->getKeyName()} = Uuid::uuid4()->toString();
         });
+
+        // posting/pembatalan jurnal otomatis saat setoran bank di-accept/dicabut
+        static::created(fn ($model) => \App\Support\PostingKeuangan::penarikanBerubah($model));
+        static::updated(fn ($model) => \App\Support\PostingKeuangan::penarikanBerubah($model));
+        static::deleted(fn ($model) => \App\Support\PostingKeuangan::batalPenarikan($model));
     }
 
     protected $fillable = [

@@ -20,6 +20,11 @@ class Pembayaran extends Model
         static::creating(function ($model) {
             $model->{$model->getKeyName()} = Uuid::uuid4()->toString();
         });
+
+        // posting/pembatalan jurnal otomatis saat pembayaran dikonfirmasi/dicabut
+        static::created(fn ($model) => \App\Support\PostingKeuangan::pembayaranBerubah($model));
+        static::updated(fn ($model) => \App\Support\PostingKeuangan::pembayaranBerubah($model));
+        static::deleted(fn ($model) => \App\Support\PostingKeuangan::batalPembayaran($model));
     }
 
     protected $fillable = [

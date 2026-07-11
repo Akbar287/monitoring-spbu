@@ -519,8 +519,24 @@ Route::middleware(['auth', 'cache.header'])->group(function ($route) {
     $route->get('/financial/laba-rugi', [App\Http\Controllers\LabaRugiController::class, 'index'])->name('laba-rugi.index');
     $route->get('/financial/neraca', [App\Http\Controllers\NeracaController::class, 'index'])->name('neraca.index');
     $route->get('/financial/buku-besar', [App\Http\Controllers\BukuBesarController::class, 'index'])->name('buku-besar.index');
+    $route->get('/financial/neraca-saldo', [App\Http\Controllers\NeracaSaldoController::class, 'index'])->name('neraca-saldo.index');
     $route->get('/financial/arus-kas', [App\Http\Controllers\ArusKasController::class, 'index'])->name('arus-kas.index');
     $route->get('/financial/perubahan-modal', [App\Http\Controllers\PerubahanModalController::class, 'index'])->name('perubahan-modal.index');
+
+    $route->get('/financial/coa', [App\Http\Controllers\CoaController::class, 'index'])->name('coa.index');
+    $route->get('/financial/coa/create', [App\Http\Controllers\CoaController::class, 'create'])->name('coa.create');
+    $route->post('/financial/coa', [App\Http\Controllers\CoaController::class, 'store'])->name('coa.store');
+    $route->get('/financial/coa/{coa}', [App\Http\Controllers\CoaController::class, 'show'])->name('coa.show');
+    $route->get('/financial/coa/{coa}/edit', [App\Http\Controllers\CoaController::class, 'edit'])->name('coa.edit');
+    $route->put('/financial/coa/{coa}', [App\Http\Controllers\CoaController::class, 'update'])->name('coa.update');
+    $route->delete('/financial/coa/{coa}', [App\Http\Controllers\CoaController::class, 'destroy'])->name('coa.destroy');
+
+    $route->get('/financial/jurnal', [App\Http\Controllers\JurnalController::class, 'index'])->name('jurnal.index');
+    $route->get('/financial/jurnal/{jurnal}', [App\Http\Controllers\JurnalController::class, 'show'])->name('jurnal.show');
+
+    $route->get('/financial/saldo-awal', [App\Http\Controllers\SaldoAwalController::class, 'index'])->name('saldo-awal.index');
+    $route->get('/financial/saldo-awal/{spbu}', [App\Http\Controllers\SaldoAwalController::class, 'form'])->name('saldo-awal.form');
+    $route->put('/financial/saldo-awal/{spbu}', [App\Http\Controllers\SaldoAwalController::class, 'store'])->name('saldo-awal.store');
 
     // Absensi
     $route->get('/jadwal_absensi', App\Http\Controllers\JadwalAbsensiController::class)->name('menu.jadwal_absensi');

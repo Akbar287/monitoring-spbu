@@ -20,6 +20,11 @@ class Penjualan extends Model
         static::creating(function ($model) {
             $model->{$model->getKeyName()} = Uuid::uuid4()->toString();
         });
+
+        // posting/pembatalan jurnal otomatis saat setoran di-accept/dicabut
+        static::created(fn ($model) => \App\Support\PostingKeuangan::penjualanBerubah($model));
+        static::updated(fn ($model) => \App\Support\PostingKeuangan::penjualanBerubah($model));
+        static::deleted(fn ($model) => \App\Support\PostingKeuangan::batalPenjualan($model));
     }
 
     protected $fillable = [

@@ -20,6 +20,11 @@ class PajakPembelian extends Model
         static::creating(function ($model) {
             $model->{$model->getKeyName()} = Uuid::uuid4()->toString();
         });
+
+        // pengakuan persediaan + utang saat faktur pajak pembelian tercatat/berubah
+        static::created(fn ($model) => \App\Support\PostingKeuangan::fakturPembelianBerubah($model));
+        static::updated(fn ($model) => \App\Support\PostingKeuangan::fakturPembelianBerubah($model));
+        static::deleted(fn ($model) => \App\Support\PostingKeuangan::batalFakturPembelian($model));
     }
     protected $fillable = [
         'rencana_pembelian_id',
@@ -28,7 +33,8 @@ class PajakPembelian extends Model
         'ppn',
         'ppbkb',
         'pph',
-        'total_amount'
+        'total_amount',
+        'metode_posting_pajak'
     ];
 
     public function rencana_pembelian()
