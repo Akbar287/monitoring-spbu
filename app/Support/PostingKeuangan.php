@@ -354,6 +354,109 @@ class PostingKeuangan
         );
     }
 
+    // ------------------------------------------------------------------- losses
+
+    /**
+     * Susut/lebih stok dari stok taking, transfer, atau penerimaan.
+     * Nilai = liter x harga beli default produk. Jika produk belum punya harga
+     * default, posting dilewati (nilai 0) agar alur stok tidak terblokir.
+     */
+    public static function lossesBerubah(\App\Models\Losses $losses): void
+    {
+        if (! self::aktif()) {
+            return;
+        }
+        if (! $losses->wasRecentlyCreated) {
+            JurnalPosting::batalkan('losses', $losses->losses_id);
+        }
+        self::postLosses($losses);
+    }
+
+    public static function batalLosses(\App\Models\Losses $losses): void
+    {
+        if (! self::aktif()) {
+            return;
+        }
+        JurnalPosting::batalkan('losses', $losses->losses_id);
+    }
+
+    public static function postLosses(\App\Models\Losses $losses): void
+    {
+        $dokumen = $losses->dokumen_stok()->with(['dombak', 'stok_inventory'])->first();
+        $spbuId = $dokumen?->dombak?->spbu_id;
+        $produkId = $dokumen?->stok_inventory?->produk_id;
+        if (is_null($spbuId) || is_null($produkId)) {
+            return;
+        }
+
+        $hargaBeli = floatval(\App\Models\Harga::where('produk_id', $produkId)->where('is_default', 1)->value('harga_beli') ?? 0);
+        $nilai = floatval($losses->jumlah) * $hargaBeli;
+        if ($nilai <= 0.0001) {
+            return;
+        }
+
+        $ket = 'Susut stok (' . $losses->simbol . ') ' . floatval($losses->jumlah) . ' liter';
+        $lines = $losses->simbol === 'kurang'
+            ? [
+                ['kode_akun' => Akun::BEBAN_SUSUT_BBM, 'debit' => $nilai, 'kredit' => 0, 'keterangan' => $ket],
+                ['kode_akun' => Akun::PERSEDIAAN_BBM, 'debit' => 0, 'kredit' => $nilai, 'keterangan' => $ket],
+            ]
+            : [
+                ['kode_akun' => Akun::PERSEDIAAN_BBM, 'debit' => $nilai, 'kredit' => 0, 'keterangan' => $ket],
+                ['kode_akun' => Akun::BEBAN_SUSUT_BBM, 'debit' => 0, 'kredit' => $nilai, 'keterangan' => $ket],
+            ];
+
+        JurnalPosting::post($spbuId, $losses->tanggal, 'losses', $losses->losses_id, $ket, $lines, self::memberAktif());
+    }
+
+    // --------------------------------------------------------------------- gaji
+
+    /**
+     * Pembayaran gaji per member. Beban gaji = gaji bersih + potongan pajak;
+     * potongan diakui sebagai Utang PPh 21 sampai disetor ke kas negara.
+     * SPBU diambil dari penempatan member (spbu_member pertama).
+     */
+    public static function gajiMemberBerubah(\App\Models\GajiMember $gajiMember): void
+    {
+        if (! self::aktif()) {
+            return;
+        }
+        if (! $gajiMember->wasRecentlyCreated) {
+            JurnalPosting::batalkan('gaji', $gajiMember->gaji_member_id);
+        }
+        self::postGajiMember($gajiMember);
+    }
+
+    public static function batalGajiMember(\App\Models\GajiMember $gajiMember): void
+    {
+        if (! self::aktif()) {
+            return;
+        }
+        JurnalPosting::batalkan('gaji', $gajiMember->gaji_member_id);
+    }
+
+    public static function postGajiMember(\App\Models\GajiMember $gajiMember): void
+    {
+        $bersih = floatval($gajiMember->total_gaji_bersih);
+        if ($bersih <= 0.0001) {
+            return;
+        }
+        $potongan = floatval($gajiMember->gaji()->first()?->potongan_pajak ?? 0);
+        $member = $gajiMember->member()->first();
+        $spbuId = $member?->spbu()->first()?->spbu_id ?? \App\Models\Spbu::first()->spbu_id;
+
+        $ket = 'Gaji ' . (optional($member?->ktp()->first())->nama ?? $gajiMember->member_id) . ' per ' . Carbon::parse($gajiMember->tanggal)->format('d/m/Y');
+        $lines = [
+            ['kode_akun' => Akun::BEBAN_GAJI, 'debit' => $bersih + $potongan, 'kredit' => 0, 'keterangan' => $ket],
+            ['kode_akun' => Akun::BANK, 'debit' => 0, 'kredit' => $bersih, 'keterangan' => 'Pembayaran gaji bersih'],
+        ];
+        if ($potongan > 0.0001) {
+            $lines[] = ['kode_akun' => Akun::UTANG_PPH21, 'debit' => 0, 'kredit' => $potongan, 'keterangan' => 'Potongan PPh 21 gaji'];
+        }
+
+        JurnalPosting::post($spbuId, $gajiMember->tanggal, 'gaji', $gajiMember->gaji_member_id, $ket, $lines, self::memberAktif());
+    }
+
     // ------------------------------------------------------------------ helpers
 
     private static function memberAktif(): ?string

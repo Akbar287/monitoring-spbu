@@ -534,6 +534,12 @@ Route::middleware(['auth', 'cache.header'])->group(function ($route) {
     $route->get('/financial/jurnal', [App\Http\Controllers\JurnalController::class, 'index'])->name('jurnal.index');
     $route->get('/financial/jurnal/{jurnal}', [App\Http\Controllers\JurnalController::class, 'show'])->name('jurnal.show');
 
+    $route->get('/financial/tutup-buku', [App\Http\Controllers\PeriodeAkuntansiController::class, 'index'])->name('periode-akuntansi.index');
+    $route->get('/financial/tutup-buku/create', [App\Http\Controllers\PeriodeAkuntansiController::class, 'create'])->name('periode-akuntansi.create');
+    $route->post('/financial/tutup-buku', [App\Http\Controllers\PeriodeAkuntansiController::class, 'store'])->name('periode-akuntansi.store');
+    $route->get('/financial/tutup-buku/{periode}', [App\Http\Controllers\PeriodeAkuntansiController::class, 'show'])->name('periode-akuntansi.show');
+    $route->put('/financial/tutup-buku/{periode}', [App\Http\Controllers\PeriodeAkuntansiController::class, 'toggle'])->name('periode-akuntansi.toggle');
+
     $route->get('/financial/saldo-awal', [App\Http\Controllers\SaldoAwalController::class, 'index'])->name('saldo-awal.index');
     $route->get('/financial/saldo-awal/{spbu}', [App\Http\Controllers\SaldoAwalController::class, 'form'])->name('saldo-awal.form');
     $route->put('/financial/saldo-awal/{spbu}', [App\Http\Controllers\SaldoAwalController::class, 'store'])->name('saldo-awal.store');

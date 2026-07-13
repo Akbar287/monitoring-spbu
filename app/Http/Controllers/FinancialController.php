@@ -34,6 +34,12 @@ class FinancialController extends Controller
                 "color" => "warning"
             ],
             [
+                "nama" => "Tutup Buku",
+                "icon" => "lock",
+                "url" => route('periode-akuntansi.index'),
+                "color" => "danger"
+            ],
+            [
                 "nama" => "Petty Cash",
                 "icon" => "th",
                 "url" => route('financial.petty-cash'),

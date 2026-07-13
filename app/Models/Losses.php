@@ -20,6 +20,11 @@ class Losses extends Model
         static::creating(function ($model) {
             $model->{$model->getKeyName()} = Uuid::uuid4()->toString();
         });
+
+        // susut/lebih stok langsung dijurnal (nilai = liter x harga beli default)
+        static::created(fn ($model) => \App\Support\PostingKeuangan::lossesBerubah($model));
+        static::updated(fn ($model) => \App\Support\PostingKeuangan::lossesBerubah($model));
+        static::deleted(fn ($model) => \App\Support\PostingKeuangan::batalLosses($model));
     }
     protected $fillable = [
         'jenis_losses_id',

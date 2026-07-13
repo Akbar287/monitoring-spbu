@@ -76,7 +76,14 @@ menghapus jurnalnya (ditolak jika periode sudah ditutup).
       Pembayaran, PettyCash (`App\Support\PostingKeuangan`) — semua jalur tulis
       (controller/import) tertangkap; GL baru aktif setelah CoaSeeder dijalankan
 - [x] Pilihan metode posting pajak di form Ubah Pajak Pembayaran (PajakEdit)
-- [ ] Hook posting gaji, losses, dan penyusutan aset (job bulanan)
+- [x] Hook posting losses (nilai = liter x harga beli default; dilewati jika
+      harga default 0 agar alur stok tidak terblokir) dan gaji (beban = bersih
+      + potongan; potongan ke Utang PPh 21; SPBU dari penempatan member)
+- [x] Penyusutan aset: `php artisan keuangan:penyusutan [--bulan=Y-m] [--dry-run]`
+      — per SPBU per bulan, tanggal posting akhir bulan, kumulatif dibatasi
+      nilai perolehan. Asumsi: `aset.harga` = nilai perolehan baris,
+      `penyusutan_per_hari` untuk baris tsb. Jalankan tiap akhir bulan
+      (bisa didaftarkan ke scheduler)
 - [x] Command `php artisan keuangan:backfill` (opsi --dari --sampai --dry-run;
       idempotent — record yang sudah punya jurnal dilewati, gagal per-record
       dilaporkan tanpa menghentikan sisanya)
@@ -99,8 +106,13 @@ menghapus jurnalnya (ditolak jika periode sudah ditutup).
       agar arus kas bersih dari baris non-kas
 - [x] Laporan Perubahan Modal (modal awal + mutasi akun modal + laba periode =
       modal akhir; validasi vs bagian Modal di Neraca)
-- [ ] Tutup buku bulanan (periode_akuntansi) + closing laba ke Laba Ditahan
-- [ ] Rapikan MarginController (`dd()` di baris 74)
+- [x] Tutup buku bulanan: menu Financial → Tutup Buku (tutup/buka periode per
+      SPBU; periode tertutup menolak posting & pembatalan jurnal)
+- [x] Closing tahunan: `php artisan keuangan:tutup-tahun {tahun} [--dry-run]`
+      — memindahkan saldo akun nominal per 31 Des ke Laba Ditahan per SPBU,
+      idempotent. Urutan akhir tahun: selesaikan transaksi → tutup-tahun →
+      baru tutup periode Desember di menu Tutup Buku
+- [x] MarginController: `dd()` debug di report Totalisator sudah dihapus
 
 ## Catatan lingkungan
 

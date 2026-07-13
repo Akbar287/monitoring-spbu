@@ -20,6 +20,11 @@ class GajiMember extends Model
         static::creating(function ($model) {
             $model->{$model->getKeyName()} = Uuid::uuid4()->toString();
         });
+
+        // pembayaran gaji langsung dijurnal (beban = bersih + potongan PPh 21)
+        static::created(fn ($model) => \App\Support\PostingKeuangan::gajiMemberBerubah($model));
+        static::updated(fn ($model) => \App\Support\PostingKeuangan::gajiMemberBerubah($model));
+        static::deleted(fn ($model) => \App\Support\PostingKeuangan::batalGajiMember($model));
     }
     public $timestamps = false;
     protected $fillable = [

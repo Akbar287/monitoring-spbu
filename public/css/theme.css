@@ -1729,3 +1729,12 @@ html[data-theme="dark"] .main-sidebar .sidebar-menu>li:nth-of-type(12n+12)>a>i {
     color: #6ee7b7 !important;
     background: rgba(52, 211, 153, .18) !important;
 }
+
+/* ============================================================
+   LINK — tanpa garis bawah di seluruh aplikasi (React & Blade)
+   ============================================================ */
+a,
+a:hover,
+a:focus {
+    text-decoration: none;
+}

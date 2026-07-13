@@ -661,12 +661,65 @@ class HomeController extends Controller
 
     public function profil()
     {
-        return view('auth/profil');
+        $user = Auth::user();
+        $member = $user->member()->first();
+        $ktp = $member->ktp()->first();
+        $role = $member->jabatan()
+            ->select('jabatan.nama_jabatan')
+            ->addSelect('level.nama_level')
+            ->addSelect('divisi.nama_divisi')
+            ->join('level', 'level.level_id', 'jabatan.level_id')
+            ->join('divisi', 'divisi.divisi_id', 'level.divisi_id')
+            ->first();
+
+        return Inertia::render('Profil/Index', [
+            'title' => 'Profil',
+            'avatar' => asset('storage/profile_img/' . $member->avatar),
+            'role' => [
+                'divisi' => optional($role)->nama_divisi,
+                'level' => optional($role)->nama_level,
+                'jabatan' => optional($role)->nama_jabatan,
+            ],
+            'fields' => [
+                ['label' => 'NIK', 'value' => optional($ktp)->nik],
+                ['label' => 'Nama', 'value' => optional($ktp)->nama],
+                ['label' => 'Tempat Lahir', 'value' => optional($ktp)->tempat_lahir],
+                ['label' => 'Tanggal Lahir', 'value' => optional($ktp)->tanggal_lahir ? Carbon::parse($ktp->tanggal_lahir)->format('d F Y') : '-'],
+                ['label' => 'Jenis Kelamin', 'value' => ucfirst(optional($ktp)->jenis_kelamin ?? '-')],
+                ['label' => 'Email', 'value' => $member->email],
+                ['label' => 'No. HP', 'value' => $member->no_hp],
+                ['label' => 'No. WhatsApp', 'value' => $member->no_wa],
+                ['label' => 'Username', 'value' => $user->username],
+            ],
+            'editUrl' => route('profil.edit'),
+            'passwordUrl' => route('profil.edit_password'),
+            'homeUrl' => url('/home'),
+        ]);
     }
 
     public function profil_edit()
     {
-        return view('auth/profil_edit');
+        $user = Auth::user();
+        $member = $user->member()->first();
+        $ktp = $member->ktp()->first();
+
+        return Inertia::render('Profil/Edit', [
+            'title' => 'Ubah Profil',
+            'avatar' => asset('storage/profile_img/' . $member->avatar),
+            'action' => route('profil.store'),
+            'backUrl' => route('profil'),
+            'values' => [
+                'nik' => optional($ktp)->nik,
+                'nama' => optional($ktp)->nama,
+                'tempat_lahir' => optional($ktp)->tempat_lahir,
+                'tanggal_lahir' => optional($ktp)->tanggal_lahir,
+                'jenis_kelamin' => optional($ktp)->jenis_kelamin,
+                'email' => $member->email,
+                'no_hp' => $member->no_hp,
+                'no_wa' => $member->no_wa,
+                'username' => $user->username,
+            ],
+        ]);
     }
 
     public function profil_store(Request $request)
@@ -725,7 +778,12 @@ class HomeController extends Controller
 
     public function profil_edit_password()
     {
-        return view('auth/profil_password');
+        return Inertia::render('Profil/Password', [
+            'title' => 'Ubah Password',
+            'avatar' => asset('storage/profile_img/' . Auth::user()->member()->first()->avatar),
+            'action' => route('profil.store_password'),
+            'backUrl' => route('profil'),
+        ]);
     }
 
     public function profil_store_password(Request $request)
