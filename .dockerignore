@@ -14,18 +14,14 @@ vendor
 
 storage/logs/*
 storage/app/*
+!storage/app/.gitignore
 !storage/app/public/
-storage/app/public/*
-!storage/app/public/.gitignore
-!storage/app/public/profile_img/
-storage/app/public/profile_img/*
-!storage/app/public/profile_img/default.png
+!storage/app/public/**
 storage/framework/cache/*
 storage/framework/sessions/*
 storage/framework/views/*
 bootstrap/cache/*
 storage/*.key
-!storage/app/.gitignore
 
 public/build
 public/hot

@@ -2,16 +2,28 @@
 set -e
 
 mkdir -p \
-    storage/app/public/profile_img \
+    storage/app/public \
     storage/framework/cache \
     storage/framework/sessions \
     storage/framework/views \
     storage/logs \
     bootstrap/cache
 
-DEFAULT_PROFILE_IMAGE="/usr/local/share/monitoring-spbu/profile_img/default.png"
-if [ -f "$DEFAULT_PROFILE_IMAGE" ] && [ ! -f storage/app/public/profile_img/default.png ]; then
-    cp "$DEFAULT_PROFILE_IMAGE" storage/app/public/profile_img/default.png
+PUBLIC_STORAGE_SEED="/usr/local/share/monitoring-spbu/storage-public"
+if [ -d "$PUBLIC_STORAGE_SEED" ]; then
+    find "$PUBLIC_STORAGE_SEED" -type d | while IFS= read -r dir; do
+        rel="${dir#"$PUBLIC_STORAGE_SEED"}"
+        mkdir -p "storage/app/public$rel"
+    done
+
+    find "$PUBLIC_STORAGE_SEED" -type f | while IFS= read -r file; do
+        rel="${file#"$PUBLIC_STORAGE_SEED"/}"
+        target="storage/app/public/$rel"
+        if [ ! -e "$target" ]; then
+            mkdir -p "$(dirname "$target")"
+            cp "$file" "$target"
+        fi
+    done
 fi
 
 chown -R www-data:www-data storage bootstrap/cache

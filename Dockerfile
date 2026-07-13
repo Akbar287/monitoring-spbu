@@ -62,7 +62,7 @@ RUN composer install \
         --optimize-autoloader
 
 COPY . .
-COPY storage/app/public/profile_img/default.png /usr/local/share/monitoring-spbu/profile_img/default.png
+COPY storage/app/public /usr/local/share/monitoring-spbu/storage-public
 COPY --from=assets /app/public/build ./public/build
 COPY docker/nginx/default.conf /etc/nginx/http.d/default.conf
 COPY docker/supervisord.conf /etc/supervisord.conf
@@ -70,13 +70,13 @@ COPY docker/entrypoint.sh /usr/local/bin/docker-entrypoint
 
 RUN composer dump-autoload --optimize --no-dev \
     && mkdir -p \
-        storage/app/public/profile_img \
+        storage/app/public \
         storage/framework/cache \
         storage/framework/sessions \
         storage/framework/views \
         storage/logs \
         bootstrap/cache \
-    && cp /usr/local/share/monitoring-spbu/profile_img/default.png storage/app/public/profile_img/default.png \
+    && cp -a /usr/local/share/monitoring-spbu/storage-public/. storage/app/public/ \
     && chown -R www-data:www-data storage bootstrap/cache \
     && chmod +x /usr/local/bin/docker-entrypoint
 
