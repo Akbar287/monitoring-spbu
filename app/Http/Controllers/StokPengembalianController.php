@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Inertia\Inertia;
 
 class StokPengembalianController extends Controller
 {
@@ -11,7 +12,11 @@ class StokPengembalianController extends Controller
      */
     public function index()
     {
-        return view('tera/pengembalian/index');
+        return Inertia::render('Menu/Index', [
+            'title' => 'Stok Pengembalian Tera',
+            'description' => 'Modul pengembalian stok tera belum memiliki menu turunan aktif.',
+            'menus' => [],
+        ]);
     }
 
     /**

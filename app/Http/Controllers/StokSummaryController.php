@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use App\Models\DokumenStok;
 use App\Models\Produk;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 
 class StokSummaryController extends Controller
@@ -77,7 +78,69 @@ class StokSummaryController extends Controller
                 ->orderBy('movement_order')->get();
         }
 
-        return view('stok.stok_summary.show', compact('date', 'produk', 'temp'));
+        $format = fn ($value) => number_format($value ?? 0, 6, '.', ',');
+        $products = collect($produk)->map(function ($product, $index) use ($temp, $format) {
+            return [
+                'id' => $product['produk_id'],
+                'name' => $product['nama_produk'],
+                'items' => $temp[$index]->map(function ($item) use ($format) {
+                    $rows = [
+                        ['label' => 'Stok Awal', 'value' => $format($item->stok_awal)],
+                    ];
+
+                    if ($item->type_movement === 'Stok Taking') {
+                        $rows[] = [
+                            'label' => 'Losses / Profit',
+                            'value' => ($item->simbol === 'kurang' ? '-' : '+') . ' ' . $format($item->jumlah),
+                        ];
+                    }
+
+                    if ($item->type_movement === 'Good Transfer Send') {
+                        $rows[] = ['label' => 'Stok Dipindah', 'value' => $format($item->stok_akhir - $item->stok_awal)];
+                    }
+
+                    if ($item->type_movement === 'Good Transfer Receive') {
+                        $rows[] = ['label' => 'Stok Terpindah', 'value' => $format($item->stok_akhir - $item->stok_awal)];
+                    }
+
+                    if ($item->type_movement === 'Good Receive Penerimaan') {
+                        $rows[] = ['label' => 'Stok Terisi', 'value' => $format($item->stok_akhir - $item->stok_awal)];
+                    }
+
+                    if (in_array($item->type_movement, ['Stok Taking Good Receive Penerimaan', 'Stok Taking Good Transfer'], true)) {
+                        $rows[] = ['label' => 'Penjualan / Losses', 'value' => $format($item->stok_akhir - $item->stok_awal)];
+                    }
+
+                    $rows[] = ['label' => 'Stok Akhir', 'value' => $format($item->stok_akhir)];
+
+                    if ($item->type_movement === 'Good Issue Sales') {
+                        $rows[] = ['label' => 'Stand Meter Awal', 'value' => $format($item->stand_meter_awal) . ' Liter'];
+                        $rows[] = ['label' => 'Penjualan', 'value' => $format(($item->stand_meter_akhir ?? 0) - ($item->stand_meter_awal ?? 0)) . ' Liter'];
+                        $rows[] = ['label' => 'Stand Meter Akhir', 'value' => $format($item->stand_meter_akhir) . ' Liter'];
+                    }
+
+                    return [
+                        'id' => $item->dokumen_stok_id,
+                        'waktu' => $item->waktu,
+                        'type_movement' => $item->type_movement,
+                        'is_confirmation' => (bool) $item->is_confirmation,
+                        'rows' => $rows,
+                    ];
+                })->values()->all(),
+            ];
+        })->values()->all();
+
+        return Inertia::render('StokSummary/Show', [
+            'title' => 'Stok Summary',
+            'dateLabel' => Carbon::createFromFormat('Y-m-d', $date)->format('d F Y'),
+            'breadcrumbs' => [
+                ['label' => 'Dashboard', 'url' => route('home')],
+                ['label' => 'Manajemen Persediaan', 'url' => route('menu.stok')],
+                ['label' => 'Stok Summary', 'url' => route('stok-summary.index')],
+            ],
+            'products' => $products,
+            'backUrl' => route('stok-summary.index'),
+        ]);
     }
 
     public function update(Request $request, $date)

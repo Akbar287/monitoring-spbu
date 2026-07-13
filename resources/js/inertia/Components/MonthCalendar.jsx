@@ -45,24 +45,25 @@ export default function MonthCalendar({ events = [], onDayClick, onEventClick })
     };
 
     return (
-        <div>
+        <div className="month-calendar">
+            <style dangerouslySetInnerHTML={{ __html: CSS }} />
             <div className="d-flex align-items-center justify-content-between mb-3">
                 <div className="btn-group">
-                    <button type="button" className="btn btn-sm btn-light" onClick={() => move(-1)}>
+                    <button type="button" className="btn btn-sm month-calendar-btn" onClick={() => move(-1)}>
                         <i className="fas fa-chevron-left"></i>
                     </button>
                     <button
                         type="button"
-                        className="btn btn-sm btn-light"
+                        className="btn btn-sm month-calendar-btn"
                         onClick={() => setCursor({ y: today.getFullYear(), m: today.getMonth() })}
                     >
                         Hari Ini
                     </button>
-                    <button type="button" className="btn btn-sm btn-light" onClick={() => move(1)}>
+                    <button type="button" className="btn btn-sm month-calendar-btn" onClick={() => move(1)}>
                         <i className="fas fa-chevron-right"></i>
                     </button>
                 </div>
-                <h5 className="mb-0" style={{ fontWeight: 700 }}>
+                <h5 className="mb-0 month-calendar-title">
                     {BULAN[cursor.m]} {cursor.y}
                 </h5>
                 <div style={{ width: 120 }}></div>
@@ -81,19 +82,15 @@ export default function MonthCalendar({ events = [], onDayClick, onEventClick })
                         <div
                             key={i}
                             onClick={() => d && onDayClick && onDayClick(dateStr)}
+                            className={`month-calendar-cell ${d ? '' : 'empty'} ${isToday(d) ? 'today' : ''}`}
                             style={{
                                 minHeight: 86,
-                                borderRadius: 10,
-                                padding: 6,
-                                background: d ? '#fff' : 'transparent',
-                                border: d ? '1px solid rgba(31,36,64,.08)' : 'none',
                                 cursor: d && onDayClick ? 'pointer' : 'default',
-                                outline: isToday(d) ? '2px solid #6777ef' : 'none',
                             }}
                         >
                             {d && (
                                 <>
-                                    <div style={{ fontSize: 12, fontWeight: 700, color: isToday(d) ? '#6777ef' : '#6c757d' }}>{d}</div>
+                                    <div className={`month-calendar-day ${isToday(d) ? 'today' : ''}`}>{d}</div>
                                     {evs.slice(0, 3).map((ev, j) => (
                                         <div
                                             key={j}
@@ -134,3 +131,53 @@ export default function MonthCalendar({ events = [], onDayClick, onEventClick })
         </div>
     );
 }
+
+const CSS = `
+.month-calendar{color:var(--foreground)}
+.month-calendar-btn{
+    color:var(--foreground);
+    background:var(--surface-soft);
+    border:1px solid var(--border);
+}
+.month-calendar-btn:hover,
+.month-calendar-btn:focus{
+    color:var(--foreground);
+    background:color-mix(in srgb, var(--surface-soft) 82%, var(--foreground));
+    border-color:var(--border);
+}
+.month-calendar-title{
+    color:var(--foreground);
+    font-weight:700;
+}
+.month-calendar-cell{
+    border-radius:10px;
+    padding:6px;
+    background:var(--surface);
+    border:1px solid var(--border);
+    transition:background .15s ease,border-color .15s ease,box-shadow .15s ease;
+}
+.month-calendar-cell:not(.empty):hover{
+    background:var(--surface-soft);
+}
+.month-calendar-cell.empty{
+    background:transparent;
+    border-color:transparent;
+}
+.month-calendar-cell.today{
+    box-shadow:0 0 0 2px #6777ef;
+}
+.month-calendar-day{
+    color:var(--muted);
+    font-size:12px;
+    font-weight:700;
+}
+.month-calendar-day.today{
+    color:#6777ef;
+}
+html[data-theme="dark"] .month-calendar-cell.today{
+    box-shadow:0 0 0 2px #a5b4fc;
+}
+html[data-theme="dark"] .month-calendar-day.today{
+    color:#c7d2fe;
+}
+`;

@@ -345,11 +345,51 @@ class StokTakingController extends Controller
     public function edit(DokumenStok $stok)
     {
         $typeDokumen = TypeDokumenStok::select('type_movement')->addSelect('type_dokumen_stok_id')->get();
-        $dokumenStokExist = DokumenStok::orderBy('created_at', 'desc')->first();
-        $dombak = Dombak::where('is_aktif', 1)->get();
         $jamKerja = JamKerja::select('nama_jam_kerja')->addSelect('jam_kerja_id')->addSelect('batas_akhir_in')->addSelect('batas_awal_in')->get();
         $stokInventory = StokInventory::get();
-        return view('stok/stok-taking/edit', compact('typeDokumen', 'dokumenStokExist', 'jamKerja', 'stokInventory', 'stok', 'dombak'));
+        $loss = $stok->losses()->first();
+
+        return Inertia::render('Form/Index', [
+            'title' => 'Ubah Stok Taking',
+            'breadcrumbs' => [
+                ['label' => 'Manajemen Persediaan', 'url' => route('menu.stok')],
+                ['label' => 'Stok Taking', 'url' => route('stok-taking.index')],
+                ['label' => 'Detail', 'url' => route('stok-taking.show', $stok->dokumen_stok_id)],
+            ],
+            'backUrl' => route('stok-taking.show', $stok->dokumen_stok_id),
+            'action' => route('stok-taking.update', $stok->dokumen_stok_id),
+            'method' => 'put',
+            'fields' => [
+                [
+                    'name' => 'type_dokumen_stok_id',
+                    'label' => 'Tipe Dokumen',
+                    'type' => 'select',
+                    'value' => $stok->type_dokumen_stok_id,
+                    'options' => $typeDokumen->map(fn ($item) => ['value' => $item->type_dokumen_stok_id, 'label' => $item->type_movement])->values()->all(),
+                ],
+                [
+                    'name' => 'stok_inventory_id',
+                    'label' => 'Stok Inventory',
+                    'type' => 'select',
+                    'value' => $stok->stok_inventory_id,
+                    'options' => $stokInventory->map(fn ($item) => [
+                        'value' => $item->stok_inventory_id,
+                        'label' => optional($item->produk()->first())->nama_produk . ' - ' . number_format($item->stok ?? 0, 6, '.', ',') . ' Liter',
+                    ])->values()->all(),
+                ],
+                [
+                    'name' => 'jam_kerja_id',
+                    'label' => 'Jam Kerja',
+                    'type' => 'select',
+                    'value' => $stok->jam_kerja_id,
+                    'options' => $jamKerja->map(fn ($item) => ['value' => $item->jam_kerja_id, 'label' => $item->nama_jam_kerja . ' (' . $item->batas_awal_in . '-' . $item->batas_akhir_in . ')'])->values()->all(),
+                ],
+                ['name' => 'tanggal', 'label' => 'Tanggal', 'type' => 'date', 'value' => $stok->tanggal],
+                ['name' => 'stok_awal', 'label' => 'Stok Awal', 'type' => 'text', 'value' => $stok->stok_awal],
+                ['name' => 'stok_akhir', 'label' => 'Stok Akhir', 'type' => 'text', 'value' => $stok->stok_akhir],
+                ['name' => 'loss', 'label' => 'Loss/Profit', 'type' => 'text', 'value' => $loss?->jumlah ?? 0],
+            ],
+        ]);
     }
 
     /**

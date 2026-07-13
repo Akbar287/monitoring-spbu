@@ -8,6 +8,7 @@ use App\Models\Penjualan;
 use App\Models\StatusSetoran;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 use Yajra\DataTables\DataTables;
 
@@ -174,7 +175,30 @@ class SetoranUangOperatorController extends Controller
                 ->rawColumns(['action', 'status'])
                 ->make(true);
         }
-        return view('setoran/setor_bank/index', compact('penjualan'));
+        return Inertia::render('Table/Index', [
+            'title' => 'Bank Setoran',
+            'breadcrumbs' => [
+                ['label' => 'Setoran', 'url' => route('menu.setoran')],
+                ['label' => 'Setoran Bank', 'url' => route('setoran.setoran_bank.index_setoran_bank_penjualan')],
+                ['label' => 'Detail Setoran', 'url' => route('setoran.setoran_bank.show_setoran_bank_penjualan', $penjualan->penjualan_id)],
+            ],
+            'createUrl' => route('setoran.setoran_bank.bank.create', $penjualan->penjualan_id),
+            'headerActions' => [
+                ['label' => 'Kembali', 'url' => route('setoran.setoran_bank.show_setoran_bank_penjualan', $penjualan->penjualan_id), 'color' => 'light', 'icon' => 'arrow-left'],
+            ],
+            'table' => [
+                'url' => $request->url(),
+                'columns' => [
+                    ['label' => 'Status', 'data' => 'status', 'raw' => true],
+                    ['label' => 'Tanggal', 'data' => 'tanggal'],
+                    ['label' => 'Nama Bank', 'data' => 'nama_bank'],
+                    ['label' => 'No. Referensi', 'data' => 'no_ref'],
+                    ['label' => 'Metode Transfer', 'data' => 'metode_transfer'],
+                    ['label' => 'Total Uang', 'data' => 'total_uang'],
+                    ['label' => 'Aksi', 'data' => 'action', 'orderable' => false, 'searchable' => false, 'raw' => true],
+                ],
+            ],
+        ]);
     }
 
     /**
@@ -183,7 +207,32 @@ class SetoranUangOperatorController extends Controller
     public function create(Penjualan $penjualan)
     {
         $member = Member::select('member.member_id')->addSelect('ktp.nama')->join('ktp', 'ktp.ktp_id', 'member.ktp_id')->orderBy('ktp.nama')->get();
-        return view('setoran/setor_bank/create', compact('penjualan', 'member'));
+        return Inertia::render('Form/Index', [
+            'title' => 'Tambah Bank Setoran',
+            'breadcrumbs' => [
+                ['label' => 'Setoran', 'url' => route('menu.setoran')],
+                ['label' => 'Setoran Bank', 'url' => route('setoran.setoran_bank.index_setoran_bank_penjualan')],
+                ['label' => 'Detail Setoran', 'url' => route('setoran.setoran_bank.show_setoran_bank_penjualan', $penjualan->penjualan_id)],
+                ['label' => 'Bank', 'url' => route('setoran.setoran_bank.bank.index', $penjualan->penjualan_id)],
+            ],
+            'backUrl' => route('setoran.setoran_bank.bank.index', $penjualan->penjualan_id),
+            'action' => route('setoran.setoran_bank.bank.store', $penjualan->penjualan_id),
+            'method' => 'post',
+            'fields' => [
+                ['name' => 'total_setoran', 'label' => 'Total Setoran', 'type' => 'text', 'value' => $penjualan->total_penjualan, 'readonly' => true],
+                [
+                    'name' => 'member_id',
+                    'label' => 'Dititipkan Oleh',
+                    'type' => 'select',
+                    'options' => $member->map(fn ($item) => ['value' => $item->member_id, 'label' => $item->nama])->values()->all(),
+                ],
+                ['name' => 'tanggal', 'label' => 'Tanggal', 'type' => 'date', 'value' => date('Y-m-d')],
+                ['name' => 'nama_bank', 'label' => 'Nama Bank', 'type' => 'text'],
+                ['name' => 'no_referensi', 'label' => 'No. Referensi', 'type' => 'text'],
+                ['name' => 'metode_transfer', 'label' => 'Metode Transfer', 'type' => 'text'],
+                ['name' => 'total_uang', 'label' => 'Total Uang', 'type' => 'text'],
+            ],
+        ]);
     }
 
     /**
@@ -214,7 +263,56 @@ class SetoranUangOperatorController extends Controller
      */
     public function show(Penjualan $penjualan, Penarikan $penitipan)
     {
-        return view('setoran/setor_bank/show', compact('penjualan', 'penitipan'));
+        $isAdmin = optional(optional(Auth::user()?->member()->first())->jabatan()->first())->nama_jabatan === 'Admin';
+        $actions = [
+            ['label' => 'File', 'url' => route('setoran.setoran_bank.file.index', [$penjualan->penjualan_id, $penitipan->penarikan_id]), 'color' => 'primary', 'icon' => 'folder-open'],
+        ];
+
+        if ($isAdmin) {
+            if ($penitipan->is_accepted) {
+                $actions[] = [
+                    'label' => 'Batalkan Konfirmasi',
+                    'url' => route('setoran.setoran_bank.bank.update_confirmation_0x002', [$penjualan->penjualan_id, $penitipan->penarikan_id]),
+                    'method' => 'put',
+                    'color' => 'danger',
+                    'icon' => 'times',
+                    'confirm' => "Bank akan di batalkan konfirmasi!\n Lanjutkan?",
+                ];
+            } else {
+                $actions[] = ['label' => 'Ubah', 'url' => route('setoran.setoran_bank.bank.edit', [$penjualan->penjualan_id, $penitipan->penarikan_id]), 'color' => 'success', 'icon' => 'pen'];
+                $actions[] = [
+                    'label' => 'Konfirmasi',
+                    'url' => route('setoran.setoran_bank.bank.update_confirmation_0x003', [$penjualan->penjualan_id, $penitipan->penarikan_id]),
+                    'method' => 'put',
+                    'color' => 'info',
+                    'icon' => 'check',
+                    'confirm' => "Bank akan di konfirmasi!\n Lanjutkan?",
+                ];
+            }
+        }
+
+        return Inertia::render('Show/Index', [
+            'title' => 'Detail Bank Setoran',
+            'breadcrumbs' => [
+                ['label' => 'Setoran', 'url' => route('menu.setoran')],
+                ['label' => 'Setoran Bank', 'url' => route('setoran.setoran_bank.index_setoran_bank_penjualan')],
+                ['label' => 'Detail Setoran', 'url' => route('setoran.setoran_bank.show_setoran_bank_penjualan', $penjualan->penjualan_id)],
+                ['label' => 'Bank', 'url' => route('setoran.setoran_bank.bank.index', $penjualan->penjualan_id)],
+            ],
+            'backUrl' => route('setoran.setoran_bank.bank.index', $penjualan->penjualan_id),
+            'notice' => ['text' => $penitipan->is_accepted ? 'Konfirmasi' : 'Tidak Konfirmasi', 'color' => $penitipan->is_accepted ? 'success' : 'danger'],
+            'fields' => [
+                ['label' => 'Dititipkan Oleh', 'value' => optional(optional($penitipan->member()->first())->ktp()->first())->nama],
+                ['label' => 'Tanggal', 'value' => $penitipan->tanggal],
+                ['label' => 'Nama Bank', 'value' => $penitipan->nama_bank],
+                ['label' => 'No. Referensi', 'value' => $penitipan->no_referensi],
+                ['label' => 'Metode Transfer', 'value' => $penitipan->metode_transfer],
+                ['label' => 'Total Uang', 'value' => 'Rp. ' . number_format($penitipan->total_uang ?? 0, 6, '.', ',')],
+            ],
+            'actions' => $actions,
+            'deleteUrl' => $isAdmin && ! $penitipan->is_accepted ? route('setoran.setoran_bank.bank.destroy', [$penjualan->penjualan_id, $penitipan->penarikan_id]) : null,
+            'deleteConfirm' => "Bank akan dihapus!\n Lanjutkan?",
+        ]);
     }
 
     /**
@@ -223,7 +321,33 @@ class SetoranUangOperatorController extends Controller
     public function edit(Penjualan $penjualan, Penarikan $penitipan)
     {
         $member = Member::select('member.member_id')->addSelect('ktp.nama')->join('ktp', 'ktp.ktp_id', 'member.ktp_id')->get();
-        return view('setoran/setor_bank/edit', compact('penjualan', 'penitipan', 'member'));
+        return Inertia::render('Form/Index', [
+            'title' => 'Ubah Bank Setoran',
+            'breadcrumbs' => [
+                ['label' => 'Setoran', 'url' => route('menu.setoran')],
+                ['label' => 'Setoran Bank', 'url' => route('setoran.setoran_bank.index_setoran_bank_penjualan')],
+                ['label' => 'Detail Setoran', 'url' => route('setoran.setoran_bank.show_setoran_bank_penjualan', $penjualan->penjualan_id)],
+                ['label' => 'Bank', 'url' => route('setoran.setoran_bank.bank.index', $penjualan->penjualan_id)],
+                ['label' => 'Detail Bank', 'url' => route('setoran.setoran_bank.bank.show', [$penjualan->penjualan_id, $penitipan->penarikan_id])],
+            ],
+            'backUrl' => route('setoran.setoran_bank.bank.show', [$penjualan->penjualan_id, $penitipan->penarikan_id]),
+            'action' => route('setoran.setoran_bank.bank.update', [$penjualan->penjualan_id, $penitipan->penarikan_id]),
+            'method' => 'put',
+            'fields' => [
+                [
+                    'name' => 'member_id',
+                    'label' => 'Dititipkan Oleh',
+                    'type' => 'select',
+                    'value' => $penitipan->member_id,
+                    'options' => $member->map(fn ($item) => ['value' => $item->member_id, 'label' => $item->nama])->values()->all(),
+                ],
+                ['name' => 'tanggal', 'label' => 'Tanggal', 'type' => 'date', 'value' => $penitipan->tanggal],
+                ['name' => 'nama_bank', 'label' => 'Nama Bank', 'type' => 'text', 'value' => $penitipan->nama_bank],
+                ['name' => 'no_referensi', 'label' => 'No. Referensi', 'type' => 'text', 'value' => $penitipan->no_referensi],
+                ['name' => 'metode_transfer', 'label' => 'Metode Transfer', 'type' => 'text', 'value' => $penitipan->metode_transfer],
+                ['name' => 'total_uang', 'label' => 'Total Uang', 'type' => 'text', 'value' => $penitipan->total_uang],
+            ],
+        ]);
     }
 
     /**

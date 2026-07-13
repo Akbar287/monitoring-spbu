@@ -193,7 +193,8 @@ class KehadiranOperatorController extends Controller
     {
         $userAgent = $_SERVER['HTTP_USER_AGENT'];
         preg_match('/\((.*?)\)/', $userAgent, $matches);
-        $osAndVersionOs = str_replace('; ', ', ', $matches[1]);
+        $osAndVersionOs = isset($matches[1]) ? str_replace('; ', ', ', $matches[1]) : $userAgent;
+        $geo = [];
         $utility = [
             'ip' => $this->get_client_ip(),
             'typeDevice' => $this->getTypeDevices($osAndVersionOs),
@@ -216,7 +217,27 @@ class KehadiranOperatorController extends Controller
 
         $ongoing = !is_null(Auth::user()->member()->first()->penjadwalan()->whereNotNull('start_time')->whereNull('finish_time')->first()); // jika ada nilainya true
 
-        return view('absensi.presensi.show', compact('penjadwalan', 'utility', 'ongoing'));
+        return Inertia::render('Kehadiran/Show', [
+            'title' => 'Kehadiran',
+            'breadcrumbs' => [],
+            'backUrl' => route('menu.kehadiran'),
+            'ongoing' => $ongoing,
+            'utility' => $utility,
+            'schedule' => [
+                'id' => $penjadwalan->penjadwalan_id,
+                'mode' => !is_null($penjadwalan->start_time) && is_null($penjadwalan->finish_time) ? 'out' : 'in',
+                'nama' => $penjadwalan->nama,
+                'jabatan' => $penjadwalan->nama_jabatan,
+                'tanggal' => Carbon::createFromFormat('Y-m-d', $penjadwalan->tanggal)->format('d F Y'),
+                'jamKerja' => $penjadwalan->nama_jam_kerja,
+                'deskripsi' => $penjadwalan->deskripsi,
+                'startTime' => $penjadwalan->start_time,
+            ],
+            'api' => [
+                'in' => route('kehadiran.store', $penjadwalan->penjadwalan_id),
+                'out' => route('kehadiran.close', $penjadwalan->penjadwalan_id),
+            ],
+        ]);
     }
 
     public function close(Request $request, Penjadwalan $penjadwalan)

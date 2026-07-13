@@ -99,6 +99,7 @@ export default function Index({ title, breadcrumbs = [], employees = [], jamKerj
 
     return (
         <AppLayout title={title}>
+            <style dangerouslySetInnerHTML={{ __html: CSS }} />
             <div className="section-header">
                 <h1>{title}</h1>
                 <div className="section-header-breadcrumb">
@@ -134,17 +135,10 @@ export default function Index({ title, breadcrumbs = [], employees = [], jamKerj
                                     <button
                                         type="button"
                                         onClick={() => pickEmployee(emp)}
-                                        className="w-100 text-left"
-                                        style={{
-                                            border: selected?.id === emp.id ? '2px solid #6777ef' : '1px solid rgba(31,36,64,.1)',
-                                            background: selected?.id === emp.id ? 'rgba(103,119,239,.08)' : '#fff',
-                                            borderRadius: 12,
-                                            padding: '12px 14px',
-                                            cursor: 'pointer',
-                                        }}
+                                        className={`schedule-employee w-100 text-left ${selected?.id === emp.id ? 'active' : ''}`}
                                     >
-                                        <div style={{ fontWeight: 700, fontSize: 14 }}>{emp.nama}</div>
-                                        <div className="text-muted" style={{ fontSize: 12 }}>
+                                        <div className="schedule-employee-name">{emp.nama}</div>
+                                        <div className="schedule-employee-role">
                                             {emp.jabatan.length ? emp.jabatan.join(', ') : 'Tidak ada Jabatan'}
                                         </div>
                                     </button>
@@ -178,7 +172,7 @@ export default function Index({ title, breadcrumbs = [], employees = [], jamKerj
                             {alert && <div className={`alert alert-${alert.color}`}>{alert.text}</div>}
 
                             {showForm && (
-                                <div className="mb-4 p-3" style={{ background: '#f6f7fd', borderRadius: 12 }}>
+                                <div className="schedule-form-panel mb-4 p-3">
                                     <div className="form-group row align-items-center">
                                         <label className="col-md-3 col-form-label text-md-right">Jabatan</label>
                                         <div className="col-md-8">
@@ -268,3 +262,48 @@ export default function Index({ title, breadcrumbs = [], employees = [], jamKerj
         </AppLayout>
     );
 }
+
+const CSS = `
+.schedule-employee{
+    color:var(--foreground);
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:12px;
+    padding:12px 14px;
+    cursor:pointer;
+    transition:background .15s ease,border-color .15s ease,box-shadow .15s ease,transform .15s ease;
+}
+.schedule-employee:hover{
+    background:var(--surface-soft);
+    border-color:color-mix(in srgb, var(--border) 70%, var(--foreground));
+    transform:translateY(-1px);
+}
+.schedule-employee.active{
+    background:rgba(103,119,239,.10);
+    border-color:#6777ef;
+    box-shadow:0 0 0 1px rgba(103,119,239,.35);
+}
+.schedule-employee-name{
+    color:var(--foreground);
+    font-size:14px;
+    font-weight:700;
+    line-height:1.35;
+}
+.schedule-employee-role{
+    color:var(--muted);
+    font-size:12px;
+    line-height:1.35;
+    margin-top:3px;
+}
+.schedule-form-panel{
+    color:var(--foreground);
+    background:var(--surface-soft);
+    border:1px solid var(--border);
+    border-radius:12px;
+}
+html[data-theme="dark"] .schedule-employee.active{
+    background:rgba(129,140,248,.16);
+    border-color:#a5b4fc;
+    box-shadow:0 0 0 1px rgba(165,180,252,.38);
+}
+`;

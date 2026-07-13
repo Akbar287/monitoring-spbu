@@ -5,8 +5,8 @@ namespace App\Support;
 class Navigation
 {
     /**
-     * Anak pertama tiap modul: link "Ringkasan" menuju halaman menu modul
-     * yang sudah Inertia (flag inertia => navigasi SPA via <Link> + NProgress).
+     * Anak pertama tiap modul: link "Ringkasan" menuju halaman menu modul.
+     * Deteksi SPA sekarang terpusat di HandleInertiaRequests + AppLayout.
      */
     private static function ringkasan(string $url, array $children): array
     {
@@ -96,12 +96,17 @@ class Navigation
 
         if ($pj || $direksi) {
             $menu[] = ['label' => 'Financial', 'icon' => 'file', 'url' => url('/financial'), 'children' => self::ringkasan(url('/financial'), [
+                ['label' => 'COA (Master Akun)', 'url' => url('/financial/coa')],
+                ['label' => 'Jurnal Umum', 'url' => url('/financial/jurnal')],
+                ['label' => 'Saldo Awal', 'url' => url('/financial/saldo-awal')],
+                ['label' => 'Tutup Buku', 'url' => url('/financial/tutup-buku')],
                 ['label' => 'Petty Cash', 'url' => url('/financial/petty-cash')],
                 ['label' => 'Rekap Pajak', 'url' => url('/financial/rekap-pajak')],
                 ['label' => 'Margin', 'url' => url('/financial/margin')],
                 ['label' => 'Laba Rugi', 'url' => url('/financial/laba-rugi')],
                 ['label' => 'Neraca', 'url' => url('/financial/neraca')],
                 ['label' => 'Buku Besar', 'url' => url('/financial/buku-besar')],
+                ['label' => 'Neraca Saldo', 'url' => url('/financial/neraca-saldo')],
                 ['label' => 'Arus Kas', 'url' => url('/financial/arus-kas')],
                 ['label' => 'Perubahan Modal', 'url' => url('/financial/perubahan-modal')],
             ])];

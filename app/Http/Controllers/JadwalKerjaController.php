@@ -84,7 +84,25 @@ class JadwalKerjaController extends Controller
         $memberSelected = 'all';
         $jamKerjaSelected = 'all';
 
-        return view('jadwal_absensi/penjadwalan/upload_file', compact('member', 'jamKerja', 'waktuMulai', 'waktuSelesai', 'memberSelected', 'jamKerjaSelected'));
+        return Inertia::render('JadwalKerja/Upload', [
+            'title' => 'Upload Jadwal Kerja',
+            'breadcrumbs' => [
+                ['label' => 'Jadwal & Absensi', 'url' => route('menu.jadwal_absensi')],
+                ['label' => 'Penjadwalan', 'url' => route('jadwal-kerja.index')],
+            ],
+            'deleteAction' => route('jadwal-kerja.upload_file.delete'),
+            'uploadAction' => route('jadwal-kerja.upload_file.store'),
+            'templateUrl' => route('jadwal-kerja.upload_file.template'),
+            'backUrl' => route('jadwal-kerja.index'),
+            'filters' => [
+                'waktu_mulai' => $waktuMulai,
+                'waktu_selesai' => $waktuSelesai,
+                'member' => $memberSelected,
+                'jam_kerja' => $jamKerjaSelected,
+            ],
+            'members' => $member->map(fn ($item) => ['value' => $item->member_id, 'label' => $item->nama])->values()->all(),
+            'jamKerja' => $jamKerja->map(fn ($item) => ['value' => $item->jam_kerja_id, 'label' => $item->nama_jam_kerja])->values()->all(),
+        ]);
     }
 
     /**
@@ -219,7 +237,29 @@ class JadwalKerjaController extends Controller
                 $data = StatusKehadiran::where('status_kehadiran_id', $statusKehadiranSelected)->first()->penjadwalan()->select('random_string_barcode.is_active', 'random_string_barcode.barcode', 'random_string_barcode.finish', 'penjadwalan.tanggal', 'jabatan.nama_jabatan', 'jam_kerja.nama_jam_kerja', 'ktp.nama')->join('member', 'member.member_id', 'penjadwalan.member_id')->join('ktp', 'member.ktp_id', 'ktp.ktp_id')->join('random_string_barcode', 'random_string_barcode.penjadwalan_id', 'penjadwalan.penjadwalan_id')->join('jam_kerja', 'penjadwalan.jam_kerja_id', 'jam_kerja.jam_kerja_id')->join('jabatan', 'jabatan.jabatan_id', 'penjadwalan.jabatan_id')->where('random_string_barcode.is_active', '1')->where('member_id', $memberSelected)->orderBy('tanggal', 'desc')->where('tanggal', $tanggal)->get();
             }
         }
-        return view('jadwal_absensi/penjadwalan/qrcode', compact('tanggal', 'member', 'statusKehadiran', 'memberSelected', 'statusKehadiranSelected', 'data'));
+        return Inertia::render('JadwalKerja/Qr', [
+            'title' => 'QR Code',
+            'breadcrumbs' => [
+                ['label' => 'Jadwal & Absensi', 'url' => route('menu.jadwal_absensi')],
+                ['label' => 'Penjadwalan', 'url' => route('jadwal-kerja.index')],
+            ],
+            'backUrl' => route('jadwal-kerja.index'),
+            'filters' => [
+                'tanggal' => $tanggal,
+                'member' => $memberSelected,
+                'status_kehadiran_id' => $statusKehadiranSelected,
+            ],
+            'members' => $member->map(fn ($item) => ['value' => $item->member_id, 'label' => $item->nama])->values()->all(),
+            'statuses' => $statusKehadiran->map(fn ($item) => ['value' => $item->status_kehadiran_id, 'label' => $item->nama_kehadiran])->values()->all(),
+            'items' => $data->map(fn ($item) => [
+                'barcode' => $item->barcode,
+                'nama' => $item->nama,
+                'qr' => (string) \QrCode::size(150)->generate($item->barcode),
+                'tanggalJam' => Carbon::createFromFormat('Y-m-d', $item->tanggal)->format('d F Y') . ' (' . $item->nama_jam_kerja . ')',
+                'jabatan' => $item->nama_jabatan,
+                'finish' => Carbon::createFromFormat('Y-m-d H:i:s', $item->finish)->diffForHumans(),
+            ])->values()->all(),
+        ]);
     }
 
     public function checkAndCreateQrCode()

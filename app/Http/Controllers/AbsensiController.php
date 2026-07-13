@@ -189,13 +189,55 @@ class AbsensiController extends Controller
 
     public function show(Penjadwalan $penjadwalan)
     {
-        return view('jadwal_absensi/absensi/show', compact('penjadwalan'));
+        return Inertia::render('Show/Index', [
+            'title' => 'Detail Absensi',
+            'breadcrumbs' => [
+                ['label' => 'Jadwal & Absensi', 'url' => route('menu.jadwal_absensi')],
+                ['label' => 'Absensi', 'url' => route('absensi.index')],
+            ],
+            'backUrl' => route('absensi.index'),
+            'fields' => [
+                ['label' => 'Status Kehadiran', 'value' => optional($penjadwalan->status_kehadiran()->first())->nama_kehadiran],
+                ['label' => 'Tanggal', 'value' => Carbon::createFromFormat('Y-m-d', $penjadwalan->tanggal)->format('d F Y')],
+                ['label' => 'Jam Absen Masuk', 'value' => is_null($penjadwalan->start_time) ? '' : Carbon::createFromFormat('Y-m-d H:i:s', $penjadwalan->start_time)->format('d F Y H:i:s')],
+                ['label' => 'Jam Absen Keluar', 'value' => is_null($penjadwalan->finish_time) ? '' : Carbon::createFromFormat('Y-m-d H:i:s', $penjadwalan->finish_time)->format('d F Y H:i:s')],
+                ['label' => 'Jam Kerja', 'value' => optional($penjadwalan->jam_kerja()->first())->nama_jam_kerja],
+                ['label' => 'Nama Pegawai', 'value' => optional(optional($penjadwalan->member()->first())->ktp()->first())->nama],
+                ['label' => 'Jabatan', 'value' => optional($penjadwalan->jabatan()->first())->nama_jabatan],
+                ['label' => 'Konfirmasi', 'value' => $penjadwalan->is_confirm ? 'Konfirmasi' : 'Tidak Konfirmasi'],
+                ['label' => 'Hadir', 'value' => $penjadwalan->is_attended ? 'Hadir' : 'Tidak Hadir'],
+                ['label' => 'Deskripsi', 'value' => $penjadwalan->deskripsi],
+            ],
+            'actions' => array_values(array_filter([
+                ['label' => 'Ubah Status', 'url' => route('absensi.edit', $penjadwalan->penjadwalan_id), 'color' => 'success', 'icon' => 'pen'],
+                $penjadwalan->is_confirm
+                    ? ['label' => 'Batalkan Konfirmasi', 'url' => route('absensi.unconfirm', $penjadwalan->penjadwalan_id), 'color' => 'danger', 'icon' => 'times', 'method' => 'put', 'confirm' => "Absensi akan dibatalkan konfirmasi!\n Lanjutkan?"]
+                    : ['label' => 'Konfirmasi', 'url' => route('absensi.confirm', $penjadwalan->penjadwalan_id), 'color' => 'info', 'icon' => 'check', 'method' => 'put', 'confirm' => "Absensi akan dikonfirmasi!\n Lanjutkan?"],
+            ])),
+        ]);
     }
 
     public function edit(Penjadwalan $penjadwalan)
     {
         $statusKehadiran = StatusKehadiran::select('status_kehadiran_id', 'nama_kehadiran')->get();
-        return view('jadwal_absensi/absensi/edit', compact('penjadwalan', 'statusKehadiran'));
+        return Inertia::render('Form/Index', [
+            'title' => 'Ubah Status Absensi',
+            'breadcrumbs' => [
+                ['label' => 'Jadwal & Absensi', 'url' => route('menu.jadwal_absensi')],
+                ['label' => 'Absensi', 'url' => route('absensi.index')],
+                ['label' => 'Detail Absensi', 'url' => route('absensi.show', $penjadwalan->penjadwalan_id)],
+            ],
+            'backUrl' => route('absensi.show', $penjadwalan->penjadwalan_id),
+            'method' => 'put',
+            'action' => route('absensi.update', $penjadwalan->penjadwalan_id),
+            'fields' => [[
+                'name' => 'status_kehadiran_id',
+                'label' => 'Status Kehadiran',
+                'type' => 'select',
+                'value' => $penjadwalan->status_kehadiran_id,
+                'options' => $statusKehadiran->map(fn ($x) => ['value' => $x->status_kehadiran_id, 'label' => $x->nama_kehadiran])->all(),
+            ]],
+        ]);
     }
 
     public function update(Request $request, Penjadwalan $penjadwalan)

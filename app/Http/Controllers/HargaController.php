@@ -60,7 +60,25 @@ class HargaController extends Controller
     }
     public function riwayat_show(Harga $harga)
     {
-        return view('master/harga/show_riwayat', compact('harga'));
+        return Inertia::render('Show/Index', [
+            'title' => 'Detail Harga',
+            'breadcrumbs' => [
+                ['label' => 'Master Data', 'url' => route('menu.master')],
+                ['label' => 'Harga', 'url' => route('harga.index')],
+                ['label' => 'Riwayat', 'url' => route('harga.riwayat.index')],
+            ],
+            'backUrl' => route('harga.riwayat.index'),
+            'fields' => [
+                ['label' => 'Produk', 'value' => optional($harga->produk()->first())->nama_produk],
+                ['label' => 'Jam Kerja', 'value' => optional($harga->jam_kerja()->first())->nama_jam_kerja],
+                ['label' => 'Tanggal', 'value' => $harga->tanggal],
+                ['label' => 'Harga Jual', 'value' => 'Rp. ' . number_format($harga->harga_jual, 6, '.', ',')],
+                ['label' => 'Harga Beli', 'value' => 'Rp. ' . number_format($harga->harga_beli, 6, '.', ',')],
+                ['label' => 'Status', 'value' => $harga->is_default ? 'Aktif' : 'Tidak Aktif'],
+            ],
+            'deleteUrl' => route('harga.destroy', $harga->harga_id),
+            'deleteConfirm' => "Harga akan dihapus!\n Lanjutkan?",
+        ]);
     }
     /**
      * Display a listing of the resource.

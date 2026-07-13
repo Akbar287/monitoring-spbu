@@ -101,7 +101,32 @@ class RekapPajakController extends Controller
     public function show(PajakPembelian $pajakPembelian)
     {
         $rencana = $pajakPembelian->rencana_pembelian()->first();
-        return view('financial/rekap_pajak/show', compact('rencana'));
+        return Inertia::render('Show/Index', [
+            'title' => 'Detail Pajak Pembelian',
+            'breadcrumbs' => [
+                ['label' => 'Financial', 'url' => route('menu.financial')],
+                ['label' => 'Rekap Pajak', 'url' => route('rekap-pajak.index')],
+            ],
+            'backUrl' => route('rekap-pajak.index'),
+            'fields' => [
+                ['label' => 'Id Rencana Pembelian', 'value' => $rencana?->rencana_pembelian_id],
+                ['label' => 'SPBU', 'value' => optional($rencana?->spbu()->first())->nama_spbu],
+                ['label' => 'Keterangan', 'value' => $rencana?->keterangan],
+                ['label' => 'Grand Total (Sblm Pajak)', 'value' => 'Rp. ' . number_format($rencana?->grand_total ?? 0, 6, '.', ',')],
+                ['label' => 'Grand Total (Stlh Pajak)', 'value' => 'Rp. ' . number_format($pajakPembelian->total_amount ?? $rencana?->grand_total ?? 0, 6, '.', ',')],
+            ],
+            'tables' => [[
+                'title' => 'Pajak Pembelian',
+                'columns' => ['Komponen', 'Nominal'],
+                'rows' => [
+                    ['Net Price', 'Rp. ' . number_format($pajakPembelian->net_price ?? $rencana?->grand_total ?? 0, 6, '.', ',')],
+                    ['PPN', 'Rp. ' . number_format($pajakPembelian->ppn ?? 0, 6, '.', ',')],
+                    ['PPBKB', 'Rp. ' . number_format($pajakPembelian->ppbkb ?? 0, 6, '.', ',')],
+                    ['PPh', 'Rp. ' . number_format($pajakPembelian->pph ?? 0, 6, '.', ',')],
+                    ['Total Amount (Gross Price)', 'Rp. ' . number_format($pajakPembelian->total_amount ?? $rencana?->grand_total ?? 0, 6, '.', ',')],
+                ],
+            ]],
+        ]);
     }
 
     public function export(Request $request)

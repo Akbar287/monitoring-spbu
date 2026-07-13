@@ -17,6 +17,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Yajra\DataTables\DataTables;
 
@@ -693,6 +695,7 @@ class HomeController extends Controller
             ],
             'editUrl' => route('profil.edit'),
             'passwordUrl' => route('profil.edit_password'),
+            'uploadAvatarUrl' => route('profil.avatar.store'),
             'homeUrl' => url('/home'),
         ]);
     }
@@ -774,6 +777,30 @@ class HomeController extends Controller
         ]);
 
         return redirect('/profil')->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> Profil sudah diubah.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
+    }
+
+    public function profil_avatar_store(Request $request)
+    {
+        $request->validate([
+            'avatar' => ['required', 'image', 'mimes:jpg,jpeg,png,webp,bmp', 'max:' . \App\Support\Upload::maxKb()],
+        ]);
+
+        $member = Auth::user()->member()->firstOrFail();
+        $oldAvatar = $member->avatar;
+        $file = $request->file('avatar');
+        $extension = strtolower($file->getClientOriginalExtension() ?: $file->extension() ?: 'jpg');
+        $filename = Str::uuid()->toString() . '.' . $extension;
+
+        $file->storeAs('public/profile_img', $filename);
+        $member->update([
+            'avatar' => $filename,
+        ]);
+
+        if ($oldAvatar && $oldAvatar !== 'default.png' && $oldAvatar !== $filename) {
+            Storage::disk('public')->delete('profile_img/' . basename($oldAvatar));
+        }
+
+        return redirect('/profil')->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> Foto profil sudah diubah.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
     }
 
     public function profil_edit_password()

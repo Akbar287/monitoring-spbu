@@ -26,6 +26,7 @@ Route::middleware(['auth', 'cache.header'])->group(function ($route) {
     $route->get('/profil', [App\Http\Controllers\HomeController::class, 'profil'])->name('profil');
     $route->get('/profil/edit', [App\Http\Controllers\HomeController::class, 'profil_edit'])->name('profil.edit');
     $route->post('/profil', [App\Http\Controllers\HomeController::class, 'profil_store'])->name('profil.store');
+    $route->post('/profil/avatar', [App\Http\Controllers\HomeController::class, 'profil_avatar_store'])->name('profil.avatar.store');
     $route->get('/profil/password', [App\Http\Controllers\HomeController::class, 'profil_edit_password'])->name('profil.edit_password');
     $route->post('/profil/password', [App\Http\Controllers\HomeController::class, 'profil_store_password'])->name('profil.store_password');
 

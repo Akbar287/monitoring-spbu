@@ -14,7 +14,6 @@ use Yajra\DataTables\DataTables;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Route;
 
 class MonitoringController extends Controller
 {
@@ -68,7 +67,18 @@ class MonitoringController extends Controller
     {
         $produk = Produk::all();
         $dombak = Dombak::all();
-        return view('stok/monitoring/create', compact('produk', 'dombak'));
+        return Inertia::render('Monitoring/Form', [
+            'title' => 'Tambah Monitoring Stok',
+            'breadcrumbs' => [
+                ['label' => 'Manajemen Persediaan', 'url' => route('menu.stok')],
+                ['label' => 'Monitoring Stok', 'url' => route('monitoring.index')],
+            ],
+            'action' => route('monitoring.store'),
+            'method' => 'post',
+            'backUrl' => route('monitoring.index'),
+            'products' => $produk->map(fn ($p) => ['value' => $p->produk_id, 'label' => $p->nama_produk])->values()->all(),
+            'dombaks' => $dombak->map(fn ($d) => ['id' => $d->dombak_id, 'name' => $d->nama_dombak, 'stok' => '0.00'])->values()->all(),
+        ]);
     }
 
     /**
@@ -117,7 +127,35 @@ class MonitoringController extends Controller
      */
     public function show(StokInventory $stok)
     {
-        return view('stok/monitoring/show', compact('stok'));
+        $level = optional(optional(optional(Auth::user()?->member()->first())->jabatan()->first())->level()->first())->nama_level;
+
+        return Inertia::render('Show/Index', [
+            'title' => 'Detail Monitoring Stok',
+            'breadcrumbs' => [
+                ['label' => 'Manajemen Persediaan', 'url' => route('menu.stok')],
+                ['label' => 'Monitoring Stok', 'url' => route('monitoring.index')],
+            ],
+            'backUrl' => route('monitoring.index'),
+            'fields' => [
+                ['label' => 'Produk', 'value' => optional($stok->produk()->first())->nama_produk],
+                ['label' => 'Total Stok', 'value' => number_format($stok->stok, 6, '.', ',')],
+            ],
+            'tables' => [[
+                'title' => 'Dombak',
+                'columns' => ['Id Dombak', 'Nama Dombak', 'Initial Stok'],
+                'rows' => $stok->stok_inventory_dombak()->get()->map(fn ($d) => [
+                    optional($d->dombak()->first())->dombak_id,
+                    optional($d->dombak()->first())->nama_dombak,
+                    number_format($d->stok ?? 0, 6, '.', ','),
+                ])->values()->all(),
+            ]],
+            'actions' => array_values(array_filter([
+                ['label' => 'Riwayat Stok', 'url' => route('monitoring.show_riwayat', $stok->stok_inventory_id), 'color' => 'primary', 'icon' => 'history'],
+                $level === 'Penanggung Jawab' ? ['label' => 'Ubah', 'url' => route('monitoring.edit', $stok->stok_inventory_id), 'color' => 'success', 'icon' => 'pen'] : null,
+            ])),
+            'deleteUrl' => $level === 'Penanggung Jawab' ? route('monitoring.delete', $stok->stok_inventory_id) : null,
+            'deleteConfirm' => "Stok Inventory akan dihapus!\n Lanjutkan?",
+        ]);
     }
 
     /**
@@ -127,7 +165,30 @@ class MonitoringController extends Controller
     {
         $produk = Produk::all();
         $dombak = Dombak::all();
-        return view('stok/monitoring/edit', compact('produk', 'stok', 'dombak'));
+        return Inertia::render('Monitoring/Form', [
+            'title' => 'Ubah Monitoring Stok',
+            'breadcrumbs' => [
+                ['label' => 'Manajemen Persediaan', 'url' => route('menu.stok')],
+                ['label' => 'Monitoring Stok', 'url' => route('monitoring.index')],
+                ['label' => 'Detail', 'url' => route('monitoring.show', $stok->stok_inventory_id)],
+            ],
+            'action' => route('monitoring.update', $stok->stok_inventory_id),
+            'method' => 'put',
+            'backUrl' => route('monitoring.show', $stok->stok_inventory_id),
+            'product' => [
+                'id' => optional($stok->produk()->first())->produk_id,
+                'label' => optional($stok->produk()->first())->nama_produk,
+            ],
+            'dombaks' => $dombak->map(function ($d) use ($stok) {
+                $rel = $d->stok_inventory_dombak()->where('stok_inventory_id', $stok->stok_inventory_id)->first();
+                return [
+                    'id' => $d->dombak_id,
+                    'name' => $d->nama_dombak,
+                    'stok' => $rel ? $rel->stok : '0.00',
+                ];
+            })->values()->all(),
+            'warning' => 'Pastikan anda mengetahui apa yang anda perbuat. Merubah initial stok bisa mengubah perhitungan laporan stok ataupun keuangan.',
+        ]);
     }
 
     /**
@@ -188,7 +249,7 @@ class MonitoringController extends Controller
             }
         }
 
-        return redirect('/stok/monitoring/' . $stok->stok_id)->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> Data Stok Inventory sudah diubah.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
+        return redirect('/stok/monitoring/' . $stok->stok_inventory_id)->with('msg', '<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Sukses!</strong> Data Stok Inventory sudah diubah.<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
     }
 
     /**
@@ -237,7 +298,27 @@ class MonitoringController extends Controller
                 ->rawColumns(['action'])
                 ->make(true);
         }
-        return view('stok/monitoring/monitoring_dombak', compact('stok'));
+        return Inertia::render('Table/Index', [
+            'title' => 'Dombak Monitoring Stok',
+            'breadcrumbs' => [
+                ['label' => 'Manajemen Persediaan', 'url' => route('menu.stok')],
+                ['label' => 'Monitoring Stok', 'url' => route('monitoring.index')],
+                ['label' => 'Detail', 'url' => route('monitoring.show', $stok->stok_inventory_id)],
+            ],
+            'createUrl' => route('monitoring.dombak.create', $stok->stok_inventory_id),
+            'headerActions' => [
+                ['label' => 'Kembali', 'url' => route('monitoring.show', $stok->stok_inventory_id), 'color' => 'light', 'icon' => 'arrow-left'],
+            ],
+            'table' => [
+                'url' => $request->url(),
+                'columns' => [
+                    ['label' => 'Id Dombak', 'data' => 'dombak_id'],
+                    ['label' => 'Nama Dombak', 'data' => 'nama_dombak'],
+                    ['label' => 'Initial Stok', 'data' => 'stok'],
+                    ['label' => 'Aksi', 'data' => 'action', 'orderable' => false, 'searchable' => false, 'raw' => true],
+                ],
+            ],
+        ]);
     }
 
     public function dombak_create(Request $request, StokInventory $stok)
@@ -246,14 +327,32 @@ class MonitoringController extends Controller
             $data = Dombak::select('*');
             return DataTables::of($data)
                 ->addIndexColumn()
-                ->addColumn('action', function ($row) {
-                    $actionBtn = $row->stok_inventory_dombak()->where('stok_inventory_dombak.stok_inventory_id', Route::getCurrentRoute()->originalParameters()['stok'])->count() > 0 ? 'Sudah'  : '<form action="' . url('/stok/monitoring/' . Route::getCurrentRoute()->originalParameters()['stok'] . '/dombak/' . $row->dombak_id) . '" method="POST">' . csrf_field() . '<button class="edit btn btn-success btn-sm" title="Pilih" type="submit">Pilih</button></form>';
+                ->addColumn('action', function ($row) use ($stok) {
+                    $actionBtn = $row->stok_inventory_dombak()->where('stok_inventory_dombak.stok_inventory_id', $stok->stok_inventory_id)->count() > 0 ? 'Sudah'  : '<form action="' . route('monitoring.dombak.store', [$stok->stok_inventory_id, $row->dombak_id]) . '" method="POST">' . csrf_field() . '<button class="edit btn btn-success btn-sm" title="Pilih" type="submit">Pilih</button></form>';
                     return $actionBtn;
                 })
                 ->rawColumns(['action'])
                 ->make(true);
         }
-        return view('stok/monitoring/monitoring_dombak_create', compact('stok'));
+        return Inertia::render('Table/Index', [
+            'title' => 'Tambah Dombak Monitoring Stok',
+            'breadcrumbs' => [
+                ['label' => 'Manajemen Persediaan', 'url' => route('menu.stok')],
+                ['label' => 'Monitoring Stok', 'url' => route('monitoring.index')],
+                ['label' => 'Detail', 'url' => route('monitoring.show', $stok->stok_inventory_id)],
+                ['label' => 'Dombak', 'url' => route('monitoring.dombak.index', $stok->stok_inventory_id)],
+            ],
+            'headerActions' => [
+                ['label' => 'Kembali', 'url' => route('monitoring.dombak.index', $stok->stok_inventory_id), 'color' => 'light', 'icon' => 'arrow-left'],
+            ],
+            'table' => [
+                'url' => $request->url(),
+                'columns' => [
+                    ['label' => 'Nama Dombak', 'data' => 'nama_dombak'],
+                    ['label' => 'Aksi', 'data' => 'action', 'orderable' => false, 'searchable' => false, 'raw' => true],
+                ],
+            ],
+        ]);
     }
 
     public function dombak_store(StokInventory $stok, Dombak $dombak)
@@ -300,7 +399,7 @@ class MonitoringController extends Controller
         $waktuSelesai = $waktuSelesai->format('Y-m-d');
 
         if ($request->ajax() && ! $request->inertia()) {
-            $data = $dombakSelected == 'all' ? $stok->dokumen_stok()
+            $data = $stok->dokumen_stok()
                 ->select([
                     'stok_inventory.stok_inventory_id',
                     'dokumen_stok.dokumen_stok_id',
@@ -321,42 +420,11 @@ class MonitoringController extends Controller
                 ->leftJoin('losses', 'losses.dokumen_stok_id', 'dokumen_stok.dokumen_stok_id')
                 ->where('dokumen_stok.is_confirmation', 1)
                 ->whereBetween('dokumen_stok.tanggal', [$waktuMulai, $waktuSelesai])
-                ->groupBy([
-                    'dokumen_stok.dokumen_stok_id',
-                    'stok_inventory.stok_inventory_id',
-                    'dokumen_stok.tanggal',
-                    'dokumen_stok.stok_awal',
-                    'dokumen_stok.stok_akhir',
-                    'type_dokumen_stok.type_movement',
-                    'dombak.nama_dombak',
-                    'jam_kerja.nama_jam_kerja',
-                    'jam_kerja.jam_datang_in'
-                ])
-                ->orderBy('tanggal', 'desc')
-                ->orderBy('jam_datang_in', 'desc')
-                ->get() : $stok->dokumen_stok()
-                ->select([
-                    'stok_inventory.stok_inventory_id',
-                    'dokumen_stok.dokumen_stok_id',
-                    'dokumen_stok.tanggal',
-                    'dokumen_stok.stok_awal',
-                    'dokumen_stok.stok_akhir',
-                    'type_dokumen_stok.type_movement',
-                    'dombak.nama_dombak',
-                    'jam_kerja.nama_jam_kerja',
-                    'jam_kerja.jam_datang_in',
-                    DB::raw("STRING_AGG(losses.simbol, ',') as loss_symbols"),
-                    DB::raw('SUM(losses.jumlah) as total_loss')
-                ])
-                ->join('stok_inventory', 'stok_inventory.stok_inventory_id', 'dokumen_stok.stok_inventory_id')
-                ->join('type_dokumen_stok', 'type_dokumen_stok.type_dokumen_stok_id', 'dokumen_stok.type_dokumen_stok_id')
-                ->join('dombak', 'dombak.dombak_id', 'dokumen_stok.dombak_id')
-                ->join('jam_kerja', 'jam_kerja.jam_kerja_id', 'dokumen_stok.jam_kerja_id')
-                ->leftJoin('losses', 'losses.dokumen_stok_id', 'dokumen_stok.dokumen_stok_id')
-                ->where('dokumen_stok.is_confirmation', 1)
-                ->whereBetween('dokumen_stok.tanggal', [$waktuMulai, $waktuSelesai])
-                ->when($dombakSelected, function ($query) use ($dombakSelected) {
+                ->when($dombakSelected !== 'all', function ($query) use ($dombakSelected) {
                     return $query->where('dokumen_stok.dombak_id', $dombakSelected);
+                })
+                ->when($typeDokumenStokSelected !== 'all', function ($query) use ($typeDokumenStokSelected) {
+                    return $query->where('dokumen_stok.type_dokumen_stok_id', $typeDokumenStokSelected);
                 })
                 ->groupBy([
                     'dokumen_stok.dokumen_stok_id',
@@ -380,10 +448,10 @@ class MonitoringController extends Controller
                     return $actionBtn . ' ' . $row->nama_jam_kerja;
                 })
                 ->addColumn('type_movement', function ($row) {
-                    return number_format($row->type_movement, 6, ".", ",");
+                    return $row->type_movement;
                 })
                 ->addColumn('nama_dombak', function ($row) {
-                    return number_format($row->nama_dombak, 6, ".", ",");
+                    return $row->nama_dombak;
                 })
                 ->addColumn('stok_awal', function ($row) {
                     return number_format($row->stok_awal, 6, ".", ",");
@@ -392,7 +460,12 @@ class MonitoringController extends Controller
                     return number_format($row->stok_akhir, 6, ".", ',');
                 })
                 ->addColumn('total_loss', function ($row) {
-                    return ($row->simbol == 'lebih' ? '+' : '-') . number_format($row->jumlah > 0 ? $row->jumlah : $row->jumlah * -1, 6, ".", ',');
+                    $symbols = array_filter(explode(',', $row->loss_symbols ?? ''));
+                    $totalLoss = (float) ($row->total_loss ?? 0);
+                    if ($totalLoss === 0.0) {
+                        return number_format(0, 6, ".", ',');
+                    }
+                    return (in_array('lebih', $symbols, true) ? '+' : '-') . number_format(abs($totalLoss), 6, ".", ',');
                 })
                 ->addColumn('action', function ($row) {
                     $actionBtn = '<a href="' . route('monitoring.show_detail_riwayat', [$row->stok_inventory_id, $row->dokumen_stok_id]) . '" class="edit btn btn-success btn-sm">Detail</a>';
@@ -401,7 +474,50 @@ class MonitoringController extends Controller
                 ->rawColumns(['action'])
                 ->make(true);
         }
-        return view('stok/monitoring/show_riwayat', compact('stok', 'waktuMulai', 'waktuSelesai', 'dombakSelected', 'dombak', 'typeDokumenStokSelected', 'typeDokumenStok'));
+        return Inertia::render('Table/Index', [
+            'title' => 'Riwayat Monitoring Stok',
+            'breadcrumbs' => [
+                ['label' => 'Manajemen Persediaan', 'url' => route('menu.stok')],
+                ['label' => 'Monitoring Stok', 'url' => route('monitoring.index')],
+                ['label' => 'Detail', 'url' => route('monitoring.show', $stok->stok_inventory_id)],
+            ],
+            'headerActions' => [
+                ['label' => 'Kembali', 'url' => route('monitoring.show', $stok->stok_inventory_id), 'color' => 'light', 'icon' => 'arrow-left'],
+            ],
+            'dateFilter' => ['mulai' => $waktuMulai, 'selesai' => $waktuSelesai],
+            'selectFilters' => [
+                [
+                    'name' => 'type_dokumen_stok',
+                    'label' => 'Tipe Dokumen',
+                    'value' => $typeDokumenStokSelected,
+                    'options' => array_merge(
+                        [['value' => 'all', 'label' => 'Semua']],
+                        $typeDokumenStok->map(fn ($type) => ['value' => $type->type_dokumen_stok_id, 'label' => $type->type_movement])->values()->all()
+                    ),
+                ],
+                [
+                    'name' => 'dombak',
+                    'label' => 'Dombak',
+                    'value' => $dombakSelected,
+                    'options' => array_merge(
+                        [['value' => 'all', 'label' => 'Semua']],
+                        $dombak->map(fn ($item) => ['value' => $item->dombak_id, 'label' => $item->nama_dombak])->values()->all()
+                    ),
+                ],
+            ],
+            'table' => [
+                'url' => $request->fullUrl(),
+                'columns' => [
+                    ['label' => 'Tanggal', 'data' => 'tanggal'],
+                    ['label' => 'Tipe Dokumen', 'data' => 'type_movement'],
+                    ['label' => 'Nama Dombak', 'data' => 'nama_dombak'],
+                    ['label' => 'Stok Awal', 'data' => 'stok_awal'],
+                    ['label' => 'Stok Akhir', 'data' => 'stok_akhir'],
+                    ['label' => 'Loss/Profit', 'data' => 'total_loss'],
+                    ['label' => 'Aksi', 'data' => 'action', 'orderable' => false, 'searchable' => false, 'raw' => true],
+                ],
+            ],
+        ]);
     }
 
     public function show_detail_riwayat(StokInventory $stok, DokumenStok $dokumenStok)
@@ -419,6 +535,33 @@ class MonitoringController extends Controller
             'stok_akhir_teoritis' => number_format($dokumenStok->stok_akhir, 6, ".", ","),
             'stok_akhir_pl' => number_format($stok_akhir_pl, 6, ".", ","),
         ];
-        return view('stok/monitoring/show_detail_riwayat', compact('stok', 'dokumenStok', 'stokHitung'));
+        return Inertia::render('Show/Index', [
+            'title' => 'Detail Riwayat Monitoring Stok',
+            'breadcrumbs' => [
+                ['label' => 'Manajemen Persediaan', 'url' => route('menu.stok')],
+                ['label' => 'Monitoring Stok', 'url' => route('monitoring.index')],
+                ['label' => 'Detail', 'url' => route('monitoring.show', $stok->stok_inventory_id)],
+                ['label' => 'Riwayat', 'url' => route('monitoring.show_riwayat', $stok->stok_inventory_id)],
+            ],
+            'backUrl' => route('monitoring.show_riwayat', $stok->stok_inventory_id),
+            'fields' => [
+                ['label' => 'Tipe Dokumen', 'value' => optional($dokumenStok->type_dokumen_stok()->first())->type_movement],
+                ['label' => 'Produk', 'value' => optional($stok->produk()->first())->nama_produk],
+                ['label' => 'Dombak', 'value' => optional($dokumenStok->dombak()->first())->nama_dombak],
+                ['label' => 'Tanggal', 'value' => Carbon::createFromFormat('Y-m-d', $dokumenStok->tanggal)->format('d F Y')],
+                ['label' => 'Jam Kerja', 'value' => optional($dokumenStok->jam_kerja()->first())->nama_jam_kerja],
+                ['label' => 'Member', 'value' => optional(optional($dokumenStok->member()->first())->ktp()->first())->nama],
+            ],
+            'tables' => [[
+                'title' => 'Stok Hitung',
+                'columns' => ['Informasi', 'Besaran'],
+                'rows' => [
+                    ['Stok Awal', $stokHitung['stok_awal']],
+                    ['Stok Akhir', $stokHitung['stok_akhir']],
+                    ['Stok Akhir Teoritis', $stokHitung['stok_akhir_teoritis']],
+                    ['Stok Akhir P/L', $stokHitung['stok_akhir_pl']],
+                ],
+            ]],
+        ]);
     }
 }

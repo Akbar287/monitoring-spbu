@@ -6,6 +6,7 @@ use App\Models\Jabatan;
 use App\Models\Member;
 use App\Models\Penjualan;
 use Illuminate\Http\Request;
+use Inertia\Inertia;
 use Yajra\DataTables\DataTables;
 
 class PjOperasionalSetoranController extends Controller
@@ -15,7 +16,7 @@ class PjOperasionalSetoranController extends Controller
      */
     public function index(Request $request, Penjualan $penjualan)
     {
-        if ($request->ajax()) {
+        if ($request->ajax() && ! $request->inertia()) {
             $data = $penjualan->pj_operasional_setoran()->distinct('jabatan_id')->get();
 
             return DataTables::of($data)
@@ -24,11 +25,17 @@ class PjOperasionalSetoranController extends Controller
                     $actionBtn = $row->jabatan()->first()->nama_jabatan;
                     return $actionBtn;
                 })
-                ->addColumn('nama', function ($row) {
-                    // $actionBtn = $row->penjualan()->first()->pj_operasional_setoran()->select('ktp.nama')->join('member', 'member.member_id', 'pj_operasional_setoran.member_id')->join('ktp', 'ktp.ktp_id', 'member.ktp_id')->where('jabatan_id', $row->jabatan_id)->get()->toArray();
+                ->addColumn('nama', function ($row) use ($penjualan) {
+                    $names = $penjualan->pj_operasional_setoran()
+                        ->select('ktp.nama')
+                        ->join('member', 'member.member_id', 'pj_operasional_setoran.member_id')
+                        ->join('ktp', 'ktp.ktp_id', 'member.ktp_id')
+                        ->where('jabatan_id', $row->jabatan_id)
+                        ->orderBy('ktp.nama')
+                        ->pluck('ktp.nama')
+                        ->all();
 
-                    // return  implode(', ', array_column($actionBtn, "nama"));
-                    return $row->member()->first()->ktp()->first()->nama;
+                    return count($names) === 0 ? '-' : implode(', ', $names);
                 })
                 ->addColumn('action', function ($row) {
                     $actionBtn = '<a href="' . route('setoran.open.pj.show', [$row->penjualan_id, $row->jabatan_id]) . '" class="edit btn btn-success btn-sm">Detail</a>';
@@ -37,7 +44,26 @@ class PjOperasionalSetoranController extends Controller
                 ->rawColumns(['action'])
                 ->make(true);
         }
-        return view('setoran/pj_operasional/index', compact('penjualan'));
+        return Inertia::render('Table/Index', [
+            'title' => 'PJ Operasional Setoran',
+            'breadcrumbs' => [
+                ['label' => 'Setoran', 'url' => route('menu.setoran')],
+                ['label' => 'Open Penjualan', 'url' => route('setoran.open')],
+                ['label' => 'Detail Penjualan', 'url' => route('setoran.open.show', $penjualan->penjualan_id)],
+            ],
+            'createUrl' => route('setoran.open.pj.create', $penjualan->penjualan_id),
+            'headerActions' => [
+                ['label' => 'Kembali', 'url' => route('setoran.open.show', $penjualan->penjualan_id), 'color' => 'light', 'icon' => 'arrow-left'],
+            ],
+            'table' => [
+                'url' => $request->url(),
+                'columns' => [
+                    ['label' => 'Jabatan', 'data' => 'nama_jabatan'],
+                    ['label' => 'Member', 'data' => 'nama'],
+                    ['label' => 'Aksi', 'data' => 'action', 'orderable' => false, 'searchable' => false, 'raw' => true],
+                ],
+            ],
+        ]);
     }
 
     /**
@@ -47,7 +73,33 @@ class PjOperasionalSetoranController extends Controller
     {
         $jabatan = Jabatan::select('jabatan_id', 'nama_jabatan')->orderBy('nama_jabatan', 'asc')->get();
         $member = Member::select('member.member_id', 'ktp.nama')->join('ktp', 'ktp.ktp_id', 'member.ktp_id')->orderBy('ktp.nama')->get();
-        return view('setoran/pj_operasional/create', compact('jabatan', 'penjualan', 'member'));
+        return Inertia::render('Form/Index', [
+            'title' => 'Tambah PJ Operasional Setoran',
+            'breadcrumbs' => [
+                ['label' => 'Setoran', 'url' => route('menu.setoran')],
+                ['label' => 'Open Penjualan', 'url' => route('setoran.open')],
+                ['label' => 'Detail Penjualan', 'url' => route('setoran.open.show', $penjualan->penjualan_id)],
+                ['label' => 'PJ Operasional', 'url' => route('setoran.open.pj', $penjualan->penjualan_id)],
+            ],
+            'backUrl' => route('setoran.open.pj', $penjualan->penjualan_id),
+            'action' => route('setoran.open.pj.store', $penjualan->penjualan_id),
+            'method' => 'post',
+            'fields' => [
+                [
+                    'name' => 'jabatan_id',
+                    'label' => 'Jabatan',
+                    'type' => 'select',
+                    'options' => $jabatan->map(fn ($item) => ['value' => $item->jabatan_id, 'label' => $item->nama_jabatan])->values()->all(),
+                ],
+                [
+                    'name' => 'member_id',
+                    'label' => 'Member',
+                    'type' => 'multiselect',
+                    'value' => [],
+                    'options' => $member->map(fn ($item) => ['value' => $item->member_id, 'label' => $item->nama])->values()->all(),
+                ],
+            ],
+        ]);
     }
 
     /**
@@ -85,7 +137,35 @@ class PjOperasionalSetoranController extends Controller
      */
     public function show(Penjualan $penjualan, Jabatan $jabatan)
     {
-        return view('setoran/pj_operasional/show', compact('jabatan', 'penjualan'));
+        $members = $penjualan->pj_operasional_setoran()
+            ->select('ktp.nama')
+            ->join('member', 'member.member_id', 'pj_operasional_setoran.member_id')
+            ->join('ktp', 'ktp.ktp_id', 'member.ktp_id')
+            ->where('jabatan_id', $jabatan->jabatan_id)
+            ->orderBy('ktp.nama')
+            ->get();
+
+        return Inertia::render('Show/Index', [
+            'title' => 'Detail PJ Operasional Setoran',
+            'breadcrumbs' => [
+                ['label' => 'Setoran', 'url' => route('menu.setoran')],
+                ['label' => 'Open Penjualan', 'url' => route('setoran.open')],
+                ['label' => 'Detail Penjualan', 'url' => route('setoran.open.show', $penjualan->penjualan_id)],
+                ['label' => 'PJ Operasional', 'url' => route('setoran.open.pj', $penjualan->penjualan_id)],
+            ],
+            'backUrl' => route('setoran.open.pj', $penjualan->penjualan_id),
+            'fields' => [
+                ['label' => 'Jabatan', 'value' => $jabatan->nama_jabatan],
+                ['label' => 'Tanggal Penjualan', 'value' => $penjualan->tanggal],
+            ],
+            'tables' => [[
+                'title' => 'Member',
+                'columns' => ['Nama'],
+                'rows' => $members->map(fn ($item) => [$item->nama])->values()->all(),
+            ]],
+            'deleteUrl' => route('setoran.open.pj.delete', [$penjualan->penjualan_id, $jabatan->jabatan_id]),
+            'deleteConfirm' => "PJ Operasional akan dihapus!\n Lanjutkan?",
+        ]);
     }
 
     /**

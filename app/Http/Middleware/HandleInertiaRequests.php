@@ -4,10 +4,16 @@ namespace App\Http\Middleware;
 
 use App\Support\Navigation;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Route;
 use Inertia\Middleware;
+use ReflectionFunction;
+use ReflectionMethod;
+use Throwable;
 
 class HandleInertiaRequests extends Middleware
 {
+    private static ?array $inertiaRouteUris = null;
+
     /**
      * The root template that's loaded on the first page visit.
      *
@@ -63,7 +69,90 @@ class HandleInertiaRequests extends Middleware
             'flash' => [
                 'msg' => fn () => $request->session()->get('msg'),
             ],
+            'spa' => [
+                'routes' => self::inertiaRouteUris(),
+            ],
             'uploadMaxKb' => \App\Support\Upload::maxKb(),
         ]);
+    }
+
+    private static function inertiaRouteUris(): array
+    {
+        if (self::$inertiaRouteUris !== null) {
+            return self::$inertiaRouteUris;
+        }
+
+        $routes = [];
+        $seen = [];
+
+        foreach (Route::getRoutes() as $route) {
+            if (!in_array('GET', $route->methods(), true)) {
+                continue;
+            }
+
+            $uri = '/' . ltrim($route->uri(), '/');
+            if (isset($seen[$uri])) {
+                continue;
+            }
+            $seen[$uri] = true;
+
+            $routes[] = [
+                'uri' => $uri,
+                'inertia' => self::routeUsesInertia($route->getAction('uses')),
+            ];
+        }
+
+        self::$inertiaRouteUris = $routes;
+
+        return self::$inertiaRouteUris;
+    }
+
+    private static function routeUsesInertia(mixed $uses): bool
+    {
+        try {
+            if ($uses instanceof \Closure) {
+                return self::sourceUsesInertia(new ReflectionFunction($uses));
+            }
+
+            if (is_string($uses)) {
+                [$class, $method] = str_contains($uses, '@')
+                    ? explode('@', $uses, 2)
+                    : [$uses, '__invoke'];
+
+                return class_exists($class)
+                    && method_exists($class, $method)
+                    && self::sourceUsesInertia(new ReflectionMethod($class, $method));
+            }
+
+            if (is_array($uses) && isset($uses[0], $uses[1])) {
+                return self::sourceUsesInertia(new ReflectionMethod($uses[0], $uses[1]));
+            }
+        } catch (Throwable) {
+            return false;
+        }
+
+        return false;
+    }
+
+    private static function sourceUsesInertia(ReflectionFunction|ReflectionMethod $reflection): bool
+    {
+        $filename = $reflection->getFileName();
+        if (!$filename) {
+            return false;
+        }
+
+        $lines = file($filename);
+        if ($lines === false) {
+            return false;
+        }
+
+        $source = implode('', array_slice(
+            $lines,
+            $reflection->getStartLine() - 1,
+            $reflection->getEndLine() - $reflection->getStartLine() + 1
+        ));
+
+        return str_contains($source, 'Inertia::render')
+            || str_contains($source, '\\Inertia\\Inertia::render');
     }
 }
