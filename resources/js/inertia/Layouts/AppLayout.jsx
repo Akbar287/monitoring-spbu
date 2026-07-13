@@ -135,7 +135,7 @@ export default function AppLayout({ title, children }) {
         try {
             window.localStorage.setItem(THEME_KEY, theme);
         } catch {
-            // Theme still applies for the current session when storage is unavailable.
+            
         }
     }, [theme]);
 
@@ -143,14 +143,8 @@ export default function AppLayout({ title, children }) {
         try {
             window.localStorage.setItem(RAIL_KEY, rail ? '1' : '0');
         } catch {
-            // Preferensi rail hanya untuk sesi ini bila storage tak tersedia.
         }
     }, [rail]);
-
-    // Delegasi link SPA: anchor yang menunjuk route Inertia diubah menjadi
-    // router.visit(). Link Blade, download, target blank, hash, dan modifier
-    // click tetap dibiarkan ke browser supaya plugin/script jQuery legacy tidak
-    // kehilangan siklus page-load normalnya.
     useEffect(() => {
         const onClick = (e) => {
             if (

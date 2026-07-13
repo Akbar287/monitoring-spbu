@@ -1,2 +1,5 @@
 *
 !.gitignore
+!profile_img/
+profile_img/*
+!profile_img/default.png
