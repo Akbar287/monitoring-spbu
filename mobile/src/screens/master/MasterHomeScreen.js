@@ -47,7 +47,9 @@ export default function MasterHomeScreen({ navigation }) {
                                         { backgroundColor: a.lembut, borderColor: a.solid + '2e' },
                                         pressed && styles.ditekan,
                                     ]}
-                                    onPress={() => navigation.navigate('MasterList', { resource: r.key })}
+                                    onPress={() => (r.layar
+                                    ? navigation.navigate(r.layar, r.params || {})
+                                    : navigation.navigate('MasterList', { resource: r.key }))}
                                 >
                                     <View style={[styles.ikonKotak, { backgroundColor: a.solid }]}>
                                         <Ionicons name={r.ikon} size={20} color="#fff" />

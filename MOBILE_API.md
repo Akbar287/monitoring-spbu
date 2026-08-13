@@ -55,6 +55,32 @@ Klien di `mobile/src/api/client.js` menormalkan ketiganya menjadi `ApiError`.
 | 422 | Validasi gagal atau aturan bisnis ditolak (QR salah, belum absen masuk, dsb.) |
 | 429 | Terlalu banyak percobaan login (`throttle:10,1`) |
 
+<a id="hak-akses-menu"></a>
+### Hak akses menu
+
+Pembagian hak akses memakai **nama jabatan**, bukan level — beberapa jabatan
+berbagi level yang sama tetapi haknya sengaja berbeda (mis. Admin, Manajer,
+dan Supervisor sama-sama berlevel *Penanggung Jawab*).
+
+Satu-satunya sumber kebenaran: [`App\Support\Akses`](app/Support/Akses.php).
+
+| Jabatan | Menu |
+|---|---|
+| Direktur Utama · Direktur · Komisaris · Admin · Manajer | **seluruh menu** — Beranda, Jadwal, Procurement, Kelola Data (Master + Konfigurasi), Profil |
+| jabatan lain (Operator, Security, Supervisor, …) | Beranda, Jadwal, Profil |
+
+Perbandingan nama jabatan **tidak peka huruf besar/kecil**, dan satu pegawai
+bisa memegang lebih dari satu jabatan — cukup salah satunya masuk daftar.
+
+Klien tidak perlu menyalin daftar ini: `/auth/login`, `/auth/me`, dan `/profil`
+mengembalikan flag `akses_penuh` (boolean) beserta `daftar_jabatan` (array).
+Aplikasi mobile memakai flag itu untuk menyembunyikan tab Procurement dan
+Kelola. Penyembunyian tab hanyalah kenyamanan — penegakan sebenarnya ada di
+middleware server.
+
+Aturan yang sama juga menentukan apakah `GET /dashboard` mengisi bagian
+`ringkasan` (angka penjualan & stok) atau membiarkannya kosong.
+
 ### Endpoint daftar (paginasi)
 
 ```json
@@ -293,12 +319,13 @@ tidak diketik ulang klien — agar angka LO tidak menyimpang dari dokumen asal.
   `sprintf('%.12F')`, bukan cast `(string)` — cast memakai `precision=14` PHP
   dan akan memotong nilai seperti `156837600.987654` menjadi `…98765`.
 
-### Master Data & Konfigurasi — **hanya level `Penanggung Jawab`**
+### Master Data & Konfigurasi — **hanya jabatan berakses penuh**
 
-Route berprefiks `/master` dan `/konfigurasi`, ditambah `/opsi`, dijaga
-middleware `level:Penanggung Jawab`
-([EnsureLevel](app/Http/Middleware/EnsureLevel.php)). Level lain menerima 403
-dengan `data.level_anda` berisi level pengguna.
+Route berprefiks `/master`, `/konfigurasi`, `/procurement`, ditambah `/opsi`,
+dijaga middleware `akses.penuh`
+([EnsureAksesPenuh](app/Http/Middleware/EnsureAksesPenuh.php)). Jabatan lain
+menerima 403 dengan `data.jabatan_anda` berisi jabatan pengguna.
+Daftar jabatannya lihat [§ Hak akses menu](#hak-akses-menu).
 
 | Method | Path | Keterangan |
 |---|---|---|
@@ -415,6 +442,160 @@ dan penghalang penghapusan.
   sebagai dasar HPP perpetual ([docs/keuangan.md](docs/keuangan.md)).
 - **Password pegawai tidak pernah dikembalikan** dan hanya diubah bila field
   `password` dikirim terisi.
+
+### Manajemen Persediaan — **hanya jabatan berakses penuh**
+
+Prefiks `/persediaan`, di bawah middleware `akses.penuh` yang sama.
+Logika bersama: [`App\Support\Persediaan`](app/Support/Persediaan.php).
+
+| Method | Path | Keterangan |
+|---|---|---|
+| GET | `/persediaan/ringkasan` | Saldo total, saldo per produk & dombak, antrean konfirmasi, losses hari ini |
+| GET | `/persediaan/dombak` | Dombak + saldo + apakah siap dipakai (punya produk & tabel konversi) |
+| GET | `/persediaan/dombak/{id}/konversi?cari=` | Cari tinggi pada tabel konversi (maks 60 baris) |
+
+**Monitoring Stok**
+
+| Method | Path |
+|---|---|
+| GET / POST | `/persediaan/monitoring` |
+| GET | `/persediaan/monitoring/{id}` · `/persediaan/monitoring/{id}/riwayat` |
+| POST / DELETE | `/persediaan/monitoring/{id}/dombak` · `/persediaan/monitoring/{id}/dombak/{dombak}` |
+| POST | `/persediaan/monitoring/{id}/koreksi` — koreksi manual, tercatat sebagai dokumen *Commit Change From User* |
+
+**Stok Taking** — `GET|POST /persediaan/stok-taking`, `GET .../riwayat`,
+`GET|DELETE .../{id}`, `POST .../{id}/konfirmasi`.
+Body simpan: `dombak_id`, `jam_kerja_id`, `tanggal`, `tinggi`.
+
+**Penerimaan BBM** — `GET /persediaan/penerimaan/lo` (LO belum dibongkar),
+`GET .../lo/{id}`, `POST .../lo/{id}` (body: `tanggal`, `waktu`,
+`jam_kerja_id`, `alokasi[]` berisi `dombak_id`, `tinggi_sebelum`,
+`tinggi_sesudah`, `jumlah`), `GET .../verifikasi`, `GET .../riwayat`,
+`GET|DELETE .../{id}`, `POST .../{id}/konfirmasi`.
+
+**Stok Transfer** — `GET|POST /persediaan/stok-transfer`, `GET .../riwayat`,
+`GET|DELETE .../{id}`, `POST .../{id}/konfirmasi`. Body simpan memuat
+tinggi sebelum & sesudah untuk dombak asal dan tujuan.
+
+**Stok Summary** — `GET /persediaan/summary/{Y-m-d}`.
+
+#### Aturan yang berlaku di seluruh modul
+
+- **Saldo hanya berubah saat konfirmasi.** `POST .../store` membuat dokumen
+  `is_confirmation = false`; saldo dombak baru diperbarui oleh
+  `POST .../konfirmasi`. Dokumen yang sudah dikonfirmasi tidak bisa dihapus.
+- **Tinggi → volume lewat tabel konversi.** Tinggi yang tidak ada di tabel
+  ditolak 422 dengan pesan jelas, bukan disimpan sebagai nol.
+- **Semua angka stok adalah STRING 6 desimal** (`"12674.000000"`), dihitung
+  dengan bcmath lewat `App\Support\Uang`. Jangan melewatkannya lewat
+  `Number()` di klien bila presisinya penting.
+- **Total produk selalu diturunkan ulang** dari penjumlahan seluruh
+  `stok_inventory_dombak` (`Persediaan::sinkronkanTotal`), tidak dihitung
+  bertahap. Alur web menghitungnya ad-hoc di tiap titik konfirmasi — dan di
+  satu tempat memakai dokumen yang keliru — sehingga totalnya bisa menyimpang
+  dari jumlah per dombak.
+- **Selisih dibukukan sebagai losses/profit** pada `losses` sesuai jenisnya:
+  *Stok Taking*, *Good Issue Penerimaan*, atau *Good Transfer*.
+- **Idempoten**: mengirim ulang data yang sama persis tidak membuat dokumen
+  kedua.
+
+### Totalisator — **hanya jabatan berakses penuh**
+
+Prefiks `/totalisator`, di bawah `akses.penuh`. Tabel `stand_meter`: angka
+meter tiap nozzle per shift.
+
+| Method | Path | Keterangan |
+|---|---|---|
+| GET | `/totalisator/ringkasan` | Shift terbuka, siap konfirmasi, belum diisi, liter hari ini |
+| GET | `/totalisator` | Daftar **belum dikonfirmasi**, berpaginasi (`page`, `per_page`, filter `dari`/`sampai`/`nozzle_id`/`dombak_id`) |
+| GET | `/totalisator/riwayat` | Daftar sudah dikonfirmasi, berpaginasi |
+| GET | `/totalisator/nozzle/{dombak}` | Nozzle yang melayani sebuah dombak (lewat payung → dispenser) |
+| GET | `/totalisator/saran/{nozzle}` | Tanggal, shift berikutnya, dan angka awal terbawa dari shift sebelumnya |
+| POST | `/totalisator` | Buka shift: `nozzle_id`, `dombak_id`, `jam_kerja_id`, `tanggal`, `stand_meter_awal` |
+| GET | `/totalisator/{id}` | Detail |
+| PUT | `/totalisator/{id}` | Ubah tanggal/shift/angka (hanya sebelum dikonfirmasi) |
+| PUT | `/totalisator/{id}/akhir` | Isi angka meter akhir |
+| POST | `/totalisator/{id}/konfirmasi` | Potong stok + buat dokumen *Good Issue Sales* |
+| DELETE | `/totalisator/{id}` | Hapus (ditolak bila sudah dikonfirmasi atau dipakai setoran) |
+
+#### Perilaku
+
+- **Angka awal terbawa otomatis.** `/saran/{nozzle}` membaca shift terakhir
+  nozzle tersebut, menaikkan urutan shift (berganti hari bila sudah shift
+  terakhir), dan mengembalikan `stand_meter_akhir` sebelumnya sebagai angka
+  awal dengan `awal_terkunci: true`. Bila shift sebelumnya belum ditutup,
+  angka awal dikembalikan `0` dan `awal_terkunci: false` agar diisi manual.
+- **Validasi**: satu nozzle hanya boleh punya satu catatan per tanggal+shift;
+  angka akhir tidak boleh lebih kecil dari angka awal; konfirmasi ditolak bila
+  angka akhir masih nol.
+- **Konfirmasi memotong stok.** Liter terjual = `akhir − awal`. Saldo dombak
+  berkurang sebesar itu, total produk disinkronkan, lalu dibuat dokumen
+  `Good Issue Sales` (sudah `is_confirmation = 1`) yang tertaut ke
+  `stand_meter_dokumen_stok` dan muncul di Stok Summary.
+- **Penyesuaian shift dengan penerimaan.** Bila pada shift yang sama ada
+  penerimaan BBM tetapi belum ada dokumen penjualan, angka pemotongan stok
+  direkonsiliasi terhadap isi tangki — **formulanya disalin apa adanya dari
+  `StandMeterController` web**, karena angka ini menjadi dasar penjualan & HPP.
+- Semua angka meter STRING 6 desimal.
+
+### Setoran — **hanya jabatan berakses penuh**
+
+Prefiks `/setoran`. Satu record `penjualan` per shift berjalan melewati lima
+tahap `status_setoran`:
+
+`Open Penjualan → Penitipan Setoran → Closing Penjualan → Setoran Ke Bank → Selesai`
+
+| Method | Path | Keterangan |
+|---|---|---|
+| GET | `/setoran/ringkasan` | Jumlah per tahap, total bulan berjalan, jumlah menunggu persetujuan |
+| GET | `/setoran` | **Daftar berpaginasi** dengan pencarian & filter (lihat bawah) |
+| POST | `/setoran` | Buka setoran: `spbu_id`, `jam_kerja_id`, `tanggal`, `stand_meter_id[]` |
+| GET / DELETE | `/setoran/{id}` | Detail / hapus |
+| POST | `/setoran/{id}/maju` · `/mundur` · `/selesai` | Pindah tahap |
+| POST | `/setoran/{id}/persetujuan` | `peran` = `admin\|top`, `setuju` = boolean |
+| POST | `/setoran/{id}/detail/{detail}/konfirmasi` | Konfirmasi satu baris stand meter |
+| GET | `/setoran/stand-meter-tersedia?tanggal=&jam_kerja_id=` | Stand meter yang belum dipakai setoran |
+| POST / DELETE | `/setoran/{id}/stand-meter` · `/{detail}` | Tambah / hapus baris |
+| GET | `/setoran/petugas/{jabatan}` | Pegawai pemegang jabatan (untuk PJ & penyetor) |
+| POST / DELETE | `/setoran/{id}/pj` · `/{pj}` | Penanggung jawab shift |
+
+**Setoran ke bank** (tabel `penarikan`):
+
+| Method | Path |
+|---|---|
+| GET / POST | `/setoran/{id}/bank` |
+| GET / PUT / DELETE | `/setoran/{id}/bank/{bank}` |
+| POST | `/setoran/{id}/bank/{bank}/konfirmasi` — body `setuju` |
+| GET / POST | `/setoran/{id}/bank/{bank}/lampiran` — bukti setor (multipart `berkas`) |
+| DELETE | `/setoran/{id}/bank/{bank}/lampiran/{file}` |
+
+#### Pencarian & filter pada `GET /setoran`
+
+| Parameter | Isi |
+|---|---|
+| `cari` | Pencarian bebas: tanggal, nama shift, nama SPBU, nama nozzle, nama bank, no. referensi, metode transfer |
+| `tahap` | `semua` (default) · `open` · `penitipan` · `closing` · `bank` · `selesai` |
+| `dari`, `sampai` | Rentang tanggal — **default bulan berjalan**, sama seperti web |
+| `spbu_id`, `jam_kerja_id` | Filter langsung |
+| `diterima_admin`, `diterima_top` | Boolean |
+| `nama_bank`, `metode_transfer`, `no_referensi`, `member_id` | Menyaring lewat catatan penarikan |
+| `page`, `per_page` | Paginasi (default 20, maks 100) |
+
+#### Perilaku
+
+- **`total_penjualan` selalu diturunkan ulang** dari seluruh baris detail.
+  Alur web menjumlahkannya sambil berjalan **dan menambahkan nilai baris baru
+  dua kali**, sehingga totalnya bisa menggelembung.
+- **`total_uang_kotak` selalu diturunkan ulang** dari jumlah penarikan pada
+  shift itu — angka ini dipakai jurnal penjualan untuk menghitung selisih
+  kurang/lebih setor.
+- **Persetujuan memicu jurnal.** `is_accepted_admin` **dan** `is_accepted_top`
+  bernilai true → terbentuk jurnal `penjualan` (kas) dan `penjualan_hpp`;
+  mencabut salah satunya membatalkan keduanya. Konfirmasi penarikan memicu
+  jurnal Bank/Kas. Bila periode akuntansi sudah ditutup, aksinya ditolak 422.
+- **Penghapusan dijaga**: setoran yang sudah disetujui atau masih punya catatan
+  bank tidak bisa dihapus; penarikan yang sudah dikonfirmasi juga tidak.
+- Semua nilai uang STRING 6 desimal.
 
 ### Referensi
 
@@ -535,7 +716,8 @@ curl -s -X POST "$BASE/jadwal/<PENJADWALAN_ID>/masuk" \
   diproses menjadi penerimaan lewat web.
 - **Import Excel belum ada di API.** Menu Konfigurasi → Import di web
   (stok taking, penerimaan, stok transfer, totalisator) tetap web-only.
-- **Master Data & Konfigurasi adalah satu-satunya bagian API dengan otorisasi
-  berbasis level.** Endpoint lain tetap hanya dijaga autentikasi.
+- **Procurement, Master Data, dan Konfigurasi adalah satu-satunya bagian API
+  dengan otorisasi berbasis jabatan.** Endpoint lain tetap hanya dijaga
+  autentikasi.
 - **Unggahan berjalan sinkron** (`QUEUE_CONNECTION=sync`); selfie sebaiknya
   dikompres di klien (aplikasi memakai `quality: 0.5`).

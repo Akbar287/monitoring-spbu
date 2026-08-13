@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\V1;
 use App\Http\Controllers\Controller;
 use App\Models\Penjualan;
 use App\Models\StokInventory;
+use App\Support\Akses;
 use App\Support\ApiResponse;
 use App\Support\MobileProfile;
 use Carbon\Carbon;
@@ -12,13 +13,11 @@ use Illuminate\Http\Request;
 
 /**
  * Ringkasan layar Beranda aplikasi mobile.
- * Isinya menyesuaikan level pegawai — sama seperti sidebar web yang disusun
- * App\Support\Navigation.
+ * Bagian `ringkasan` (angka penjualan & stok) hanya diisi untuk jabatan
+ * berakses penuh — aturan yang sama dengan akses menu, lihat App\Support\Akses.
  */
 class DashboardController extends Controller
 {
-    private const LEVEL_MANAJERIAL = ['Penanggung Jawab', 'Komisaris', 'Direktur Utama', 'Direktur'];
-
     public function index(Request $request)
     {
         $user = $request->user();
@@ -53,7 +52,8 @@ class DashboardController extends Controller
             'ringkasan' => [],
         ];
 
-        if (in_array($profil['level'], self::LEVEL_MANAJERIAL, true)) {
+        // ringkasan operasional memakai aturan yang sama dengan akses menu
+        if (Akses::penuh($member)) {
             $data['ringkasan'] = $this->ringkasanManajerial($member);
         }
 

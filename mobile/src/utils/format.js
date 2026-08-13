@@ -86,3 +86,13 @@ function parseTanggal(nilai) {
     const d = new Date(teks);
     return Number.isNaN(d.getTime()) ? null : d;
 }
+
+/**
+ * Format akuntansi: negatif ditulis dalam kurung, dua desimal —
+ * sama seperti tampilan laporan di web.
+ */
+export function akuntansi(nilai) {
+    const n = Number(nilai || 0);
+    const teks = Math.abs(n).toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    return n < 0 ? `(${teks})` : teks;
+}

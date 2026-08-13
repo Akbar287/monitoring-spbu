@@ -1,87 +1,56 @@
 import { useCallback, useState } from 'react';
-import { FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
-import { Halaman, Badge, Card, EmptyState, ErrorState, Loading } from '../components/ui';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Badge, Button, Card, Halaman } from '../components/ui';
+import DaftarData from '../components/DaftarData';
 import { Notifikasi } from '../api/endpoints';
-import { useMuat } from '../hooks/useMuat';
-import { tanggalPendek, jam } from '../utils/format';
-import { colors, spacing, typography } from '../theme';
+import { jam, tanggalPendek } from '../utils/format';
+import { colors, radius, spacing, typography } from '../theme';
 
 export default function NotifikasiScreen() {
-    const [menandai, setMenandai] = useState(false);
+    const [hanyaBaru, setHanyaBaru] = useState(false);
+    const [versi, setVersi] = useState(0); // paksa muat ulang setelah tandai dibaca
 
-    const { data, setData, memuat, menyegarkan, error, segarkan, muatUlang } = useMuat(
-        useCallback(() => Notifikasi.daftar({ per_page: 50 }), [])
+    const ambil = useCallback(
+        (page, cari, perPage) => Notifikasi.daftar({
+            page, cari, per_page: perPage,
+            hanya_belum_dibaca: hanyaBaru ? 1 : undefined,
+        }),
+        [hanyaBaru, versi] // eslint-disable-line react-hooks/exhaustive-deps
     );
 
-    const items = data?.items || [];
-    const belumDibaca = items.filter((n) => !n.is_read).length;
-
-    const tandaiSatu = async (item) => {
+    const tandai = async (item) => {
         if (item.is_read) return;
-        // optimistis: tandai lokal dulu supaya terasa instan
-        setData((lama) => ({
-            ...lama,
-            items: lama.items.map((n) =>
-                n.notifikasi_id === item.notifikasi_id ? { ...n, is_read: true } : n
-            ),
-        }));
-        try {
-            await Notifikasi.baca(item.notifikasi_id);
-        } catch {
-            segarkan(); // gagal -> ambil ulang keadaan sebenarnya
-        }
+        try { await Notifikasi.baca(item.notifikasi_id); setVersi((v) => v + 1); } catch { /* diamkan */ }
     };
 
     const tandaiSemua = async () => {
-        setMenandai(true);
-        try {
-            await Notifikasi.bacaSemua();
-            await segarkan();
-        } finally {
-            setMenandai(false);
-        }
+        try { await Notifikasi.bacaSemua(); setVersi((v) => v + 1); } catch { /* diamkan */ }
     };
 
-    if (memuat && !data) return <Halaman judul={'Notifikasi'} warna="merah" scroll={false} padded={false}><Loading /></Halaman>;
-    if (error && !data) {
-        return <Halaman judul={'Notifikasi'} warna="merah" scroll={false} padded={false}><ErrorState pesan={error.message} onCoba={muatUlang} /></Halaman>;
-    }
-
     return (
-        <Halaman judul={'Notifikasi'} warna="merah" scroll={false} padded={false}>
-            {belumDibaca > 0 && (
-                <View style={styles.bar}>
-                    <Text style={typography.muted}>{belumDibaca} belum dibaca</Text>
-                    <Pressable onPress={tandaiSemua} disabled={menandai}>
-                        <Text style={styles.tautan}>
-                            {menandai ? 'Menandai…' : 'Tandai semua dibaca'}
-                        </Text>
-                    </Pressable>
-                </View>
-            )}
-
-            <FlatList
-                data={items}
-                keyExtractor={(item) => item.notifikasi_id}
-                contentContainerStyle={styles.list}
-                refreshControl={
-                    <RefreshControl
-                        refreshing={menyegarkan}
-                        onRefresh={segarkan}
-                        colors={[colors.primary]}
-                        tintColor={colors.primary}
-                    />
+        <Halaman judul="Notifikasi" warna="merah" scroll={false}>
+            <DaftarData
+                key={`${hanyaBaru}-${versi}`}
+                ambil={ambil}
+                cariPlaceholder="Cari judul atau isi notifikasi…"
+                jumlahFilterAktif={hanyaBaru ? 1 : 0}
+                filter={
+                    <>
+                        <Pressable onPress={() => setHanyaBaru((v) => !v)}
+                            style={[styles.chip, hanyaBaru && styles.chipAktif]}>
+                            <Text style={[styles.chipTeks, hanyaBaru && styles.chipTeksAktif]}>
+                                Hanya yang belum dibaca
+                            </Text>
+                        </Pressable>
+                        <Button label="Tandai semua dibaca" variant="ghost" onPress={tandaiSemua} />
+                    </>
                 }
-                ListEmptyComponent={
-                    <EmptyState judul="Belum ada notifikasi" pesan="Pemberitahuan dari sistem akan muncul di sini." />
-                }
-                renderItem={({ item }) => (
-                    <Pressable onPress={() => tandaiSatu(item)}>
-                        <Card tone={item.is_read ? undefined : "merah"}>
+                kosong={{ judul: 'Belum ada notifikasi', pesan: 'Pemberitahuan dari sistem akan muncul di sini.' }}
+                render={(item) => (
+                    <Pressable onPress={() => tandai(item)}>
+                        <Card tone={item.is_read ? undefined : 'merah'}>
                             <View style={styles.baris}>
-                                <Text style={[typography.heading, styles.judul]} numberOfLines={2}>
-                                    {item.judul}
-                                </Text>
+                                <Text style={[typography.heading, styles.judul]} numberOfLines={2}>{item.judul}</Text>
                                 {!item.is_read && <Badge label="Baru" tone="merah" />}
                             </View>
                             <Text style={typography.body}>{item.content}</Text>
@@ -97,17 +66,13 @@ export default function NotifikasiScreen() {
 }
 
 const styles = StyleSheet.create({
-    screen: { flex: 1, backgroundColor: colors.background },
-    bar: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        paddingHorizontal: spacing.lg,
-        paddingTop: spacing.md,
+    chip: {
+        paddingHorizontal: spacing.md, paddingVertical: 8, borderRadius: radius.pill,
+        borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface, alignSelf: 'flex-start',
     },
-    tautan: { color: colors.primary, fontWeight: '600', fontSize: 13 },
-    list: { padding: spacing.lg, gap: spacing.md, flexGrow: 1 },
-    kartuBaru: { borderColor: colors.primary, backgroundColor: colors.primarySoft },
+    chipAktif: { backgroundColor: colors.primary, borderColor: colors.primary },
+    chipTeks: { fontSize: 12, color: colors.textMuted, fontWeight: '700' },
+    chipTeksAktif: { color: '#fff' },
     baris: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: spacing.sm },
     judul: { flex: 1 },
 });

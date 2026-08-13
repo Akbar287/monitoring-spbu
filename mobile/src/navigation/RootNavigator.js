@@ -2,6 +2,7 @@ import { ActivityIndicator, View, StyleSheet } from 'react-native';
 import { NavigationContainer, DefaultTheme } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Ionicons from '@expo/vector-icons/Ionicons';
 
 import { useAuth } from '../auth/AuthContext';
@@ -32,6 +33,32 @@ import Ms2FormScreen from '../screens/procurement/Ms2FormScreen';
 import Ms2KirimScreen from '../screens/procurement/Ms2KirimScreen';
 import DeliveryScreen from '../screens/procurement/DeliveryScreen';
 import LoFormScreen from '../screens/procurement/LoFormScreen';
+import PersediaanHomeScreen from '../screens/persediaan/PersediaanHomeScreen';
+import MonitoringScreen from '../screens/persediaan/MonitoringScreen';
+import MonitoringDetailScreen from '../screens/persediaan/MonitoringDetailScreen';
+import MonitoringRiwayatScreen from '../screens/persediaan/MonitoringRiwayatScreen';
+import StokTakingScreen from '../screens/persediaan/StokTakingScreen';
+import StokTakingFormScreen from '../screens/persediaan/StokTakingFormScreen';
+import DokumenDetailScreen from '../screens/persediaan/DokumenDetailScreen';
+import PenerimaanScreen from '../screens/persediaan/PenerimaanScreen';
+import PenerimaanFormScreen from '../screens/persediaan/PenerimaanFormScreen';
+import PenerimaanDetailScreen from '../screens/persediaan/PenerimaanDetailScreen';
+import StokTransferScreen from '../screens/persediaan/StokTransferScreen';
+import StokTransferFormScreen from '../screens/persediaan/StokTransferFormScreen';
+import StokTransferDetailScreen from '../screens/persediaan/StokTransferDetailScreen';
+import StokSummaryScreen from '../screens/persediaan/StokSummaryScreen';
+import TotalisatorScreen from '../screens/totalisator/TotalisatorScreen';
+import TotalisatorFormScreen from '../screens/totalisator/TotalisatorFormScreen';
+import TotalisatorDetailScreen from '../screens/totalisator/TotalisatorDetailScreen';
+import SetoranScreen from '../screens/setoran/SetoranScreen';
+import SetoranFormScreen from '../screens/setoran/SetoranFormScreen';
+import SetoranDetailScreen from '../screens/setoran/SetoranDetailScreen';
+import PenarikanFormScreen from '../screens/setoran/PenarikanFormScreen';
+import LaporanScreen from '../screens/financial/LaporanScreen';
+import BukuBesarScreen from '../screens/financial/BukuBesarScreen';
+import JurnalUmumScreen from '../screens/financial/JurnalUmumScreen';
+import JurnalDetailScreen from '../screens/financial/JurnalDetailScreen';
+import CoaScreen from '../screens/financial/CoaScreen';
 import { OpsiProvider } from '../master/OpsiContext';
 import { colors } from '../theme';
 
@@ -89,6 +116,36 @@ function JadwalStack() {
     );
 }
 
+function PersediaanStack() {
+    return (
+        // header bawaan dimatikan seperti stack lain — judul & tombol kembali
+        // disediakan komponen Halaman
+        <Stack.Navigator screenOptions={{ headerShown: false }}>
+            <Stack.Screen name="PersediaanHome" component={PersediaanHomeScreen} />
+            <Stack.Screen name="Monitoring" component={MonitoringScreen} />
+            <Stack.Screen name="MonitoringDetail" component={MonitoringDetailScreen} />
+            <Stack.Screen name="MonitoringRiwayat" component={MonitoringRiwayatScreen} />
+            <Stack.Screen name="StokTaking" component={StokTakingScreen} />
+            <Stack.Screen name="StokTakingForm" component={StokTakingFormScreen} />
+            <Stack.Screen name="StokTakingDetail" component={DokumenDetailScreen} />
+            <Stack.Screen name="Penerimaan" component={PenerimaanScreen} />
+            <Stack.Screen name="PenerimaanForm" component={PenerimaanFormScreen} />
+            <Stack.Screen name="PenerimaanDetail" component={PenerimaanDetailScreen} />
+            <Stack.Screen name="StokTransfer" component={StokTransferScreen} />
+            <Stack.Screen name="StokTransferForm" component={StokTransferFormScreen} />
+            <Stack.Screen name="StokTransferDetail" component={StokTransferDetailScreen} />
+            <Stack.Screen name="StokSummary" component={StokSummaryScreen} />
+            <Stack.Screen name="Totalisator" component={TotalisatorScreen} />
+            <Stack.Screen name="TotalisatorForm" component={TotalisatorFormScreen} />
+            <Stack.Screen name="TotalisatorDetail" component={TotalisatorDetailScreen} />
+            <Stack.Screen name="Setoran" component={SetoranScreen} />
+            <Stack.Screen name="SetoranForm" component={SetoranFormScreen} />
+            <Stack.Screen name="SetoranDetail" component={SetoranDetailScreen} />
+            <Stack.Screen name="PenarikanForm" component={PenarikanFormScreen} />
+        </Stack.Navigator>
+    );
+}
+
 function MasterStack() {
     return (
         <Stack.Navigator screenOptions={{ headerShown: false }}>
@@ -98,6 +155,11 @@ function MasterStack() {
             <Stack.Screen name="MasterForm" component={MasterFormScreen} />
             <Stack.Screen name="Lampiran" component={LampiranScreen} />
             <Stack.Screen name="MemberRelasi" component={MemberRelasiScreen} />
+            <Stack.Screen name="Laporan" component={LaporanScreen} />
+            <Stack.Screen name="BukuBesar" component={BukuBesarScreen} />
+            <Stack.Screen name="JurnalUmum" component={JurnalUmumScreen} />
+            <Stack.Screen name="JurnalDetail" component={JurnalDetailScreen} />
+            <Stack.Screen name="Coa" component={CoaScreen} />
         </Stack.Navigator>
     );
 }
@@ -115,11 +177,17 @@ const IKON = {
     BerandaTab: ['home', 'home-outline'],
     JadwalTab: ['calendar', 'calendar-outline'],
     ProcurementTab: ['cart', 'cart-outline'],
+    PersediaanTab: ['cube', 'cube-outline'],
     MasterTab: ['grid', 'grid-outline'],
     ProfilTab: ['person', 'person-outline'],
 };
 
-function TabUtama({ bolehMaster }) {
+function TabUtama({ aksesPenuh }) {
+    // Aplikasi digambar edge-to-edge (navigationBarColor transparan), jadi tab
+    // bar harus menaikkan sendiri kontennya setinggi inset bawah — kalau tidak,
+    // labelnya tertimpa tombol Home/Back/Menu sistem Android.
+    const insets = useSafeAreaInsets();
+
     return (
         <Tab.Navigator
             screenOptions={({ route }) => ({
@@ -130,11 +198,13 @@ function TabUtama({ bolehMaster }) {
                     backgroundColor: colors.surface,
                     borderTopColor: colors.border,
                     borderTopWidth: 1,
-                    height: 62,
+                    // latar tetap membentang ke bawah, isinya yang dinaikkan
+                    height: 62 + insets.bottom,
                     paddingTop: 6,
-                    paddingBottom: 8,
+                    paddingBottom: 8 + insets.bottom,
                 },
-                tabBarLabelStyle: { fontSize: 11, fontWeight: '700' },
+                // enam tab pada layar ponsel — ukuran label dikecilkan agar tidak terpotong
+                tabBarLabelStyle: { fontSize: 10, fontWeight: '700' },
                 tabBarItemStyle: { paddingVertical: 2 },
                 tabBarIcon: ({ focused, color, size }) => {
                     const [aktif, nonaktif] = IKON[route.name] || IKON.BerandaTab;
@@ -144,8 +214,13 @@ function TabUtama({ bolehMaster }) {
         >
             <Tab.Screen name="BerandaTab" component={BerandaStack} options={{ title: 'Beranda' }} />
             <Tab.Screen name="JadwalTab" component={JadwalStack} options={{ title: 'Jadwal' }} />
-            <Tab.Screen name="ProcurementTab" component={ProcurementStack} options={{ title: 'Procurement' }} />
-            {bolehMaster && (
+            {aksesPenuh && (
+                <Tab.Screen name="ProcurementTab" component={ProcurementStack} options={{ title: 'Procurement' }} />
+            )}
+            {aksesPenuh && (
+                <Tab.Screen name="PersediaanTab" component={PersediaanStack} options={{ title: 'Persediaan' }} />
+            )}
+            {aksesPenuh && (
                 <Tab.Screen name="MasterTab" component={MasterStack} options={{ title: 'Kelola' }} />
             )}
             <Tab.Screen name="ProfilTab" component={ProfilStack} options={{ title: 'Profil' }} />
@@ -165,15 +240,17 @@ export default function RootNavigator() {
         );
     }
 
-    // Modul Master Data & Konfigurasi hanya untuk Penanggung Jawab — sama
-    // seperti sidebar web, dan ditegakkan juga oleh middleware `level` di backend.
-    const bolehMaster = user?.level === 'Penanggung Jawab';
+    // Procurement, Master Data, dan Konfigurasi hanya untuk jabatan tertentu
+    // (Direktur Utama, Direktur, Komisaris, Admin, Manajer). Flag ini dihitung
+    // server di App\Support\Akses dan dikirim lewat profil, jadi daftar
+    // jabatannya tidak disalin di sini. Sisanya hanya Beranda, Jadwal, Profil.
+    const aksesPenuh = user?.akses_penuh === true;
 
     return (
         <NavigationContainer theme={tema}>
             {user ? (
-                <OpsiProvider aktif={bolehMaster}>
-                    <TabUtama bolehMaster={bolehMaster} />
+                <OpsiProvider aktif={aksesPenuh}>
+                    <TabUtama aksesPenuh={aksesPenuh} />
                 </OpsiProvider>
             ) : (
                 <LoginScreen />

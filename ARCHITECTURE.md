@@ -170,9 +170,10 @@ dengan dua cara yang keduanya **kosmetik**:
 Konsekuensinya: **user level manapun yang tahu URL-nya bisa memanggil route
 apa pun.** Pengecualiannya hanya di API mobile: endpoint jadwal/kehadiran
 memverifikasi kepemilikan `penjadwalan`, dan seluruh endpoint Master Data
-serta Konfigurasi dijaga middleware `level:Penanggung Jawab`
-([EnsureLevel](app/Http/Middleware/EnsureLevel.php), alias `level` di
-[Kernel](app/Http/Kernel.php)). Jika perlu pengamanan sungguhan, tempat yang benar adalah middleware
+serta Konfigurasi dan Procurement dijaga middleware `akses.penuh`
+([EnsureAksesPenuh](app/Http/Middleware/EnsureAksesPenuh.php), alias
+`akses.penuh` di [Kernel](app/Http/Kernel.php)) yang membaca daftar jabatan
+di [App\Support\Akses](app/Support/Akses.php). Jika perlu pengamanan sungguhan, tempat yang benar adalah middleware
 route atau Policy — bukan menambah cek di view. Catat ini sebelum menyimpulkan
 "fitur X hanya untuk PJ".
 
@@ -372,7 +373,8 @@ cek route + controller.
 
 | Kelas | Peran |
 |---|---|
-| [Navigation](app/Support/Navigation.php) | struktur menu sidebar per level |
+| [Navigation](app/Support/Navigation.php) | struktur menu sidebar web per level |
+| [Akses](app/Support/Akses.php) | jabatan yang boleh membuka seluruh menu di aplikasi mobile |
 | [Upload](app/Support/Upload.php) | batas unggah efektif (KB) |
 | [Charts](app/Support/Charts.php) | agregasi bulanan `{labels, data}` untuk chart.js (query `to_char(...)` → **PostgreSQL-specific**) |
 | [SetoranShow](app/Support/SetoranShow.php) | serialisasi props halaman setoran (info, PJ, stand meter) |

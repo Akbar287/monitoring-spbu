@@ -28,6 +28,7 @@ class MobileProfile
                 'email' => null,
                 'no_hp' => null,
                 'avatar_url' => null,
+                'akses_penuh' => false,
                 'spbu' => [],
             ];
         }
@@ -51,6 +52,10 @@ class MobileProfile
             'no_wa' => $member->no_wa,
             'bergabung_sejak' => $member->bergabung_sejak,
             'avatar_url' => self::avatarUrl($member),
+            // dihitung server dari nama jabatan (App\Support\Akses) agar klien
+            // tidak perlu menyalin daftar jabatannya
+            'akses_penuh' => Akses::penuh($member),
+            'daftar_jabatan' => $member->jabatan()->get()->pluck('nama_jabatan')->values()->all(),
             'spbu' => $member->spbu()->get()->map(fn ($s) => [
                 'spbu_id' => $s->spbu_id,
                 'nama_spbu' => $s->nama_spbu,

@@ -193,6 +193,141 @@ export const Procurement = {
     },
 };
 
+/**
+ * Manajemen Persediaan (jabatan berakses penuh).
+ *
+ * Seluruh angka stok dikirim & diterima sebagai STRING 6 desimal — jangan
+ * pernah melewatkannya lewat Number(), presisinya bisa hilang.
+ */
+export const Persediaan = {
+    ringkasan: () => api.get('persediaan/ringkasan'),
+    dombak: () => api.get('persediaan/dombak'),
+    konversi: (dombakId, cari) => api.get(`persediaan/dombak/${dombakId}/konversi`, { cari }),
+
+    monitoring: {
+        daftar: () => api.get('persediaan/monitoring'),
+        detail: (id) => api.get(`persediaan/monitoring/${id}`),
+        riwayat: (id, params) => api.get(`persediaan/monitoring/${id}/riwayat`, params),
+        opsiRiwayat: (id) => api.get(`persediaan/monitoring/${id}/opsi-riwayat`),
+        simpan: (data) => api.post('persediaan/monitoring', data),
+        tambahDombak: (id, data) => api.post(`persediaan/monitoring/${id}/dombak`, data),
+        hapusDombak: (id, dombakId) => api.del(`persediaan/monitoring/${id}/dombak/${dombakId}`),
+        koreksi: (id, data) => api.post(`persediaan/monitoring/${id}/koreksi`, data),
+    },
+
+    taking: {
+        daftar: (params) => api.get('persediaan/stok-taking', params),
+        riwayat: (params) => api.get('persediaan/stok-taking/riwayat', params),
+        detail: (id) => api.get(`persediaan/stok-taking/${id}`),
+        simpan: (data) => api.post('persediaan/stok-taking', data),
+        konfirmasi: (id) => api.post(`persediaan/stok-taking/${id}/konfirmasi`),
+        hapus: (id) => api.del(`persediaan/stok-taking/${id}`),
+    },
+
+    penerimaan: {
+        lo: (params) => api.get('persediaan/penerimaan/lo', params),
+        detailLo: (id) => api.get(`persediaan/penerimaan/lo/${id}`),
+        simpan: (loId, data) => api.post(`persediaan/penerimaan/lo/${loId}`, data),
+        verifikasi: (params) => api.get('persediaan/penerimaan/verifikasi', params),
+        riwayat: (params) => api.get('persediaan/penerimaan/riwayat', params),
+        detail: (id) => api.get(`persediaan/penerimaan/${id}`),
+        konfirmasi: (id) => api.post(`persediaan/penerimaan/${id}/konfirmasi`),
+        hapus: (id) => api.del(`persediaan/penerimaan/${id}`),
+    },
+
+    transfer: {
+        daftar: (params) => api.get('persediaan/stok-transfer', params),
+        riwayat: (params) => api.get('persediaan/stok-transfer/riwayat', params),
+        detail: (id) => api.get(`persediaan/stok-transfer/${id}`),
+        simpan: (data) => api.post('persediaan/stok-transfer', data),
+        konfirmasi: (id) => api.post(`persediaan/stok-transfer/${id}/konfirmasi`),
+        hapus: (id) => api.del(`persediaan/stok-transfer/${id}`),
+    },
+
+    summary: (tanggal) => api.get(`persediaan/summary/${tanggal}`),
+};
+
+/**
+ * Totalisator (stand_meter) — jabatan berakses penuh.
+ * Angka meter adalah STRING 6 desimal; jangan dilewatkan lewat Number().
+ */
+export const Totalisator = {
+    ringkasan: () => api.get('totalisator/ringkasan'),
+    daftar: (params) => api.get('totalisator', params),
+    riwayat: (params) => api.get('totalisator/riwayat', params),
+    detail: (id) => api.get(`totalisator/${id}`),
+
+    nozzle: (dombakId) => api.get(`totalisator/nozzle/${dombakId}`),
+    saran: (nozzleId) => api.get(`totalisator/saran/${nozzleId}`),
+
+    simpan: (data) => api.post('totalisator', data),
+    ubah: (id, data) => api.put(`totalisator/${id}`, data),
+    akhir: (id, standMeterAkhir) => api.put(`totalisator/${id}/akhir`, { stand_meter_akhir: standMeterAkhir }),
+    konfirmasi: (id) => api.post(`totalisator/${id}/konfirmasi`),
+    hapus: (id) => api.del(`totalisator/${id}`),
+};
+
+/**
+ * Setoran — jabatan berakses penuh.
+ * Satu daftar melayani semua tahap lewat parameter `tahap`; nilai uang adalah
+ * STRING 6 desimal.
+ */
+export const Setoran = {
+    ringkasan: () => api.get('setoran/ringkasan'),
+    daftar: (params) => api.get('setoran', params),
+    detail: (id) => api.get(`setoran/${id}`),
+    buat: (data) => api.post('setoran', data),
+    hapus: (id) => api.del(`setoran/${id}`),
+
+    maju: (id) => api.post(`setoran/${id}/maju`),
+    mundur: (id) => api.post(`setoran/${id}/mundur`),
+    selesai: (id) => api.post(`setoran/${id}/selesai`),
+    persetujuan: (id, peran, setuju) => api.post(`setoran/${id}/persetujuan`, { peran, setuju }),
+    konfirmasiDetail: (id, detailId, konfirmasi) =>
+        api.post(`setoran/${id}/detail/${detailId}/konfirmasi`, { konfirmasi }),
+
+    standMeterTersedia: (tanggal, jamKerjaId) =>
+        api.get('setoran/stand-meter-tersedia', { tanggal, jam_kerja_id: jamKerjaId }),
+    tambahStandMeter: (id, standMeterId) => api.post(`setoran/${id}/stand-meter`, { stand_meter_id: standMeterId }),
+    hapusStandMeter: (id, detailId) => api.del(`setoran/${id}/stand-meter/${detailId}`),
+
+    petugas: (jabatanId) => api.get(`setoran/petugas/${jabatanId}`),
+    tambahPj: (id, jabatanId, memberId) => api.post(`setoran/${id}/pj`, { jabatan_id: jabatanId, member_id: memberId }),
+    hapusPj: (id, pjId) => api.del(`setoran/${id}/pj/${pjId}`),
+
+    bank: {
+        daftar: (id, params) => api.get(`setoran/${id}/bank`, params),
+        detail: (id, bankId) => api.get(`setoran/${id}/bank/${bankId}`),
+        simpan: (id, data) => api.post(`setoran/${id}/bank`, data),
+        ubah: (id, bankId, data) => api.put(`setoran/${id}/bank/${bankId}`, data),
+        hapus: (id, bankId) => api.del(`setoran/${id}/bank/${bankId}`),
+        konfirmasi: (id, bankId, setuju) => api.post(`setoran/${id}/bank/${bankId}/konfirmasi`, { setuju }),
+        lampiran: (id, bankId) => api.get(`setoran/${id}/bank/${bankId}/lampiran`),
+        unggah: (id, bankId, berkas, keterangan) => {
+            const form = new FormData();
+            form.append('berkas', fileDari(berkas, keterangan || 'bukti-setor'));
+            if (keterangan) form.append('keterangan', keterangan);
+            return api.upload(`setoran/${id}/bank/${bankId}/lampiran`, form);
+        },
+        hapusLampiran: (id, bankId, fileId) => api.del(`setoran/${id}/bank/${bankId}/lampiran/${fileId}`),
+    },
+};
+
+/**
+ * Financial — BACA-SAJA. Semua nilai STRING desimal 6 angka; jangan pernah
+ * dilewatkan lewat Number() untuk perhitungan, hanya untuk tampilan.
+ */
+export const Financial = {
+    ringkasan: (params) => api.get('financial/ringkasan', params),
+    neracaSaldo: (params) => api.get('financial/neraca-saldo', params),
+    labaRugi: (params) => api.get('financial/laba-rugi', params),
+    neraca: (params) => api.get('financial/neraca', params),
+    bukuBesar: (params) => api.get('financial/buku-besar', params),
+    coa: (params) => api.get('financial/coa', params),
+    jurnal: (params) => api.get('financial/jurnal', params),
+    jurnalDetail: (id) => api.get(`financial/jurnal/${id}`),
+};
+
 export const Ping = () => request('ping');
 
 /** Ubah hasil expo-image-picker menjadi bagian FormData yang dimengerti RN. */

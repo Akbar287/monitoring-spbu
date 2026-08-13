@@ -431,6 +431,19 @@ export const KONFIGURASI = {
     },
 };
 
+/**
+ * Kelompok Keuangan — baca-saja, memakai layar khusus (bukan CRUD generik),
+ * karena angkanya harus ditampilkan apa adanya dari server.
+ */
+export const KEUANGAN = [
+    { key: 'FinNeracaSaldo', layar: 'Laporan', params: { jenis: 'neraca-saldo' }, label: 'Neraca Saldo', ikon: 'checkmark-done-outline', deskripsi: 'Uji keseimbangan debit = kredit' },
+    { key: 'FinLabaRugi', layar: 'Laporan', params: { jenis: 'laba-rugi' }, label: 'Laba Rugi', ikon: 'trending-up-outline', deskripsi: 'Pendapatan − HPP − beban' },
+    { key: 'FinNeraca', layar: 'Laporan', params: { jenis: 'neraca' }, label: 'Neraca', ikon: 'scale-outline', deskripsi: 'Aset = Kewajiban + Modal' },
+    { key: 'FinBukuBesar', layar: 'BukuBesar', label: 'Buku Besar', ikon: 'book-outline', deskripsi: 'Mutasi per kode akun' },
+    { key: 'FinJurnal', layar: 'JurnalUmum', label: 'Jurnal Umum', ikon: 'list-outline', deskripsi: 'Seluruh jurnal terposting' },
+    { key: 'FinCoa', layar: 'Coa', label: 'Bagan Akun (COA)', ikon: 'pricetags-outline', deskripsi: 'Rujukan kode akun' },
+];
+
 /** Seluruh resource yang dikenal layar generik, digabung dari kedua modul. */
 export const REGISTRY = { ...MASTER, ...KONFIGURASI };
 
@@ -445,6 +458,11 @@ export const GRUP = [
         judul: 'Konfigurasi',
         deskripsi: 'Struktur organisasi, shift, dan tarif',
         items: Object.entries(KONFIGURASI).map(([key, konf]) => ({ key, ...konf })),
+    },
+    {
+        judul: 'Keuangan',
+        deskripsi: 'Laporan buku besar — baca-saja',
+        items: KEUANGAN,
     },
 ];
 

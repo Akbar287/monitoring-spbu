@@ -22,7 +22,7 @@ export default function MemberRelasiScreen({ route, navigation }) {
     const [pesan, setPesan] = useState(null);
 
     const { data, setData, memuat, error, muatUlang } = useMuat(
-        useCallback(() => Kelola.detail('member', id), [id])
+        useCallback(() => Kelola.detail('master/member', id), [id])
     );
 
     const jalankan = async (fn, sukses) => {

@@ -13,6 +13,7 @@ class NotifikasiController extends Controller
     {
         $request->validate([
             'hanya_belum_dibaca' => ['nullable', 'boolean'],
+            'cari' => ['nullable', 'string', 'max:100'],
             'per_page' => ['nullable', 'integer', 'min:1', 'max:100'],
         ]);
 
@@ -20,6 +21,11 @@ class NotifikasiController extends Controller
 
         $paginator = $member->notifikasi()
             ->when($request->boolean('hanya_belum_dibaca'), fn ($q) => $q->where('is_read', false))
+            ->when($request->filled('cari'), function ($q) use ($request) {
+                $pola = '%' . mb_strtolower($request->input('cari')) . '%';
+                $q->where(fn ($w) => $w->whereRaw('LOWER(judul) LIKE ?', [$pola])
+                    ->orWhereRaw('LOWER(content) LIKE ?', [$pola]));
+            })
             ->orderBy('created_at', 'desc')
             ->paginate($request->integer('per_page', 20));
 

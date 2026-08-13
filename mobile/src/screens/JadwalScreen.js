@@ -1,119 +1,88 @@
 import { useCallback, useState } from 'react';
-import { useFocusEffect } from '@react-navigation/native';
-import { FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
-import { Halaman, Card, EmptyState, ErrorState, Loading } from '../components/ui';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Card, Halaman } from '../components/ui';
+import DaftarData from '../components/DaftarData';
+import DateField from '../components/DateField';
 import { BadgeMode } from './BerandaScreen';
 import { Jadwal } from '../api/endpoints';
-import { useMuat } from '../hooks/useMuat';
 import { jamSingkat, tanggalPendek } from '../utils/format';
 import { colors, radius, spacing, typography } from '../theme';
 
-const FILTER = [
+const STATUS = [
     { key: 'semua', label: 'Semua' },
     { key: 'belum', label: 'Belum absen' },
     { key: 'berjalan', label: 'Bertugas' },
     { key: 'selesai', label: 'Selesai' },
 ];
 
+const awalBulan = () => { const d = new Date(); return new Date(d.getFullYear(), d.getMonth(), 1).toISOString().slice(0, 10); };
+const akhirBulan = () => { const d = new Date(); return new Date(d.getFullYear(), d.getMonth() + 1, 0).toISOString().slice(0, 10); };
+
 export default function JadwalScreen({ navigation }) {
     const [status, setStatus] = useState('semua');
+    const [dari, setDari] = useState(awalBulan());
+    const [sampai, setSampai] = useState(akhirBulan());
 
-    const { data, memuat, menyegarkan, error, segarkan, muatUlang } = useMuat(
-        useCallback(() => Jadwal.daftar({ status, per_page: 50 }), [status]),
-        [status]
+    const ambil = useCallback(
+        (page, cari, perPage) => Jadwal.daftar({ page, cari, per_page: perPage, status, dari, sampai }),
+        [status, dari, sampai]
     );
 
-    // kembali dari layar absen -> daftar harus mencerminkan status terbaru
-    useFocusEffect(useCallback(() => { muatUlang({ segarkan: true }); }, [muatUlang]));
-
-    const items = data?.items || [];
+    const filterAktif = (dari !== awalBulan() ? 1 : 0) + (sampai !== akhirBulan() ? 1 : 0);
 
     return (
-        <Halaman judul={'Jadwal Saya'} warna="teal" scroll={false} padded={false}>
-            <View style={styles.filterBar}>
-                {FILTER.map((f) => (
-                    <Pressable
-                        key={f.key}
-                        onPress={() => setStatus(f.key)}
-                        style={[styles.chip, status === f.key && styles.chipAktif]}
-                    >
-                        <Text style={[styles.chipTeks, status === f.key && styles.chipTeksAktif]}>
-                            {f.label}
-                        </Text>
+        <Halaman judul="Jadwal Saya" warna="oranye" kembali={false} scroll={false}>
+            <DaftarData
+                key={`${status}-${dari}-${sampai}`}
+                ambil={ambil}
+                cariPlaceholder="Cari tanggal, shift, jabatan, status…"
+                jumlahFilterAktif={filterAktif}
+                filter={
+                    <>
+                        <DateField label="Dari tanggal" value={dari} onChange={setDari} />
+                        <DateField label="Sampai tanggal" value={sampai} onChange={setSampai} />
+                    </>
+                }
+                kepala={
+                    <View style={styles.chipBaris}>
+                        {STATUS.map((s) => (
+                            <Pressable key={s.key} onPress={() => setStatus(s.key)}
+                                style={[styles.chip, status === s.key && styles.chipAktif]}>
+                                <Text style={[styles.chipTeks, status === s.key && styles.chipTeksAktif]}>{s.label}</Text>
+                            </Pressable>
+                        ))}
+                    </View>
+                }
+                kosong={{ judul: 'Tidak ada jadwal', pesan: 'Belum ada jadwal pada rentang & filter ini.' }}
+                render={(item) => (
+                    <Pressable onPress={() => navigation.navigate('JadwalDetail', { id: item.penjadwalan_id })}>
+                        <Card tone={item.mode === 'done' ? 'abu' : item.mode === 'out' ? 'hijau' : 'oranye'}>
+                            <View style={styles.baris}>
+                                <Text style={typography.heading}>{tanggalPendek(item.tanggal)}</Text>
+                                <BadgeMode mode={item.mode} />
+                            </View>
+                            <Text style={typography.body}>
+                                {item.jam_kerja?.nama || 'Shift'} · {jamSingkat(item.jam_kerja?.jam_datang)}–{jamSingkat(item.jam_kerja?.jam_pulang)}
+                            </Text>
+                            <Text style={typography.muted}>
+                                {item.jabatan}{item.nozzles?.length ? ` · ${item.nozzles.join(', ')}` : ''}
+                            </Text>
+                        </Card>
                     </Pressable>
-                ))}
-            </View>
-
-            {memuat && !data ? (
-                <Loading />
-            ) : error && !data ? (
-                <ErrorState pesan={error.message} onCoba={muatUlang} />
-            ) : (
-                <FlatList
-                    data={items}
-                    keyExtractor={(item) => item.penjadwalan_id}
-                    contentContainerStyle={styles.list}
-                    refreshControl={
-                        <RefreshControl
-                            refreshing={menyegarkan}
-                            onRefresh={segarkan}
-                            colors={[colors.primary]}
-                            tintColor={colors.primary}
-                        />
-                    }
-                    ListEmptyComponent={
-                        <EmptyState
-                            judul="Tidak ada jadwal"
-                            pesan="Belum ada jadwal pada rentang bulan ini untuk filter yang dipilih."
-                        />
-                    }
-                    renderItem={({ item }) => (
-                        <Pressable
-                            onPress={() => navigation.navigate('JadwalDetail', { id: item.penjadwalan_id })}
-                        >
-                            <Card tone={item.mode === 'done' ? 'abu' : item.mode === 'out' ? 'hijau' : 'teal'}>
-                                <View style={styles.baris}>
-                                    <Text style={typography.heading}>{tanggalPendek(item.tanggal)}</Text>
-                                    <BadgeMode mode={item.mode} />
-                                </View>
-                                <Text style={typography.body}>
-                                    {item.jam_kerja?.nama || 'Shift'} · {jamSingkat(item.jam_kerja?.jam_datang)}–{jamSingkat(item.jam_kerja?.jam_pulang)}
-                                </Text>
-                                <Text style={typography.muted}>
-                                    {item.jabatan}
-                                    {item.nozzles?.length ? ` · ${item.nozzles.join(', ')}` : ''}
-                                </Text>
-                            </Card>
-                        </Pressable>
-                    )}
-                />
-            )}
+                )}
+            />
         </Halaman>
     );
 }
 
 const styles = StyleSheet.create({
-    screen: { flex: 1, backgroundColor: colors.background },
-    filterBar: {
-        flexDirection: 'row',
-        gap: spacing.sm,
-        paddingHorizontal: spacing.lg,
-        paddingTop: spacing.md,
-        paddingBottom: spacing.sm,
-        flexWrap: 'wrap',
-    },
+    chipBaris: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, marginBottom: spacing.sm },
     chip: {
-        paddingHorizontal: spacing.md,
-        paddingVertical: 6,
-        borderRadius: radius.pill,
-        borderWidth: 1,
-        borderColor: colors.border,
-        backgroundColor: colors.surface,
+        paddingHorizontal: spacing.md, paddingVertical: 6, borderRadius: radius.pill,
+        borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface,
     },
     chipAktif: { backgroundColor: colors.primary, borderColor: colors.primary },
-    chipTeks: { fontSize: 13, color: colors.textMuted, fontWeight: '600' },
+    chipTeks: { fontSize: 12, color: colors.textMuted, fontWeight: '700' },
     chipTeksAktif: { color: '#fff' },
-
-    list: { padding: spacing.lg, paddingTop: spacing.sm, gap: spacing.md, flexGrow: 1 },
     baris: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
 });

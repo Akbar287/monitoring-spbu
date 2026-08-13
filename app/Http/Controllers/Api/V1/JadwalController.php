@@ -20,6 +20,7 @@ class JadwalController extends Controller
             'dari' => ['nullable', 'date_format:Y-m-d'],
             'sampai' => ['nullable', 'date_format:Y-m-d'],
             'status' => ['nullable', 'in:semua,belum,berjalan,selesai'],
+            'cari' => ['nullable', 'string', 'max:100'],
             'per_page' => ['nullable', 'integer', 'min:1', 'max:100'],
         ]);
 
@@ -40,6 +41,15 @@ class JadwalController extends Controller
             'selesai' => $query->whereNotNull('finish_time'),
             default => null,
         };
+
+        if ($cari = trim((string) $request->input('cari'))) {
+            $pola = '%' . mb_strtolower($cari) . '%';
+            $query->where(fn ($q) => $q
+                ->whereRaw('LOWER(CAST(tanggal AS TEXT)) LIKE ?', [$pola])
+                ->orWhereHas('jam_kerja', fn ($j) => $j->whereRaw('LOWER(nama_jam_kerja) LIKE ?', [$pola]))
+                ->orWhereHas('jabatan', fn ($j) => $j->whereRaw('LOWER(nama_jabatan) LIKE ?', [$pola]))
+                ->orWhereHas('status_kehadiran', fn ($k) => $k->whereRaw('LOWER(nama_kehadiran) LIKE ?', [$pola])));
+        }
 
         $paginator = $query
             ->orderBy('tanggal', 'desc')

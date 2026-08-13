@@ -41,3 +41,6 @@ yarn-error.*
 /ios
 /android
 .env
+
+# alamat backend produksi — sengaja ikut ter-commit
+!.env.production
