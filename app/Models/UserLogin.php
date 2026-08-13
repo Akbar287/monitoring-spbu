@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Laravel\Sanctum\HasApiTokens;
 use Ramsey\Uuid\Uuid;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 
@@ -10,7 +11,10 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class UserLogin extends Authenticatable
 {
-    use HasFactory, softDeletes;
+    // HasApiTokens dipakai API mobile (routes/mobile.php). Kolom
+    // personal_access_tokens.tokenable_id sudah diubah ke varchar(36) lewat
+    // migrasi 2026_08_13_000001 agar muat UUID.
+    use HasApiTokens, HasFactory, softDeletes;
     protected $table = 'userlogin';
     protected $primaryKey = 'user_login_id';
     public $incrementing = false;

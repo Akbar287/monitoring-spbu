@@ -29,6 +29,14 @@ class RouteServiceProvider extends ServiceProvider
         });
 
         $this->routes(function () {
+            // API mobile: stateless, token Sanctum. Didaftarkan lebih dulu agar
+            // prefix api/v1 tidak tertangkap grup api berbasis sesi di bawahnya.
+            Route::middleware('api')
+                ->prefix('api/v1')
+                ->group(base_path('routes/mobile.php'));
+
+            // Endpoint AJAX internal untuk halaman web — memakai middleware
+            // 'web' (sesi + CSRF), bukan 'api'. Lihat ARCHITECTURE.md §4.
             Route::middleware('web')
                 ->prefix('api')
                 ->group(base_path('routes/api.php'));

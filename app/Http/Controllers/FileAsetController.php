@@ -98,7 +98,7 @@ class FileAsetController extends Controller
                 ['label' => 'Nama File', 'value' => $fileAset->nama_file],
                 ['label' => 'Tanggal Upload', 'value' => $fileAset->tanggal_upload],
             ],
-            'image' => asset('storage/aset/' . $fileAset->nama_file),
+            'image' => route('aset.file.download', [$aset, $fileAset, 'preview' => 1]),
             'actions' => [
                 ['label' => 'Ubah', 'url' => route('aset.file.edit', [$aset, $fileAset]), 'color' => 'primary', 'icon' => 'pen'],
                 ['label' => 'Download', 'url' => route('aset.file.download', [$aset, $fileAset]), 'color' => 'info', 'icon' => 'download'],
@@ -172,8 +172,19 @@ class FileAsetController extends Controller
         ];
     }
 
-    public function download(Aset $aset, FileAset $fileAset)
+    public function download(Request $request, Aset $aset, FileAset $fileAset)
     {
-        return Storage::download('public/aset/' . $fileAset->nama_file);
+        $path = 'public/aset/' . $fileAset->nama_file;
+        $name = $fileAset->nama_dokumen ?: $fileAset->nama_file;
+
+        if (! Storage::exists($path)) {
+            abort(404);
+        }
+
+        if ($request->boolean('preview')) {
+            return Storage::response($path, $name, [], 'inline');
+        }
+
+        return Storage::download($path, $name);
     }
 }

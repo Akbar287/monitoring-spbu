@@ -1,0 +1,69 @@
+{
+  "expo": {
+    "name": "SPBU 24.345.20",
+    "slug": "monitoring-spbu",
+    "scheme": "monitoringspbu",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "id.spbubernah.monitoring",
+      "infoPlist": {
+        "NSCameraUsageDescription": "Kamera dipakai untuk memindai QR code absensi dan mengambil foto selfie kehadiran.",
+        "NSLocationWhenInUseUsageDescription": "Lokasi dipakai untuk mencatat titik absensi Anda.",
+        "NSPhotoLibraryUsageDescription": "Diperlukan untuk memilih foto profil."
+      }
+    },
+    "android": {
+      "package": "id.spbubernah.monitoring",
+      "adaptiveIcon": {
+        "backgroundColor": "#ffffff",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.ACCESS_COARSE_LOCATION"
+      ]
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Kamera dipakai untuk memindai QR code absensi dan mengambil foto selfie kehadiran."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "cameraPermission": "Kamera dipakai untuk mengambil foto selfie kehadiran."
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Lokasi dipakai untuk mencatat titik absensi Anda."
+        }
+      ],
+      "expo-secure-store",
+      "@react-native-community/datetimepicker",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 220,
+          "resizeMode": "contain",
+          "backgroundColor": "#ffffff"
+        }
+      ],
+      "expo-font"
+    ]
+  }
+}
