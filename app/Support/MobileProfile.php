@@ -29,6 +29,7 @@ class MobileProfile
                 'no_hp' => null,
                 'avatar_url' => null,
                 'akses_penuh' => false,
+                'tanpa_jadwal' => false,
                 'spbu' => [],
             ];
         }
@@ -55,6 +56,8 @@ class MobileProfile
             // dihitung server dari nama jabatan (App\Support\Akses) agar klien
             // tidak perlu menyalin daftar jabatannya
             'akses_penuh' => Akses::penuh($member),
+            // divisi stakeholder: tanpa jadwal kerja & absensi
+            'tanpa_jadwal' => Akses::tanpaJadwal($member),
             'daftar_jabatan' => $member->jabatan()->get()->pluck('nama_jabatan')->values()->all(),
             'spbu' => $member->spbu()->get()->map(fn ($s) => [
                 'spbu_id' => $s->spbu_id,

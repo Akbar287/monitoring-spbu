@@ -35,6 +35,15 @@ class Akses
     public const MENU_DASAR = ['Beranda', 'Jadwal', 'Profil'];
 
     /**
+     * Divisi yang anggotanya TIDAK menjalani jadwal kerja & absensi —
+     * mereka stakeholder, bukan pelaksana operasional. Menu Jadwal
+     * disembunyikan dan Beranda tidak menampilkan blok shift/absensi.
+     *
+     * Perbandingan tidak peka huruf besar/kecil.
+     */
+    public const DIVISI_TANPA_JADWAL = ['top manajemen'];
+
+    /**
      * Satu pegawai bisa memegang lebih dari satu jabatan; cukup salah satunya
      * masuk daftar untuk mendapat akses penuh.
      */
@@ -46,6 +55,28 @@ class Akses
 
         foreach ($member->jabatan()->get() as $jabatan) {
             if (self::jabatanPenuh($jabatan->nama_jabatan)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Benar bila pegawai berada di divisi yang tidak menjalani jadwal kerja.
+     * Ditentukan lewat jabatan -> level -> divisi.
+     */
+    public static function tanpaJadwal(?Member $member): bool
+    {
+        if (is_null($member)) {
+            return false;
+        }
+
+        foreach ($member->jabatan()->get() as $jabatan) {
+            $divisi = optional(optional($jabatan->level()->first())->divisi()->first())->nama_divisi;
+
+            if (! is_null($divisi)
+                && in_array(mb_strtolower(trim($divisi)), self::DIVISI_TANPA_JADWAL, true)) {
                 return true;
             }
         }

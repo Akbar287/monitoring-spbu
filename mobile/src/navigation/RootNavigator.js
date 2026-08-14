@@ -182,7 +182,7 @@ const IKON = {
     ProfilTab: ['person', 'person-outline'],
 };
 
-function TabUtama({ aksesPenuh }) {
+function TabUtama({ aksesPenuh, punyaJadwal }) {
     // Aplikasi digambar edge-to-edge (navigationBarColor transparan), jadi tab
     // bar harus menaikkan sendiri kontennya setinggi inset bawah — kalau tidak,
     // labelnya tertimpa tombol Home/Back/Menu sistem Android.
@@ -245,12 +245,15 @@ export default function RootNavigator() {
     // server di App\Support\Akses dan dikirim lewat profil, jadi daftar
     // jabatannya tidak disalin di sini. Sisanya hanya Beranda, Jadwal, Profil.
     const aksesPenuh = user?.akses_penuh === true;
+    // Divisi stakeholder (Top Manajemen) tidak menjalani jadwal kerja & absensi,
+    // jadi tab Jadwal disembunyikan — aturannya di App\Support\Akses.
+    const punyaJadwal = user?.tanpa_jadwal !== true;
 
     return (
         <NavigationContainer theme={tema}>
             {user ? (
                 <OpsiProvider aktif={aksesPenuh}>
-                    <TabUtama aksesPenuh={aksesPenuh} />
+                    <TabUtama aksesPenuh={aksesPenuh} punyaJadwal={punyaJadwal} />
                 </OpsiProvider>
             ) : (
                 <LoginScreen />

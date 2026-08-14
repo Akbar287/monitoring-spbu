@@ -15,6 +15,8 @@ export const Auth = {
 
 export const Dashboard = {
     ringkasan: () => api.get('dashboard'),
+    /** Beranda analitik per domain — hanya untuk jabatan berakses penuh. */
+    analitik: () => api.get('analitik'),
 };
 
 export const Jadwal = {

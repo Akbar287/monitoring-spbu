@@ -11,7 +11,7 @@
 | Kebutuhan tester | Hanya koneksi internet. **Tidak** perlu Metro/laptop developer |
 | Berkas | `mobile/dist/SPBU-24.345.20-uat.apk` — 52,7 MB |
 | Arsitektur | `arm64-v8a` + `armeabi-v7a` (semua HP Android; kode emulator x86 dibuang) |
-| versionCode | 10 (versionName 1.0.9) |
+| versionCode | 12 (versionName 1.1.1) |
 
 ### Kenapa bukan APK debug?
 
@@ -78,6 +78,12 @@ Menu yang tampil menyesuaikan **jabatan** pegawai (bukan level):
 | Jabatan | Tab yang muncul |
 |---|---|
 | Direktur Utama, Direktur, Komisaris, Admin, Manajer | Beranda · Jadwal · **Procurement** · **Persediaan** · **Kelola** · Profil |
+
+Khusus pegawai di **Divisi "Top Manajemen"** (Direktur Utama, Direktur,
+Komisaris) menu **Jadwal tidak ditampilkan** — mereka stakeholder, tidak
+menjalani jadwal kerja maupun absensi. Beranda mereka juga tidak menampilkan
+kartu shift berjalan, jadwal hari ini, dan statistik "Belum absen".
+Admin & Manajer berada di divisi Operasional, jadi jadwalnya tetap ada.
 | Jabatan lain (Operator, Security, Supervisor, …) | Beranda · Jadwal · Profil |
 
 Tab yang tidak berhak **tidak ditampilkan**, dan server juga menolak

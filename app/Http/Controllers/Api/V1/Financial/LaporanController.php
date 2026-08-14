@@ -62,7 +62,7 @@ class LaporanController extends Controller
         $mutasi = LK::mutasi($spbuId, $dari, $sampai);
 
         $baris = [];
-        $t = ['awal_d' => '0', 'awal_k' => '0', 'mut_d' => '0', 'mut_k' => '0', 'akhir_d' => '0', 'akhir_k' => '0'];
+        $t = array_fill_keys(['awal_d', 'awal_k', 'mut_d', 'mut_k', 'akhir_d', 'akhir_k'], Uang::of(0));
 
         foreach (LK::akun() as $a) {
             $sAwal = $awal[$a->coa_id] ?? '0';
@@ -131,7 +131,8 @@ class LaporanController extends Controller
                 $subtotal = Uang::tambah($subtotal, $nilai);
             }
 
-            return ['baris' => $baris, 'subtotal' => $subtotal];
+            // normalkan agar kontrak API selalu 6 desimal, termasuk saat nol
+            return ['baris' => $baris, 'subtotal' => Uang::of($subtotal)];
         };
 
         $pendapatan = $bagian(['pendapatan'], 1);
@@ -192,14 +193,14 @@ class LaporanController extends Controller
                 $subtotal = Uang::tambah($subtotal, $nilai);
             }
 
-            return ['baris' => $baris, 'subtotal' => $subtotal];
+            return ['baris' => $baris, 'subtotal' => Uang::of($subtotal)];
         };
 
         $aset = $bagian(['aset'], 1);
         $kewajiban = $bagian(['kewajiban'], -1);
         $modal = $bagian(['modal'], -1);
 
-        $totalModal = $modal['subtotal'];
+        $totalModal = Uang::of($modal['subtotal']);
         if (! LK::nol($labaBerjalan)) {
             $modal['baris'][] = [
                 'kode_akun' => '—',

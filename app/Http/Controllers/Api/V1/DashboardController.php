@@ -25,19 +25,23 @@ class DashboardController extends Controller
         $profil = MobileProfile::for($user);
         $hariIni = Carbon::now()->format('Y-m-d');
 
-        $ongoing = $member->penjadwalan()
+        // divisi stakeholder (mis. Top Manajemen) tidak menjalani jadwal kerja
+        $tanpaJadwal = Akses::tanpaJadwal($member);
+
+        $ongoing = $tanpaJadwal ? null : $member->penjadwalan()
             ->whereNotNull('start_time')
             ->whereNull('finish_time')
             ->orderBy('start_time', 'desc')
             ->first();
 
-        $jadwalHariIni = $member->penjadwalan()
-            ->where('tanggal', $hariIni)
-            ->get();
+        $jadwalHariIni = $tanpaJadwal
+            ? collect()
+            : $member->penjadwalan()->where('tanggal', $hariIni)->get();
 
         $data = [
             'user' => $profil,
             'tanggal' => $hariIni,
+            'tanpa_jadwal' => $tanpaJadwal,
             'shift_berjalan' => $ongoing ? JadwalController::serialize($ongoing) : null,
             'jadwal_hari_ini' => [
                 'total' => $jadwalHariIni->count(),
