@@ -47,11 +47,21 @@ class PersediaanController extends Controller
             ];
         })->values()->all();
 
-        // antrean dokumen menunggu konfirmasi, dikelompokkan per jenis gerakan
-        $antrean = DokumenStok::where('is_confirmation', 0)
-            ->get()
-            ->groupBy(fn (DokumenStok $d) => optional($d->type_dokumen_stok()->first())->type_movement ?? '-')
-            ->map->count();
+        // Antrean dokumen menunggu konfirmasi, dikelompokkan per jenis gerakan.
+        // WAJIB diagregasi di SQL: memuat seluruh dokumen lalu memanggil
+        // relasi type_dokumen_stok per baris menimbulkan N+1 (>5.500 query,
+        // ~4 detik) sehingga layar Persediaan gagal termuat karena timeout.
+        $antrean = DokumenStok::query()
+            ->leftJoin(
+                'type_dokumen_stok',
+                'type_dokumen_stok.type_dokumen_stok_id',
+                '=',
+                'dokumen_stok.type_dokumen_stok_id'
+            )
+            ->where('dokumen_stok.is_confirmation', 0)
+            ->groupBy('type_dokumen_stok.type_movement')
+            ->selectRaw("COALESCE(type_dokumen_stok.type_movement, '-') AS gerakan, COUNT(*) AS jumlah")
+            ->pluck('jumlah', 'gerakan');
 
         $lossHariIni = Losses::where('tanggal', $hariIni)->get();
 

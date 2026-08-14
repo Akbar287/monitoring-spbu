@@ -11,7 +11,7 @@
 | Kebutuhan tester | Hanya koneksi internet. **Tidak** perlu Metro/laptop developer |
 | Berkas | `mobile/dist/SPBU-24.345.20-uat.apk` — 52,7 MB |
 | Arsitektur | `arm64-v8a` + `armeabi-v7a` (semua HP Android; kode emulator x86 dibuang) |
-| versionCode | 12 (versionName 1.1.1) |
+| versionCode | 13 (versionName 1.1.2) |
 
 ### Kenapa bukan APK debug?
 

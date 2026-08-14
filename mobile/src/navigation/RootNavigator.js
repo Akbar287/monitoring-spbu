@@ -213,7 +213,9 @@ function TabUtama({ aksesPenuh, punyaJadwal }) {
             })}
         >
             <Tab.Screen name="BerandaTab" component={BerandaStack} options={{ title: 'Beranda' }} />
-            <Tab.Screen name="JadwalTab" component={JadwalStack} options={{ title: 'Jadwal' }} />
+            {punyaJadwal && (
+                <Tab.Screen name="JadwalTab" component={JadwalStack} options={{ title: 'Jadwal' }} />
+            )}
             {aksesPenuh && (
                 <Tab.Screen name="ProcurementTab" component={ProcurementStack} options={{ title: 'Procurement' }} />
             )}
