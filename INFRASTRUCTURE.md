@@ -230,8 +230,12 @@ benih berkas.
 [.github/workflows/](.github/workflows/) — satu workflow: **Build and Push Docker**.
 
 - Pemicu: push ke `main`, atau `workflow_dispatch`.
-- Login Docker Hub dengan secrets `DOCKERHUB_USERNAME` / `DOCKERHUB_TOKEN`.
-- Build + push dua tag: `<user>/monitoring-spbu:<git-sha>` dan `:latest`.
+- Registry: **GitHub Container Registry (GHCR)**. Login memakai
+  `GITHUB_TOKEN` bawaan Actions (workflow butuh `permissions: packages: write`),
+  jadi tidak perlu secret tambahan.
+- Build + push dua tag: `ghcr.io/akbar287/monitoring-spbu:<git-sha>` dan `:latest`
+  (owner diambil dari `github.repository_owner`, di-lowercase karena GHCR
+  menolak huruf besar).
 - Cache Buildx via GitHub Actions cache (`type=gha`, `mode=max`).
 
 **Tidak ada** langkah test, lint, atau deploy otomatis di CI. Deploy dilakukan
@@ -273,6 +277,7 @@ Contoh entri cron host (bila diinginkan):
 ```bash
 # di server
 cp .env.docker.example .env            # isi APP_KEY, POSTGRES_PASSWORD, APP_URL, DOCKER_IMAGE
+echo <PAT> | docker login ghcr.io -u <github-username> --password-stdin   # sekali saja, lihat catatan di bawah
 docker compose pull
 docker compose up -d postgres          # tunggu healthy
 docker compose run --rm app php artisan migrate --force
@@ -280,6 +285,11 @@ docker compose run --rm app php artisan db:seed --force
 docker compose run --rm app php artisan db:seed --class=CoaSeeder --force
 docker compose up -d
 ```
+
+Package GHCR yang baru dibuat **private** secara default. Server butuh
+`docker login ghcr.io` dengan Personal Access Token (classic) ber-scope
+`read:packages`. Alternatifnya, jadikan package public di
+*GitHub → Packages → monitoring-spbu → Package settings* agar `pull` tanpa login.
 
 `APP_KEY` dihasilkan dengan `php artisan key:generate --show` (lokal), lalu
 disalin ke `.env` server. Mengganti `APP_KEY` pada instalasi berjalan akan
