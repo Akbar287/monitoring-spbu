@@ -135,6 +135,12 @@ class Navigation
             $menu[] = ['label' => 'Kehadiran', 'icon' => 'calendar-check', 'url' => route('menu.kehadiran')];
         }
 
+        // Panduan pengisian awal. Tetap ditampilkan setelah set up ditutup agar
+        // admin punya jalan kembali saat menyiapkan SPBU baru.
+        if ($pj || $direksi) {
+            $menu[] = ['label' => 'Set Up Awal', 'icon' => 'clipboard-check', 'url' => route('setup.index')];
+        }
+
         return $menu;
     }
 }

@@ -600,11 +600,46 @@ logika keuangan.
 
 ---
 
+## 10b. Set Up Awal (`/setup`)
+
+Pengisian data pondasi saat aplikasi dipakai pertama kali. Sumber kebenarannya
+[app/Support/Setup.php](app/Support/Setup.php) — daftar langkah, prasyarat, dan
+syarat "selesai" semuanya di situ; controller dan halaman React hanya
+menampilkan hasilnya.
+
+**Prinsip yang penting dipahami sebelum mengubahnya:**
+
+- **Tidak ada jalur pintas penulisan data.** Set up hanya mengantar admin ke
+  form asli tiap modul. Satu-satunya yang ditulis `SetupController` adalah
+  identitas SPBU dan `tanggal_mulai_operasi`. Alasannya, menulis langsung ke
+  tabel akan melewati event model yang memicu jurnal dan pergerakan stok.
+- **Urutan langkah adalah dependensi, bukan tampilan.** Tiap langkah menyebut
+  `butuh`; yang prasyaratnya belum beres dikirim `terkunci: true`. Langkah yang
+  datanya sudah terisi tidak pernah dikunci.
+- **Rantai pengadaan wajib berurutan**: perencanaan → MS2 → LO. Penerimaan BBM
+  hanya bisa diproses dari LO hasil rantai ini, sehingga kondisi awal pengadaan
+  (pembelian/pengiriman yang sudah terjadi sebelum go-live) pun harus diisi
+  lewat rantai yang sama.
+- **Instalasi lama tidak boleh terkunci.** Migrasi
+  `2026_08_15_000001_create_pengaturan_sistem_table` langsung menandai set up
+  selesai bila `spbu`, `produk`, dan `member` sudah terisi.
+
+| Bagian | Berkas |
+|---|---|
+| Definisi langkah & kemajuan | [app/Support/Setup.php](app/Support/Setup.php) |
+| Halaman & simpan identitas | [SetupController](app/Http/Controllers/SetupController.php) |
+| Pengalihan admin ke `/setup` | [PastikanSetupSelesai](app/Http/Middleware/PastikanSetupSelesai.php), alias `setup.selesai` |
+| Tampilan | [Pages/Setup/Index.jsx](resources/js/inertia/Pages/Setup/Index.jsx) |
+| Penyimpanan status | tabel `pengaturan_sistem` via [PengaturanSistem](app/Models/PengaturanSistem.php) |
+
+---
+
 ## 11. Peta Cepat "Mau Ubah Apa, Sentuh Mana"
 
 | Tujuan | Berkas |
 |---|---|
 | Tambah menu sidebar | [app/Support/Navigation.php](app/Support/Navigation.php) |
+| Ubah langkah set up awal | [app/Support/Setup.php](app/Support/Setup.php) — definisi langkah, prasyarat, syarat selesai |
 | Tambah halaman CRUD | route di [routes/web.php](routes/web.php) + controller baru meniru [AsetController](app/Http/Controllers/AsetController.php) |
 | Ubah tampilan semua form / tabel / detail | `resources/js/inertia/Pages/{Form,Table,Show}/Index.jsx` (**berdampak luas**) |
 | Ubah shell/sidebar/tema | [AppLayout.jsx](resources/js/inertia/Layouts/AppLayout.jsx) + `resources/sass/` (Mix) + `public/css/theme.css` |

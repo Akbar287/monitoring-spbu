@@ -10,7 +10,7 @@
         "axios": "^1.1.2",
         "bootstrap": "^4.0.0",
         "jquery": "^3.2",
-        "laravel-mix": "^6.0.49",
+        "laravel-mix": "npm:@wintercms/laravel-mix@^6.1.0",
         "laravel-vite-plugin": "^0.7.2",
         "lodash": "^4.17.19",
         "popper.js": "^1.12",
@@ -34,6 +34,7 @@
         "react-dom": "^18.3.1",
         "react-dropzone": "^15.0.0",
         "sweetalert2": "^10.15.6",
-        "typed.js": "^2.1.0"
+        "typed.js": "^2.1.0",
+        "webpack": "5.106.2"
     }
 }

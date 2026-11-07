@@ -20,8 +20,17 @@ Route::get('/foo', function () {
     Artisan::call('storage:link');
 });
 
-Route::middleware(['auth', 'cache.header'])->group(function ($route) {
+Route::middleware(['auth', 'cache.header', 'setup.selesai'])->group(function ($route) {
     $route->get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
+
+    // Pengisian awal sistem. Definisi langkah & prasyaratnya ada di
+    // App\Support\Setup; middleware `setup.selesai` mengarahkan admin ke sini
+    // selama pengisiannya belum dituntaskan.
+    $route->get('/setup', [App\Http\Controllers\SetupController::class, 'index'])->name('setup.index');
+    $route->get('/setup/identitas', [App\Http\Controllers\SetupController::class, 'identitas'])->name('setup.identitas');
+    $route->post('/setup/identitas', [App\Http\Controllers\SetupController::class, 'simpanIdentitas'])->name('setup.identitas.simpan');
+    $route->post('/setup/selesaikan', [App\Http\Controllers\SetupController::class, 'selesaikan'])->name('setup.selesaikan');
+    $route->post('/setup/buka-kembali', [App\Http\Controllers\SetupController::class, 'bukaKembali'])->name('setup.buka-kembali');
 
     $route->get('/profil', [App\Http\Controllers\HomeController::class, 'profil'])->name('profil');
     $route->get('/profil/edit', [App\Http\Controllers\HomeController::class, 'profil_edit'])->name('profil.edit');
