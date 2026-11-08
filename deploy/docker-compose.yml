@@ -1,0 +1,92 @@
+# Docker Compose untuk server produksi.
+# Salin file ini + .env ke satu folder di server (mis. /opt/monitoring-spbu), lalu:
+#   docker login ghcr.io
+#   docker compose pull && docker compose up -d
+# Langkah lengkap (migrate, seed, rollback): INFRASTRUCTURE.md §8.
+
+name: monitoring-spbu
+
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "5"
+
+services:
+  app:
+    image: ${DOCKER_IMAGE:?DOCKER_IMAGE wajib diisi di .env}
+    pull_policy: always
+    restart: unless-stopped
+    ports:
+      # APP_BIND=127.0.0.1 bila ada reverse proxy (Nginx/Caddy) di server yang sama,
+      # 0.0.0.0 bila aplikasi diakses langsung lewat port ini.
+      - "${APP_BIND:-0.0.0.0}:${APP_PORT:-8080}:80"
+    environment:
+      APP_NAME: "${APP_NAME:-Monitoring SPBU}"
+      APP_ENV: production
+      APP_KEY: "${APP_KEY:?APP_KEY wajib diisi di .env}"
+      APP_DEBUG: "${APP_DEBUG:-false}"
+      APP_URL: "${APP_URL:?APP_URL wajib diisi di .env}"
+      LOG_CHANNEL: "${LOG_CHANNEL:-stack}"
+      LOG_LEVEL: "${LOG_LEVEL:-info}"
+
+      DB_CONNECTION: pgsql
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_DATABASE: "${POSTGRES_DB:-monitoring_spbu}"
+      DB_USERNAME: "${POSTGRES_USER:-monitoring_spbu}"
+      DB_PASSWORD: "${POSTGRES_PASSWORD:?POSTGRES_PASSWORD wajib diisi di .env}"
+
+      CACHE_DRIVER: "${CACHE_DRIVER:-file}"
+      FILESYSTEM_DISK: "${FILESYSTEM_DISK:-local}"
+      QUEUE_CONNECTION: "${QUEUE_CONNECTION:-sync}"
+      SESSION_DRIVER: "${SESSION_DRIVER:-file}"
+      SESSION_LIFETIME: "${SESSION_LIFETIME:-120}"
+      SESSION_SECURE_COOKIE: "${SESSION_SECURE_COOKIE:-true}"
+
+      CREATE_STORAGE_LINK: "${CREATE_STORAGE_LINK:-true}"
+      LARAVEL_OPTIMIZE: "${LARAVEL_OPTIMIZE:-true}"
+      RUN_MIGRATIONS: "${RUN_MIGRATIONS:-false}"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS -o /dev/null http://127.0.0.1/ || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 40s
+    volumes:
+      - app-storage:/var/www/html/storage
+    networks:
+      - app-network
+    logging: *default-logging
+
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    # Sengaja tanpa "ports": database hanya bisa diakses dari container app.
+    # Akses manual: docker compose exec postgres psql -U <user> <db>
+    environment:
+      POSTGRES_DB: "${POSTGRES_DB:-monitoring_spbu}"
+      POSTGRES_USER: "${POSTGRES_USER:-monitoring_spbu}"
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:?POSTGRES_PASSWORD wajib diisi di .env}"
+      TZ: "${TZ:-Asia/Jakarta}"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \"$${POSTGRES_USER}\" -d \"$${POSTGRES_DB}\""]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - app-network
+    logging: *default-logging
+
+volumes:
+  app-storage:
+  postgres-data:
+
+networks:
+  app-network:
+    driver: bridge
