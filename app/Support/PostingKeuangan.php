@@ -4,6 +4,7 @@ namespace App\Support;
 
 use App\Models\Coa;
 use App\Models\PajakPembelian;
+use App\Models\PajakPembelianLib;
 use App\Models\Pembayaran;
 use App\Models\Penarikan;
 use App\Models\Penjualan;
@@ -104,9 +105,16 @@ class PostingKeuangan
             $lines[] = ['kode_akun' => Akun::PENDAPATAN_LAIN, 'debit' => 0, 'kredit' => abs($selisih), 'keterangan' => 'Selisih lebih setor kas'];
         }
 
-        // HPP perpetual: liter terjual x harga beli yang berlaku pada harga_id detail
+        // HPP perpetual: liter terjual x biaya per liter = harga beli (net) pada harga_id
+        // detail x faktor pajak yang ikut dikapitalisasi ke persediaan
+        $faktor = [];
         $hpp = $penjualan->detail_penjualan()->with('harga')->get()
-            ->sum(fn ($d) => floatval($d->liter) * floatval($d->harga->harga_beli ?? 0));
+            ->sum(function ($d) use (&$faktor, $penjualan) {
+                $produkId = $d->harga->produk_id ?? null;
+                $faktor[$produkId ?? ''] ??= self::faktorKapitalisasi($produkId, $penjualan->tanggal);
+
+                return floatval($d->liter) * floatval($d->harga->harga_beli ?? 0) * $faktor[$produkId ?? ''];
+            });
 
         DB::transaction(function () use ($penjualan, $lines, $hpp) {
             $tanggalLabel = Carbon::parse($penjualan->tanggal)->format('d/m/Y');
@@ -134,6 +142,35 @@ class PostingKeuangan
                 );
             }
         });
+    }
+
+    /**
+     * Pengali harga beli (net) menjadi biaya perolehan per liter, untuk HPP dan susut.
+     *
+     * `harga.harga_beli` adalah harga dasar (net) per liter: pengadaan memakainya
+     * sebagai harga satuan rencana, lalu faktur menambahkan PPN, PPBKB, dan PPh dari
+     * tarif aktif. Dengan metode `hpp` (default) PPN + PPBKB ikut masuk Persediaan
+     * (JurnalPosting::barisPembelian), jadi biaya per liter = net x (1 + PPN% + PPBKB%).
+     * Dengan `terpisah`, persediaan hanya menerima net (faktor 1). Metode diambil dari
+     * pembelian terakhir produk itu sampai tanggal transaksi. PPh 22 tidak pernah ikut.
+     */
+    public static function faktorKapitalisasi(?string $produkId, $tanggal): float
+    {
+        $metode = is_null($produkId) ? null : DB::table('pajak_pembelian as pp')
+            ->join('rencana_pembelian as r', 'r.rencana_pembelian_id', '=', 'pp.rencana_pembelian_id')
+            ->whereExists(fn ($q) => $q->select(DB::raw(1))->from('detail_rencana_pembelian as d')
+                ->whereColumn('d.rencana_pembelian_id', 'r.rencana_pembelian_id')
+                ->where('d.produk_id', $produkId))
+            ->where('r.tanggal_pembelian', '<=', Carbon::parse($tanggal)->toDateString())
+            ->orderByDesc('r.tanggal_pembelian')
+            ->orderByDesc('pp.created_at')
+            ->value('pp.metode_posting_pajak');
+        if ($metode === 'terpisah') {
+            return 1.0;
+        }
+        $lib = PajakPembelianLib::where('is_aktif', 1)->first();
+
+        return 1 + (floatval($lib?->ppn) + floatval($lib?->ppbkb)) / 100;
     }
 
     // ---------------------------------------------------------------- penarikan
@@ -389,7 +426,9 @@ class PostingKeuangan
             return;
         }
 
-        $hargaBeli = floatval(\App\Models\Harga::where('produk_id', $produkId)->where('is_default', 1)->value('harga_beli') ?? 0);
+        // biaya per liter = harga beli default (net) x faktor pajak yang dikapitalisasi
+        $hargaBeli = floatval(\App\Models\Harga::where('produk_id', $produkId)->where('is_default', 1)->value('harga_beli') ?? 0)
+            * self::faktorKapitalisasi($produkId, $losses->tanggal);
         $nilai = floatval($losses->jumlah) * $hargaBeli;
         if ($nilai <= 0.0001) {
             return;
