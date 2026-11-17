@@ -18,13 +18,14 @@ Aturan:
 - Celah antar shift < 1 L (pergantian presisi bacaan) dibiarkan seperti Excel;
   celah lebih besar ditutup ke akhir shift sebelumnya agar liter tidak hilang.
 """
+import calendar
 import collections
 import datetime as dt
 
 import openpyxl
 
-from umum import (BULAN, SHIFT, URUTAN_SHIFT, NOZZLE, DOMBAK_NOZZLE, angka, tanggal,
-                  path_laporan, tulis_csv, fmt)
+from umum import (BULAN, SHIFT, TAHUN, URUTAN_SHIFT, NOZZLE, DOMBAK_NOZZLE, angka, tanggal,
+                  path_laporan, path_harian, ada_laporan_bulanan, tulis_csv, fmt)
 
 DLT_DIAM = 4732763.0
 
@@ -56,7 +57,7 @@ def baca_bulan(idx, bulan, catatan):
     sesudah hari terakhir bulan adalah template (mis. 'tanggal 31' November) dan dilewati."""
     wb = openpyxl.load_workbook(path_laporan(bulan), data_only=True)
     rows = []
-    bulan_ini = (2024, idx + 1)
+    bulan_ini = (TAHUN, idx + 1)
     for ws in wb.worksheets:
         if not ws.title.startswith('Totalisator'):
             continue
@@ -66,7 +67,7 @@ def baca_bulan(idx, bulan, catatan):
         sebelum = None
         for i, b in enumerate(blok):
             t = b['tanggal']
-            harap = sebelum + dt.timedelta(days=1) if sebelum else dt.date(2024, idx + 1, 1)
+            harap = sebelum + dt.timedelta(days=1) if sebelum else dt.date(TAHUN, idx + 1, 1)
             if t and (t.year, t.month) == bulan_ini:
                 pakai = t
             else:
@@ -89,11 +90,54 @@ def baca_bulan(idx, bulan, catatan):
     return rows
 
 
+SHEET_HARIAN = ['JAN', 'FEB', 'MAR', 'APR', 'MEI', 'JUNI', 'JULI', 'AGST', 'SEPT', 'OKT', 'NOV', 'DES']
+
+
+def baca_harian(catatan):
+    """2026: 'LAPORAN HARIAN SPBU 20 Per 2026.xlsx', satu sheet per bulan. Tiap shift = blok 10 mesin
+    (PLA s/d DEX2; label 'SHIF n' di tengah blok), 3 blok per hari berurutan. Tanggal ditentukan dari
+    urutan blok karena kolom tanggal kadang salah ketik tahun (mis. FEB R413 '2025-02-13'); blok sesudah
+    hari terakhir bulan dilewati."""
+    wb = openpyxl.load_workbook(path_harian(), data_only=True)
+    rows = []
+    for i, _ in enumerate(BULAN):
+        ws = wb[SHEET_HARIAN[i]]
+        n_hari = calendar.monthrange(TAHUN, i + 1)[1]
+        blok, cur = [], None
+        for r in range(5, ws.max_row + 1):
+            kode = str(ws.cell(r, 4).value or '').strip()
+            if kode == 'PLA':
+                cur = {'r': r, 'tgl': tanggal(ws.cell(r, 2).value), 'label': None, 'baris': []}
+                blok.append(cur)
+            if cur is None or kode not in NOZZLE:
+                continue
+            lab = ws.cell(r, 3).value
+            if isinstance(lab, str) and 'SHIF' in lab.upper():
+                cur['label'] = lab.strip().upper()
+            cur['baris'].append((r, kode))
+        for k, b in enumerate(blok[:n_hari * 3]):
+            t = dt.date(TAHUN, i + 1, k // 3 + 1)
+            shift = f'Shift {k % 3 + 1}'
+            if b['label'] and b['label'][-1] != shift[-1]:
+                raise RuntimeError(f"{SHEET_HARIAN[i]}!R{b['r']}: blok ke-{k} berlabel {b['label']}, diharapkan {shift}")
+            if b['tgl'] and b['tgl'] != t:
+                catatan.append({'jenis': 'tanggal_dikoreksi', 'tanggal': t, 'shift': shift, 'nozzle': '', 'kode': '',
+                                'sumber': f"{SHEET_HARIAN[i]}!R{b['r']}", 'keterangan': f"tertulis {b['tgl']} -> {t} (urutan blok)"})
+            for r, kode in b['baris']:
+                rows.append({'tanggal': t, 'shift': shift, 'kode': kode,
+                             'awal_raw': ws.cell(r, 6).value, 'akhir_raw': ws.cell(r, 7).value,
+                             'harga_raw': ws.cell(r, 9).value, 'sumber': f'{SHEET_HARIAN[i]}!R{r}'})
+    return rows
+
+
 def main():
     catatan = []
     raw = []
-    for i, b in enumerate(BULAN):
-        raw.extend(baca_bulan(i, b, catatan))
+    if ada_laporan_bulanan():
+        for i, b in enumerate(BULAN):
+            raw.extend(baca_bulan(i, b, catatan))
+    else:
+        raw = baca_harian(catatan)
 
     kandidat = collections.defaultdict(list)  # (nozzle, tanggal, shift) -> rows
     for x in raw:

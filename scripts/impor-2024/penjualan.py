@@ -17,7 +17,7 @@ import os
 
 import openpyxl
 
-from umum import BULAN, DATA, OUT, angka, fmt, tulis_csv
+from umum import BULAN, OUT, TAHUN, angka, fmt, path_margin, tulis_csv
 
 PRODUK_NOZZLE = {'PL': 'Pertalite', 'PX': 'Pertamax', 'BS': 'Bio Solar', 'PDX': 'Pertamina Dex'}
 BLOK_PRODUK = {'PERTAMAX': 'Pertamax', 'PERTALITE': 'Pertalite', 'PERTALITE 2': 'Pertalite', 'PERTALITE II': 'Pertalite',
@@ -34,8 +34,7 @@ HARGA_TOTALISATOR_DIPERCAYA = {('2024-01-03', 'Shift 2', 'N-1B PX')}
 
 
 def margin_file(bulan):
-    return (glob.glob(os.path.join(DATA, f'Margin {bulan} 2024*.xlsx'))
-            or glob.glob(os.path.join(DATA, f'Margin {bulan.upper()} 2024*.xlsx')))[0]
+    return path_margin(bulan)
 
 
 def harga_margin():
@@ -43,7 +42,7 @@ def harga_margin():
     hasil = {}
     for i, b in enumerate(BULAN):
         ws = openpyxl.load_workbook(margin_file(b), data_only=True)['Penjualan']
-        n_hari = calendar.monthrange(2024, i + 1)[1]
+        n_hari = calendar.monthrange(TAHUN, i + 1)[1]
         for c in range(1, ws.max_column + 1):
             p = BLOK_PRODUK.get(str(ws.cell(2, c).value or '').strip())
             if p is None:
@@ -51,7 +50,7 @@ def harga_margin():
             for r in range(4, 4 + n_hari):
                 h, harga = ws.cell(r, c).value, angka(ws.cell(r, c + 2).value)
                 if isinstance(h, (int, float)) and 1 <= int(h) <= n_hari and harga:
-                    k = (dt.date(2024, i + 1, int(h)).isoformat(), p)
+                    k = (dt.date(TAHUN, i + 1, int(h)).isoformat(), p)
                     hasil.setdefault(k, harga)   # blok Pertalite pertama (tangki lama) diutamakan
     return hasil
 
@@ -65,8 +64,8 @@ def laba_margin():
         for r in range(2, 12):
             p = LABA_PRODUK.get(str(ws.cell(r, 2).value or '').strip())
             if p:
-                jual[(f'2024-{i + 1:02d}', p)] += angka(ws.cell(r, 7).value) or 0
-                margin[(f'2024-{i + 1:02d}', p)] += angka(ws.cell(r, 8).value) or 0
+                jual[(f'{TAHUN}-{i + 1:02d}', p)] += angka(ws.cell(r, 7).value) or 0
+                margin[(f'{TAHUN}-{i + 1:02d}', p)] += angka(ws.cell(r, 8).value) or 0
     return jual, margin
 
 
@@ -95,7 +94,7 @@ def tebus_excel():
                 t = v.date()
             p = NOZZLE_PRODUK_EXCEL.get(str(ws.cell(r, 4).value or '').strip())
             tebus = ws.cell(r, 9).value
-            if t and t.year == 2024 and t.month == i + 1 and p and isinstance(tebus, (int, float)) and tebus > 0:
+            if t and t.year == TAHUN and t.month == i + 1 and p and isinstance(tebus, (int, float)) and tebus > 0:
                 hitung[(t.isoformat(), p)][round(tebus, 6)] += 1
         for k, c in hitung.items():
             hasil[k] = c.most_common(1)[0][0]
@@ -118,9 +117,27 @@ def biaya_pada(tebus, produk, tanggal, harga_jual):
     return round(pokok, 6), 'tebus_excel'
 
 
+def tera_harian():
+    """(tanggal, dombak) -> liter tera (kolom 'Tera' tab Stock Margin, mulai Juli 2026)."""
+    hasil = {}
+    p = os.path.join(OUT, 'stok_shift.csv')
+    for r in csv.DictReader(open(p, encoding='utf-8')):
+        if r.get('tera') and float(r['tera']) > 0:
+            hasil[(r['tanggal'], r['dombak'])] = float(r['tera'])
+    return hasil
+
+
+def biaya_faktur():
+    """2026: biaya per liter termasuk PPh dari biaya_harian.csv (pengadaan.py, acuan faktur asli)."""
+    p = os.path.join(OUT, 'biaya_harian.csv')
+    if TAHUN < 2026 or not os.path.exists(p):
+        return None
+    return {(r['tanggal'], r['produk']): float(r['biaya_per_liter']) for r in csv.DictReader(open(p, encoding='utf-8'))}
+
+
 def main():
     hm = harga_margin()
-    tebus = tebus_excel()
+    tebus = biaya_faktur() or tebus_excel()
     asal_biaya = collections.Counter()
     rows = list(csv.DictReader(open(os.path.join(OUT, 'stand_meter.csv'), encoding='utf-8')))
     detail = []
@@ -140,6 +157,12 @@ def main():
             if (r['tanggal'], r['jam_kerja'], r['nozzle']) in HARGA_TOTALISATOR_DIPERCAYA and hx:
                 catatan.append({'jenis': 'harga_totalisator_dipertahankan', 'tanggal': r['tanggal'], 'sumber': r['sumber'],
                                 'keterangan': f"{r['nozzle']} {produk}: totalisator {hx} (Lap Harian sama), Margin {acuan}"})
+            elif TAHUN >= 2026 and hx:
+                # 2026: LAPORAN HARIAN mencatat harga per shift (perubahan harga di tengah hari, mis. Dex
+                # 17 Apr Shift 3 24.450); sheet Penjualan Margin kadang tertinggal (Feb/Mar PX, 1-10 Jul PX)
+                if acuan and hx != acuan:
+                    catatan.append({'jenis': 'harga_margin_berbeda', 'tanggal': r['tanggal'], 'sumber': r['sumber'],
+                                    'keterangan': f"{r['nozzle']} {produk}: LAPORAN HARIAN {hx} dipakai, Margin {acuan}"})
             elif acuan and hx != acuan:
                 catatan.append({'jenis': 'harga_dikoreksi', 'tanggal': r['tanggal'], 'sumber': r['sumber'],
                                 'keterangan': f"{r['nozzle']} {produk}: totalisator {hx} -> Margin {acuan}"})
@@ -155,6 +178,33 @@ def main():
             'total': fmt(round(liter * harga, 2), 2), 'sumber': r['sumber'],
         })
 
+    # tera (keputusan pemilik: Biaya Tera ikut dalam perhitungan penjualan): liter tera keluar lewat
+    # nozzle lalu kembali ke tangki, jadi bukan penjualan. Liter tera hari itu dikurangkan dari baris
+    # stand meter terbesar tangki itu; importer mencatatnya sebagai Good Issue Tera + Good Return Tera.
+    tera = tera_harian()
+    per_hari = collections.defaultdict(list)
+    for d in detail:
+        d['tera'] = '0'
+        per_hari[(d['tanggal'], d['dombak'])].append(d)
+    sisa_tera = 0.0
+    for k, liter_tera in sorted(tera.items()):
+        sisa = liter_tera
+        for d in sorted(per_hari.get(k, []), key=lambda d: -float(d['liter'])):
+            if sisa <= 0.0005:
+                break
+            ambil = min(sisa, float(d['liter']))
+            d['tera'] = fmt(ambil)
+            d['liter'] = fmt(float(d['liter']) - ambil)
+            d['total'] = fmt(round(float(d['liter']) * float(d['harga_jual']), 2), 2)
+            sisa -= ambil
+        if sisa > 0.0005:
+            sisa_tera += sisa
+            catatan.append({'jenis': 'tera_tanpa_penjualan', 'tanggal': k[0], 'sumber': k[1],
+                            'keterangan': f'{sisa:.2f} L tera tidak tertampung penjualan hari itu'})
+    if tera:
+        print(f'tera: {sum(tera.values()):,.2f} L dari {len(tera)} hari-tangki dikeluarkan dari penjualan'
+              f' (tak tertampung {sisa_tera:.2f} L)')
+
     # baris harga: satu per produk per perubahan (harga jual atau biaya); dipakai semua shift
     harga = {}
     for d in sorted(detail, key=lambda d: d['tanggal']):
@@ -163,7 +213,7 @@ def main():
     harga_rows = [{'produk': p, 'tanggal': t, 'harga_jual': hj, 'harga_beli': hb} for (p, hj, hb), t in sorted(harga.items(), key=lambda x: (x[0][0], x[1]))]
 
     tulis_csv('penjualan_detail.csv', ['tanggal', 'jam_kerja', 'urutan', 'nozzle', 'dombak', 'produk_harga', 'liter',
-                                       'harga_jual', 'harga_beli', 'total', 'sumber'], detail)
+                                       'harga_jual', 'harga_beli', 'total', 'sumber', 'tera'], detail)
     tulis_csv('harga.csv', ['produk', 'tanggal', 'harga_jual', 'harga_beli'], harga_rows)
     tulis_csv('penjualan_catatan.csv', ['jenis', 'tanggal', 'sumber', 'keterangan'], catatan)
 

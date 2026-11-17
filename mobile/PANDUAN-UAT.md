@@ -6,12 +6,12 @@
 |---|---|
 | Nama aplikasi | **SPBU 24.345.20** |
 | Package | `id.spbubernah.monitoring` |
-| Backend | `https://spbu.seni.asia` (tertanam di dalam APK, dari `.env.production`) |
+| Backend | `https://spbu.cloud` (tertanam di dalam APK, dari `.env.production`) |
 | Tipe build | `release` **ditandatangani kunci debug** — bukan rilis produksi |
 | Kebutuhan tester | Hanya koneksi internet. **Tidak** perlu Metro/laptop developer |
-| Berkas | `mobile/dist/SPBU-24.345.20-uat.apk` — 52,7 MB |
+| Berkas | `mobile/dist/SPBU-24.345.20-uat.apk` — 55,6 MB |
 | Arsitektur | `arm64-v8a` + `armeabi-v7a` (semua HP Android; kode emulator x86 dibuang) |
-| versionCode | 13 (versionName 1.1.2) |
+| versionCode | 14 (versionName 1.1.3) |
 
 ### Kenapa bukan APK debug?
 
@@ -55,7 +55,7 @@ Ada dua berkas env, sengaja dipisah:
 | Berkas | Dipakai kapan | Isi |
 |---|---|---|
 | `.env` | pengembangan lokal (Expo Go / dev build) | bebas — IP LAN, `10.0.2.2`, dsb. |
-| `.env.production` | **otomatis saat build rilis** (`expo export`, `gradlew assembleRelease`) | `https://spbu.seni.asia` |
+| `.env.production` | **otomatis saat build rilis** (`expo export`, `gradlew assembleRelease`) | `https://spbu.cloud` |
 
 `.env.production` menimpa `.env` pada build produksi, jadi mengubah `.env`
 untuk keperluan lokal **tidak lagi berisiko** membuat APK UAT menunjuk ke
@@ -63,7 +63,7 @@ localhost. Setelah build, selalu pastikan lagi:
 
 ```bash
 unzip -p android/app/build/outputs/apk/release/app-release.apk \
-  assets/index.android.bundle | grep -ao 'https://spbu\.seni\.asia' | head -1
+  assets/index.android.bundle | grep -ao 'https://spbu\.cloud' | head -1
 ```
 
 > Task bundling Gradle bisa ter-cache dan diam-diam memakai bundel lama. Bila
@@ -112,7 +112,7 @@ pesannya menyebut penyebabnya. Penyebab tersering:
 1. Ponsel tidak punya internet.
 2. Akun tidak aktif (`userlogin.is_aktif` = 0) atau belum tertaut ke data pegawai.
 3. Server sedang tidak melayani `/api/v1` — cek cepat dari peramban mana pun:
-   <https://spbu.seni.asia/api/v1/ping> harus menampilkan
+   <https://spbu.cloud/api/v1/ping> harus menampilkan
    `{"status":true,...}`.
 
 ## Membangun ulang APK

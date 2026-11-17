@@ -68,11 +68,13 @@ class Navigation
             $menu[] = ['label' => 'Manajemen Persediaan', 'icon' => 'tint', 'url' => url('/stok'), 'children' => self::ringkasan(url('/stok'), $stok)];
         }
 
-        if ($pj) {
-            $menu[] = ['label' => 'Tera', 'icon' => 'upload', 'url' => url('/tera'), 'children' => self::ringkasan(url('/tera'), [
+        if ($pj || $operator || $direksi) {
+            $tera = $pj ? self::ringkasan(url('/tera'), [
                 ['label' => 'Stok Peminjaman Tera', 'url' => url('/tera/stok-peminjaman')],
                 ['label' => 'Stok Pengembalian Tera', 'url' => url('/tera/stok-pengembalian')],
-            ])];
+            ]) : [];
+            $tera[] = ['label' => 'Kualitas Minyak', 'url' => url('/tera/kualitas-minyak')];
+            $menu[] = ['label' => 'Tera', 'icon' => 'upload', 'url' => url('/tera'), 'children' => $tera];
         }
 
         if ($pj || $direksi || $operator) {

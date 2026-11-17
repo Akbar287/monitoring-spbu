@@ -20,7 +20,7 @@ import os
 
 import openpyxl
 
-from umum import BULAN, DATA, angka, fmt, tulis_csv
+from umum import BULAN, TAHUN, angka, fmt, path_margin, tulis_csv
 
 POS = [  # (kata kunci di kolom Produk/Rincian, kode akun, jenis)
     ('gaji karyawan', '6-1000', 'beban'),
@@ -35,6 +35,8 @@ POS = [  # (kata kunci di kolom Produk/Rincian, kode akun, jenis)
     ('alokasi biaya sarana', '6-1200', 'beban'),
     ('reward karyawan', '6-1000', 'beban'),
     ('pengembalian dana investasi', '3-1100', 'prive'),
+    # 2025: pelunasan utang DSP (saldo awal utang = total pelunasan setahun; keputusan pemilik)
+    ('pengembalian hutang dsp', '2-1300', 'utang'),
     ('pihak pemilik', '3-1100', 'prive'),
     ('pihak partner', '3-1100', 'prive'),
 ]
@@ -43,8 +45,7 @@ catatan = []
 
 
 def margin_file(bulan):
-    return (glob.glob(os.path.join(DATA, f'Margin {bulan} 2024*.xlsx'))
-            or glob.glob(os.path.join(DATA, f'Margin {bulan.upper()} 2024*.xlsx')))[0]
+    return path_margin(bulan)
 
 
 def main():
@@ -52,7 +53,7 @@ def main():
     for i, b in enumerate(BULAN):
         wb = openpyxl.load_workbook(margin_file(b), data_only=True)
         ws = wb['Laba']
-        akhir = dt.date(2024, i + 1, calendar.monthrange(2024, i + 1)[1]).isoformat()
+        akhir = dt.date(TAHUN, i + 1, calendar.monthrange(TAHUN, i + 1)[1]).isoformat()
         total_excel = None
         jumlah_beban = 0.0
         for r in range(9, ws.max_row + 1):
@@ -72,7 +73,7 @@ def main():
                 continue
             baris.append({'bulan': akhir[:7], 'tanggal': akhir, 'jenis': pos[2], 'kode_akun': pos[1],
                           'keterangan': label[:120], 'nilai': fmt(round(nilai, 2), 2), 'sumber': f'Margin {b}/Laba!R{r}'})
-            if pos[2] == 'beban' and not pos[0].startswith(('alokasi', 'reward')):
+            if pos[2] in ('beban', 'utang') and not pos[0].startswith(('alokasi', 'reward')):   # TOTAL PENGELUARAN 2025 memuat pelunasan DSP
                 jumlah_beban += nilai
         if total_excel is not None and abs(total_excel - jumlah_beban) > 1:
             catatan.append({'jenis': 'total_biaya_beda', 'tanggal': akhir,
@@ -110,7 +111,7 @@ def main():
         print(f"{bln}  {g('6-1000'):>18,.0f} {g('6-1200'):>19,.0f} {g('6-1400'):>18,.0f} {g('8-1000'):>12,.0f} {g('3-1100'):>13,.0f}")
     tot = collections.defaultdict(float)
     for x in baris:
-        tot[x['jenis']] += float(x['nilai'])
+        tot[x['jenis']] = tot.get(x['jenis'], 0) + float(x['nilai'])
     print('TOTAL:', {k: f'{v:,.0f}' for k, v in tot.items()},
           '| bonus per karyawan:', f"{sum(float(x['nilai']) for x in bonus):,.0f}")
 

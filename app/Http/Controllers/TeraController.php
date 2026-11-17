@@ -15,6 +15,12 @@ class TeraController extends Controller
     {
         $allMenu = [
             [
+                'nama' => 'Kualitas Minyak',
+                'icon' => 'tint',
+                'url' => route('kualitas-minyak.index'),
+                'color' => 'info',
+            ],
+            [
                 "nama" => "Peminjaman",
                 "icon" => "th",
                 "url" => route('tera.peminjaman'),

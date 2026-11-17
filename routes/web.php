@@ -393,6 +393,21 @@ Route::middleware(['auth', 'cache.header', 'setup.selesai'])->group(function ($r
     $route->delete('/stok/totalisator/riwayat/{standMeter}/file/{file}', [App\Http\Controllers\FileStandMeterController::class, 'riwayat_destroy'])->name('totalisator.file.riwayat.delete');
 
     // Tera
+    $route->prefix('/tera/kualitas-minyak')->name('kualitas-minyak.')->controller(App\Http\Controllers\KualitasMinyakController::class)->group(function ($route) {
+        $route->get('/', 'index')->name('index');
+        $route->get('/riwayat', 'riwayat')->name('riwayat');
+        $route->get('/astm', 'astm')->name('astm');
+        $route->get('/astm/lookup', 'lookup')->name('lookup');
+        $route->get('/create', 'create')->name('create');
+        $route->post('/', 'store')->name('store');
+        $route->get('/{kualitasMinyak}', 'show')->name('show');
+        $route->get('/{kualitasMinyak}/edit', 'edit')->name('edit');
+        $route->put('/{kualitasMinyak}', 'update')->name('update');
+        $route->post('/{kualitasMinyak}/penerimaan', 'tambahPenerimaan')->name('penerimaan.tambah');
+        $route->put('/{kualitasMinyak}/penerimaan/{penerimaan}', 'ubahPenerimaan')->name('penerimaan.ubah');
+        $route->put('/{kualitasMinyak}/penerimaan/{penerimaan}/akhir', 'simpanAkhir')->name('akhir.simpan');
+        $route->post('/{kualitasMinyak}/setujui', 'setujui')->name('setujui');
+    });
     $route->get('/tera', App\Http\Controllers\TeraController::class)->name('menu.tera');
     $route->get('/tera/stok-peminjaman', [App\Http\Controllers\StokPeminjamanController::class, 'index'])->name('tera.peminjaman');
     $route->get('/tera/stok-pengembalian', [App\Http\Controllers\StokPengembalianController::class, 'index'])->name('tera.pengembalian');

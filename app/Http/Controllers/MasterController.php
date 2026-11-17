@@ -23,14 +23,8 @@ class MasterController extends Controller
             [
                 "nama" => "Fasilitas",
                 "icon" => "filter",
-                "url" => route('menu.procurement'),
-                "color" => "secondary"
-            ],
-            [
-                "nama" => "Manajemen Persediaan",
-                "icon" => "tint",
                 "url" => route('fasilitas.index'),
-                "color" => "success"
+                "color" => "secondary"
             ],
             [
                 "nama" => "Produk",

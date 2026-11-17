@@ -1,9 +1,11 @@
-# Impor data historis SPBU 2434520 tahun 2024
+# Impor data historis SPBU 2434520 (2024, 2025)
 
-Mengubah Excel di `docs/data/2024/` menjadi data aplikasi (stand meter, pengadaan,
+Mengubah Excel di `docs/data/<tahun>/` menjadi data aplikasi (stand meter, pengadaan,
 penerimaan, stok, jurnal). Dua langkah: **extractor Python** menulis CSV
-ternormalisasi ke `storage/app/impor-2024/`, lalu **command artisan** mengimpor CSV
-itu per tahap.
+ternormalisasi ke `storage/app/impor-<tahun>/`, lalu **command artisan** mengimpor CSV
+itu per tahap. Tahun dipilih dengan `IMPOR_TAHUN=<tahun>` (extractor) dan `--tahun=<tahun>`
+(artisan); default 2024. Tahun berikutnya melanjutkan buku tahun sebelumnya, jadi impor
+berurutan: 2024 lalu 2025.
 
 ## 1. Extractor (Python 3 + openpyxl)
 
@@ -13,8 +15,10 @@ cd scripts/impor-2024
 /tmp/venv-impor/bin/python standmeter.py   # -> stand_meter.csv (+ stand_meter_catatan.csv)
 /tmp/venv-impor/bin/python stok.py         # -> stok_shift.csv  (butuh stand_meter.csv)
 /tmp/venv-impor/bin/python pengadaan.py    # -> order.csv, lo.csv, penerimaan.csv, transfer.csv
+/tmp/venv-impor/bin/python dm5.py          # -> stok_dombak.csv; Biosolar dipecah DM4/DM5 (+ transfer)
 /tmp/venv-impor/bin/python penjualan.py    # -> penjualan_detail.csv, harga.csv
 /tmp/venv-impor/bin/python keuangan.py     # -> keuangan_bulanan.csv, bonus.csv
+# tahun lain: IMPOR_TAHUN=2025 /tmp/venv-impor/bin/python standmeter.py  (dst., urutan sama)
 ```
 
 Urutan wajib: extractor belakangan memakai CSV dari extractor sebelumnya. Setiap
@@ -44,6 +48,9 @@ php artisan impor:historis-2024 stok                  # penerimaan, Good Issue, 
 php artisan impor:historis-2024 penjualan             # harga riwayat, penjualan per shift, setoran bank + jurnal
 php artisan impor:historis-2024 keuangan              # jurnal manual biaya/alokasi/prive bulanan
 php artisan impor:historis-2024 bonus                 # catatan bonus per karyawan (+ member baru bila namanya belum ada)
+
+# 2025 (sesudah 2024): tanpa bersihkan-stok-2026 dan saldo-awal
+php artisan impor:historis-2024 stand-meter --tahun=2025   # lalu pengadaan, stok, penjualan, keuangan, bonus
 ```
 
 - Tambahkan `--dry-run` untuk mencoba tanpa menyimpan (semua di-rollback).
@@ -80,3 +87,65 @@ php artisan impor:historis-2024 bonus                 # catatan bonus per karyaw
 - **Harga beli:** `harga.harga_beli` berarti harga dasar (net) per liter, sama seperti master yang dipakai pengadaan. HPP dan susut = net × faktor kapitalisasi pajak (`PostingKeuangan::faktorKapitalisasi`, 1 + PPN% + PPBKB% untuk metode `hpp`). Harga riwayat 2024 disimpan setara-net (biaya per liter Excel ÷ faktor), sehingga HPP terposting sama dengan biaya Excel.
 - **Biaya bulanan:** jurnal manual dari Bank. Operasional → 6-1400, Non operasional & Lain-lain → 8-1000, Sarana & Prasarana dan Alokasi 10% → 6-1200, gaji & Reward → 6-1000, bagian pemilik/partner & pengembalian investasi SDP → Prive 3-1100. Bonus per karyawan dicatat di tabel `bonus` (tanpa jurnal).
 - **Member baru dari sheet bonus:** nama yang tidak ada di master (2024: "BUDI SETIAWAN", September) dibuatkan member berstatus Tidak Aktif, jabatan sesuai sheet, jenis kelamin dari kolom L/P, username `MGSJ-nnn` berikutnya dengan login nonaktif dan password acak. NIK, tempat/tanggal lahir, dan email diisi penanda untuk dilengkapi di aplikasi.
+
+## 4. Keputusan tambahan (Biosolar DM5, 2025)
+
+- **Biosolar DM4/DM5:** dipping Biosolar di sheet stok ditulis `=DM4+DM5` (sejak 31 Jan 2024).
+  `dm5.py` memecahnya: bongkaran bertanda (BS2) masuk DM5 (tanpa tanda: bongkaran terbesar selama
+  kenaikan DM5 belum tertutup); perubahan DM5 ≥ 200 L yang tidak dijelaskan bongkaran menjadi
+  `dombak_transfer` DM5 → DM4 (atau sebaliknya); perubahan lebih kecil = selisih ukur (stok taking
+  DM5). Pembacaan DM5 pertama 2024 = pemindahan pembuka DM4 → DM5.
+- **2025 sumber pengadaan:** order dari tab "Setoran , penerimaan" di file Margin tiap bulan.
+  Sheet Setoran di Laporan SPBU 2025 tidak dipakai: September tidak lengkap dan Desember salinan
+  Oktober. LO = gabungan Margin dan Informasi Detail Produk per nomor; nomor LO yang tidak ada di
+  sumber mana pun memakai pengganti `TL-NA0xxxx`. Informasi Detail Produk Mei 2025 dst. bergeser
+  satu kolom (dideteksi dari judul "Material"). Dipping akhir hari yang kosong (Desember 2025)
+  diambil dari dipping harian tab Stock di Margin.
+- **Sisa order akhir tahun:** LO awal tahun milik order tahun lalu (baris 6 sheet Setoran Januari)
+  mengisi baris order tahun lalu yang belum terkirim, mulai dari baris yang cukup menampung satu LO
+  (backlog akhir Desember). Sisa kecil FIFO di tengah tahun tidak dibesarkan; tidak ada rencana
+  carry-over baru.
+- **Satu LO = satu truk:** setiap LO (termasuk pengganti `TL-NA0xxxx`) berukuran 8 KL (Pertamina Dex
+  per 1 KL). Bongkaran satu produk dalam satu shift (semua tangki) dijumlah, dibulatkan ke jumlah
+  truk, lalu diberi LO utuh sebanyak itu. Shift dengan bongkaran < setengah truk digabung ke shift
+  bongkaran berikutnya (atau sebelumnya) dalam 1 hari; sisa ≥ 600 L dibawa ke shift berikutnya
+  (truk yang dibongkar lintas shift). Total rencana per LO = ukuran LO; selisih terhadap liter
+  terukur menjadi susut bongkar. Bongkaran kecil tanpa pasangan (mis. PX 40 L) bukan penerimaan:
+  kenaikan dipping-nya menjadi selisih stok taking.
+- **LO tanpa bongkaran (2025: 10 LO, BS 32 / PL 24 / PX 8 / Dex 4 KL):** LO yang tercatat di
+  sumber order tetapi tidak pernah menaikkan dipping tangki (Margin dan sheet stok tidak mencatat
+  penerimaan) mengikuti stok dombak: baris ordernya tetap "belum terkirim" (sudah dibayar), nomor
+  LO dicatat di keterangan rencana "LO tanpa bongkaran di dombak (perlu dicek)".
+- **Dipping akhir hari:** bila sheet stok per shift dan "Stok Ahir Dipping" Margin berbeda, dipakai
+  nilai yang paling bersambung dengan shift sebelum dan sesudahnya (Margin hanya bila galatnya
+  lebih kecil ≥ 50 L), dicatat `dipping_koreksi_margin` / `dipping_beda_margin` di stok_catatan.csv.
+- **Utang DSP (2025):** "Pengembalian Hutang DSP" = pelunasan utang (akun baru 2-1300 Utang DSP);
+  saldo awal per 31-12-2024 = total pelunasan 2025 (lawan Modal Disetor), sehingga akhir 2025 = 0.
+  Catatan: TOTAL PENGELUARAN di sheet Laba 2025 memuat pelunasan ini, jadi laba GL lebih tinggi
+  dari "Laba Bersih" Excel sebesar total pelunasan.
+
+## 5. Tahun 2026 (Januari–Oktober)
+
+Sumber 2026 berbeda: tidak ada Laporan SPBU bulanan maupun Informasi Detail Produk.
+
+- **Stand meter:** `LAPORAN HARIAN SPBU 20 Per 2026.xlsx` (sheet per bulan; blok 10 mesin per shift,
+  3 blok per hari; tanggal dari urutan blok karena kolom tanggal kadang salah ketik tahun). Sheet NOV
+  sesudah 11 Nov dan DES masih template 2025 dan tidak dipakai. Stand meter Jan–Mei yang sudah diinput
+  lewat aplikasi identik dengan Excel; dombaknya diseragamkan (N-1A/N-1C = DM2 Lama) dan dikonfirmasi.
+- **Harga jual:** per shift dari LAPORAN HARIAN (harga sering berubah di tengah hari); sheet Penjualan
+  Margin hanya cadangan karena kadang tertinggal (Feb/Mar Pertamax, 1–10 Jul Pertamax).
+- **Biaya per liter (HPP):** Pertalite/Biosolar dari tebus Excel; Pertamax/Dex dari faktur asli tab
+  Setoran (tebus Excel tidak ikut naik), hari tanpa faktur = rasio biaya/harga jual faktur terdekat x
+  harga jual hari itu (`biaya_harian.csv`).
+- **Stok:** harian dari tab Stock Margin (Shift 3); judul kolom dibaca per blok karena mulai Juli ada
+  kolom Tera. Dipping Biosolar `=DM4+DM5` dipecah; stok awal gabungan tanpa rumus dikurangi buku DM5.
+- **Tera:** liter tera bukan penjualan (keputusan pemilik: Biaya Tera ikut dalam perhitungan
+  penjualan). Liter tera hari itu dikurangkan dari stand meter terbesar tangki itu; importer mencatat
+  Good Issue Tera + Good Return Tera (header `tera`/`detail_tera`), tanpa jurnal.
+- **Pengadaan:** order dari tab Setoran Margin; Agustus dari `Lap Tebusan` (Setoran kurang lengkap);
+  Juli (tab Setoran tidak diisi) dari penerimaan tab Stock. Penerimaan harian dari tab Stock; shift
+  bongkaran dimajukan bila stok awal tidak cukup untuk penjualan shift sebelumnya. LO tanpa nomor =
+  pengganti `TL-NA0xxxx` (satu per truk).
+- **Tahap tambahan:** `bersihkan-uji` menghapus jurnal uji yang sumbernya tidak ada (2026:
+  JRN-202608-00001/00002). Urutan 2026: bersihkan-uji, stand-meter, pengadaan, stok, penjualan,
+  keuangan, bonus.

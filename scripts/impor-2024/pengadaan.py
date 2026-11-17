@@ -30,9 +30,12 @@ import re
 
 import openpyxl
 
-from umum import BULAN, DATA, OUT, angka, fmt, path_laporan, tanggal, tulis_csv
+from umum import (BULAN, DATA, OUT, OUT_SEBELUM, TAHUN, ada_laporan_bulanan, angka, fmt, kolom_stock, path_laporan,
+                  path_margin, tanggal, tulis_csv)
 
 PRODUK = {'PL': 'Pertalite', 'BS': 'Bio Solar', 'PX': 'Pertamax', 'DX': 'Pertamina Dex'}
+# ukuran satu LO (truk): Pertamina Dex dikirim 1-3 KL per LO, produk lain 8 KL
+UNIT_TRUK = {'DX': 1000.0}
 KL_PER_LO = {'PL': 8, 'BS': 8, 'PX': 8, 'DX': 2}
 PPBKB = {'PL': 0.05, 'BS': 0.05, 'PX': 0.075, 'DX': 0.075}   # dari faktur 2024
 PPH = 0.0025
@@ -85,9 +88,14 @@ TRANSFER = [
 # F (rit) x G (KL per rit) dan nilai transaksi di kolom V sama-sama menunjuk angka koreksi.
 # Januari R133: SO 4027835615 '18 kl', F x G = 16, V132 = BS 8 + PL 16 KL.
 # Januari R168: SO 4027914678 '8 KL', F x G = 16, V168 = nilai BS 32 KL (bersama baris lain 16 KL).
-KL_ORDER_KOREKSI = {('Januari', 133): 16.0, ('Januari', 168): 16.0}
+KL_ORDER_KOREKSI = {(2024, 'Januari', 133): 16.0, (2024, 'Januari', 168): 16.0}
 # (tanggal, shift Bongkaran) -> shift: hari yang di sheet stok dicatat utuh di satu shift
 SHIFT_PENERIMAAN_KOREKSI = {('2024-04-11', 2): 1}
+TRANSFER = [t for t in TRANSFER if t['tanggal'].startswith(str(TAHUN))]
+# Bulan pertama yang order-nya diambil dari sheet Setoran (B). 2024: Jan-Feb sheet Setoran
+# bertata letak lama tanpa nilai -> order Jan-Feb dari Informasi Detail Produk (A).
+B_MULAI = 2 if TAHUN == 2024 else 0
+CARRY = f'CARRY-OVER-{TAHUN - 1}'
 PLAT = re.compile(r'^[A-Z]{1,2}\s?\d{1,4}\s?[A-Z]{0,3}$')
 
 catatan = []
@@ -175,15 +183,26 @@ def pecah_pajak(kel, total, pph=None):
 
 # --------------------------------------------------------------------------- A
 def baca_a():
-    wb = openpyxl.load_workbook(os.path.join(DATA, 'Informasi Detail Produk BBM-final.xlsx'), data_only=True)
+    import glob
     orders, los, tarif = [], [], collections.defaultdict(collections.Counter)
-    for i, bulan in enumerate(BULAN[:9]):
-        ws = wb[bulan]
+    p = sorted(glob.glob(os.path.join(DATA, 'Informasi Detail Produk*.xlsx')) + glob.glob(os.path.join(DATA, 'INFORMASI DETAIL PRODUK*.xlsx')))
+    if not p:
+        return orders, los, tarif   # 2026: tidak ada Informasi Detail Produk
+    wb = openpyxl.load_workbook(p[0], data_only=True)
+    for i, bulan in enumerate(BULAN):
+        nama = next((n for n in (bulan, bulan.upper()) if n in wb.sheetnames), None)
+        if nama is None:
+            continue   # 2024: Jan-Sep; 2025: Jan-Nov
+        ws = wb[nama]
+        # posisi kolom dari judul 'Material' (2024 & Jan-Apr 2025: kolom D; Mei 2025 dst. bergeser ke C)
+        kepala = next(((rr, cc) for rr in range(1, 15) for cc in range(1, 8)
+                       if str(ws.cell(rr, cc).value or '').strip() == 'Material'), (7, 4))
+        geser = kepala[1] - 4
         tgl = None
-        rows = list(range(8, ws.max_row + 1))
+        rows = list(range(kepala[0] + 1, ws.max_row + 1))
         prev_do = None
         for r in rows:
-            g = lambda c: ws.cell(r, c).value
+            g = lambda c: ws.cell(r, c + geser).value
             if tanggal(g(3)):
                 tgl = tanggal(g(3))
             d = g(4)
@@ -198,10 +217,10 @@ def baca_a():
             ref = ref_order(e)
             if not isdo or ref:
                 kl = kl_dari(g(8)) or ((g(6) or 0) * (g(7) or 0))
-                if (bulan, r) in KL_ORDER_KOREKSI:
-                    cat('kl_dikoreksi', f'{ref} {kel}: kolom H {kl:g} KL -> {KL_ORDER_KOREKSI[(bulan, r)]:g} KL '
+                if (TAHUN, bulan, r) in KL_ORDER_KOREKSI:
+                    cat('kl_dikoreksi', f'{ref} {kel}: kolom H {kl:g} KL -> {KL_ORDER_KOREKSI[(TAHUN, bulan, r)]:g} KL '
                                         f'(F x G dan nilai transaksi V)', sumber=f'A/{bulan}!R{r}')
-                    kl = KL_ORDER_KOREKSI[(bulan, r)]
+                    kl = KL_ORDER_KOREKSI[(TAHUN, bulan, r)]
                 t = tanggal(g(9)) or tgl
                 if 'BATAL' in ket:
                     cat('order_batal', f'{ref} {kel} {kl} KL dilewati', sumber=f'A/{bulan}!R{r}')
@@ -215,13 +234,13 @@ def baca_a():
             # baris DO/LO
             nomor = nomor_lo(e)
             kl = kl_dari(g(8)) or kl_dari(g(12))
-            m_ini, m_lanjut = g(13), ws.cell(r + 1, 13).value
+            m_ini, m_lanjut = g(13), ws.cell(r + 1, 13 + geser).value
             nopol = plat(m_ini)
             supir = None
             if nopol is None and m_ini:
                 supir = str(m_ini).strip()          # baris kedua sepasang: M berisi supir
                 nopol = prev_do['nopol'] if prev_do else None
-            elif m_lanjut and not plat(m_lanjut) and not isinstance(ws.cell(r + 1, 4).value, str):
+            elif m_lanjut and not plat(m_lanjut) and not isinstance(ws.cell(r + 1, 4 + geser).value, str):
                 supir = str(m_lanjut).strip()
             elif m_lanjut and not plat(m_lanjut):
                 supir = str(m_lanjut).strip()
@@ -241,7 +260,7 @@ def baca_a():
             prev_do = item
             # tarif satuan faktur (untuk order Jan-Feb tanpa nilai)
             net, ppn, ppbkb, pph, tot = (angka(g(c)) for c in (18, 19, 20, 21, 22))
-            if tot and kl and not isinstance(ws.cell(r + 1, 4).value, str):
+            if tot and kl and not isinstance(ws.cell(r + 1, 4 + geser).value, str):
                 tarif[(i + 1, kel)][(round(net / kl, 4), round(ppn / kl, 4), round(ppbkb / kl, 4),
                                      round(pph / kl, 4), round(tot / kl, 4))] += 1
     return orders, los, tarif
@@ -251,10 +270,15 @@ def baca_a():
 def baca_b():
     orders, los, sisa_awal = [], [], {}
     for i, bulan in enumerate(BULAN):
-        if i < 2:
-            continue   # Jan-Feb: tata letak lama, nilainya kosong
-        ws = openpyxl.load_workbook(path_laporan(bulan), data_only=True)['Setoran , Penerimaan BBM']
-        n_hari = calendar.monthrange(2024, i + 1)[1]
+        if i < B_MULAI:
+            continue   # 2024 Jan-Feb: tata letak lama, nilainya kosong
+        if TAHUN >= 2025:
+            # 2025: tab 'Setoran , penerimaan' di file Margin lebih lengkap (sheet Laporan September
+            # sebagian besar kosong, Desember salinan Oktober); tata letaknya sama
+            ws = openpyxl.load_workbook(path_margin(bulan), data_only=True)['Setoran , penerimaan']
+        else:
+            ws = openpyxl.load_workbook(path_laporan(bulan), data_only=True)['Setoran , Penerimaan BBM']
+        n_hari = calendar.monthrange(TAHUN, i + 1)[1]
         blok = [(c, ws.cell(3, c).value.strip()) for c in range(1, ws.max_column + 1)
                 if isinstance(ws.cell(3, c).value, str) and ws.cell(3, c).value.strip()]
         for n, (c, nama) in enumerate(blok):
@@ -266,12 +290,14 @@ def baca_b():
             dolo = [cc for cc in range(c, end) if str(ws.cell(5, cc).value or '').strip() == 'DO/LO']
             c_bg, c_harga, c_pph, c_lo = kol.get('No Cek BG'), kol.get('Harga BBM'), kol.get('PPh'), kol.get('No LO')
             c_set, c_trm = dolo[0], dolo[1]
-            sisa_awal[(i + 1, kel)] = angka(ws.cell(6, c_set).value) or 0
+            v6 = angka(ws.cell(6, c_set).value)
+            if v6 is not None or TAHUN < 2026:
+                sisa_awal[(i + 1, kel)] = v6 or 0   # 2026: baris 6 kosong (tab tidak diisi) = tidak diketahui
             for r in range(7, ws.max_row + 1):
                 hari = ws.cell(r, c).value
                 if not isinstance(hari, (int, float)) or not (1 <= int(hari) <= n_hari):
                     continue
-                t = dt.date(2024, i + 1, int(hari))
+                t = dt.date(TAHUN, i + 1, int(hari))
                 kl_set = angka(ws.cell(r, c_set).value)
                 harga = angka(ws.cell(r, c_harga).value)
                 pph = angka(ws.cell(r, c_pph).value)
@@ -294,12 +320,132 @@ def baca_b():
     return orders, los, sisa_awal
 
 
+# --------------------------------------------------------------------------- T (2026)
+NAMA_BULAN = {b.lower(): i + 1 for i, b in enumerate(['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus',
+                                                     'September', 'Oktober', 'November', 'Desember'])}
+
+
+def tanggal_teks(v):
+    """'1 Agustus 2026' -> date (Lap Tebusan Agustus menulis tanggal sebagai teks)."""
+    t = tanggal(v)
+    if t or not isinstance(v, str):
+        return t
+    m = re.fullmatch(r'\s*(\d{1,2})\s+([A-Za-z]+)\s+(\d{4})\s*', v)
+    if m and m.group(2).lower() in NAMA_BULAN:
+        return dt.date(int(m.group(3)), NAMA_BULAN[m.group(2).lower()], int(m.group(1)))
+    return None
+
+
+def baca_tebusan():
+    """'Lap Tebusan n Penerimaan BBM BBK <tahun>.xlsx' (2026: Agustus-November): satu baris per
+    produk per SO; QTY dalam liter walau UoM tertulis 'kl'."""
+    import glob
+    p = sorted(glob.glob(os.path.join(DATA, 'Lap Tebusan*.xlsx')))
+    if not p:
+        return []
+    wb = openpyxl.load_workbook(p[0], data_only=True)
+    hasil = []
+    for b in BULAN:
+        if b not in wb.sheetnames:
+            continue
+        ws = wb[b]
+        t = None
+        for r in range(7, ws.max_row + 1):
+            t = tanggal_teks(ws.cell(r, 3).value) or t
+            kel = keluarga(ws.cell(r, 4).value) if ws.cell(r, 4).value else None
+            qty = angka(ws.cell(r, 5).value)
+            if kel is None or not qty or t is None:
+                continue
+            so = ws.cell(r, 7).value
+            hasil.append({'tanggal': t, 'ref': f'SO-{int(so)}' if isinstance(so, (int, float)) else None, 'kel': kel,
+                          'kl': qty / 1000, 'kirim': tanggal_teks(ws.cell(r, 8).value), 'sumber': f'T/{b}!R{r}'})
+    return hasil
+
+
+def atur_shift_harian(terima):
+    """2026: penerimaan dari tab Stock Margin bersifat harian (dicatat di Shift 3). Bila stok awal hari
+    tidak cukup untuk penjualan Shift 1 (atau Shift 1+2), bongkaran pasti terjadi lebih awal."""
+    stok = {}
+    with open(os.path.join(OUT, 'stok_shift.csv'), encoding='utf-8') as f:
+        for r in csv.DictReader(f):
+            stok[(r['tanggal'], r['dombak'])] = r
+    jual = collections.defaultdict(float)
+    with open(os.path.join(OUT, 'stand_meter.csv'), encoding='utf-8') as f:
+        for r in csv.DictReader(f):
+            jual[(r['tanggal'], int(r['urutan']), r['dombak'])] += float(r['liter'])
+    angka_ = lambda v: float(v) if v not in (None, '') else None
+    for x in terima:
+        t = x['tanggal'].isoformat()
+        d = x['dombak']
+        r0 = stok.get(((x['tanggal'] - dt.timedelta(days=1)).isoformat(), d))
+        r1 = stok.get((t, d))
+        awal = None
+        if r0:
+            awal = angka_(r0.get('dipping_dm4')) if d == 'DM4-BS' and r0.get('dipping_dm4') else angka_(r0['dipping'])
+        if awal is None and r1:
+            awal = angka_(r1.get('stok_awal_dm4')) if d == 'DM4-BS' and r1.get('stok_awal_dm4') else angka_(r1['stok_awal'])
+        if awal is None:
+            continue
+        s1, s2 = jual[(t, 1, d)], jual[(t, 2, d)]
+        u = 1 if awal - s1 < 0 else 2 if awal - s1 - s2 < 0 else 3
+        if u != x['urutan']:
+            cat('shift_dari_stok', f"{d} {x['rencana']:.0f} L: Shift {x['urutan']} -> Shift {u} (stok awal {awal:.0f} L, "
+                                   f"jual Shift 1 {s1:.0f} L, Shift 2 {s2:.0f} L)", tanggal=t)
+            x['urutan'], x['jam_kerja'] = u, SHIFT_NO[u]
+    return terima
+
+
+def biaya_harian(faktur_asli, tebus):
+    """2026: biaya per liter (termasuk PPN, PPBKB, PPh) per (tanggal, produk).
+
+    Kolom tebus di sheet 'Penjualan harian nozle' Margin 2026 tidak ikut naik untuk Pertamax (12.382)
+    dan Dex (13.635) padahal faktur Pertamina naik (Dex Apr 23.857/L, Sep 25.309/L; PX Sep 15.889/L).
+    Acuan: faktur asli di tab Setoran; tanggal tanpa faktur memakai rasio biaya/harga jual faktur
+    terdekat x harga jual hari itu (LAPORAN HARIAN), sehingga ikut perubahan harga yang sering.
+    Ditulis ke biaya_harian.csv (dipakai penjualan.py untuk HPP)."""
+    jual = collections.defaultdict(collections.Counter)
+    with open(os.path.join(OUT, 'stand_meter.csv'), encoding='utf-8') as f:
+        for r in csv.DictReader(f):
+            if r['harga_excel'] and float(r['liter']) > 0:
+                kel = {'PL': 'PL', 'PX': 'PX', 'BS': 'BS', 'PDX': 'DX'}[r['nozzle'].split()[-1]]
+                jual[(r['tanggal'], kel)][float(r['harga_excel'])] += float(r['liter'])
+    harga_jual = {k: c.most_common(1)[0][0] for k, c in jual.items()}
+    rasio = collections.defaultdict(list)   # kel -> [(tanggal, biaya/jual)]
+    for t, kel, per_liter in faktur_asli:
+        hj = harga_jual.get((t.isoformat(), kel))
+        if hj and 0.85 * hj <= per_liter <= 1.0 * hj:   # nilai bayar yang tidak sesuai KL diabaikan
+            rasio[kel].append((t, per_liter / hj))
+    hasil, baris = {}, []
+    for (t, kel), hj in sorted(harga_jual.items()):
+        d = dt.date.fromisoformat(t)
+        tb = tebus.get((t, PRODUK[kel]))
+        if kel in ('PL', 'BS') and tb and 0.9 * hj <= tb <= hj:
+            # Pertalite/Biosolar: tebus Excel = faktur (Jan-Sep 2026 sama persis) dan ikut berubah
+            # (Okt BS 6.543,10); Pertamax/Dex: tebus Excel tidak ikut naik -> seri faktur
+            hasil[(t, PRODUK[kel])] = tb
+            baris.append({'tanggal': t, 'produk': PRODUK[kel], 'harga_jual': fmt(hj, 2), 'biaya_per_liter': fmt(tb, 4),
+                          'faktur_acuan': 'tebus Excel'})
+            continue
+        xs = rasio.get(kel)
+        if not xs:
+            continue
+        # faktur terdekat; seri -> yang sebelumnya
+        tf, r = min(xs, key=lambda x: (abs((x[0] - d).days), x[0] > d))
+        hasil[(t, PRODUK[kel])] = round(r * hj, 4)
+        baris.append({'tanggal': t, 'produk': PRODUK[kel], 'harga_jual': fmt(hj, 2), 'biaya_per_liter': fmt(r * hj, 4),
+                      'faktur_acuan': tf.isoformat()})
+    tulis_csv('biaya_harian.csv', ['tanggal', 'produk', 'harga_jual', 'biaya_per_liter', 'faktur_acuan'], baris)
+    return hasil
+
+
 # --------------------------------------------------------------------------- C
 def baca_c():
     hasil = []
+    if not ada_laporan_bulanan():
+        return hasil   # 2026: tanpa sheet Bongkaran BBM Aktual; penerimaan dari tab Stock Margin
     for i, bulan in enumerate(BULAN):
         ws = openpyxl.load_workbook(path_laporan(bulan), data_only=True)['Bongkaran BBM Aktual']
-        n_hari = calendar.monthrange(2024, i + 1)[1]
+        n_hari = calendar.monthrange(TAHUN, i + 1)[1]
         blok = [(c, ws.cell(3, c).value.strip()) for c in range(1, ws.max_column + 1)
                 if isinstance(ws.cell(3, c).value, str) and ws.cell(3, c).value.strip()]
         for c, nama in blok:
@@ -312,13 +458,18 @@ def baca_c():
                 if isinstance(h, (int, float)):
                     hari = int(h)
                 sh = ws.cell(r, c + 1).value
+                ke_dm5 = False
+                if isinstance(sh, str) and re.search(r'BS\s*2', sh.upper()) and re.search(r'[123](?!\d)', re.sub(r'BS\s*2', '', sh.upper())):
+                    # '(BS2) 3' / '3 (BS2)': dibongkar ke tangki Biosolar kedua (DM5), shift 3
+                    ke_dm5 = True
+                    sh = int(re.search(r'[123](?!\d)', re.sub(r'BS\s*2', '', sh.upper())).group(0))
                 if hari is None or hari > n_hari or not isinstance(sh, (int, float)):
                     continue
                 g = lambda off: ws.cell(r, c + off).value
                 awal, teori, dip = angka(g(6)), angka(g(7)), angka(g(8))
                 if dip is None or awal is None:
                     continue
-                t = dt.date(2024, i + 1, hari)
+                t = dt.date(TAHUN, i + 1, hari)
                 rencana = (teori - awal) if teori is not None else None
                 terukur = dip - awal
                 if terukur <= 0:
@@ -330,7 +481,7 @@ def baca_c():
                     'dombak': dombak, 'kel': kel, 'penerima': str(g(3) or '').strip(),
                     'supir': str(g(4) or '').strip(), 'nopol': rapikan_plat(plat(g(5)) or (str(g(5)).strip().upper() if g(5) else None)),
                     'sebelum': awal, 'sesudah': dip, 'rencana': rencana if rencana and rencana > 0 else terukur,
-                    'terukur': terukur, 'sumber': f'C/{bulan}!R{r} ({nama})',
+                    'terukur': terukur, 'sumber': f'C/{bulan}!R{r} ({nama})', 'ke_dm5': ke_dm5,
                 })
     return hasil
 
@@ -344,18 +495,17 @@ def terima_margin():
     import glob
     hasil = {}
     for i, b in enumerate(BULAN):
-        p = (glob.glob(os.path.join(DATA, f'Margin {b} 2024*.xlsx'))
-             or glob.glob(os.path.join(DATA, f'Margin {b.upper()} 2024*.xlsx')))
-        ws = openpyxl.load_workbook(p[0], data_only=True)['Stock']
-        n_hari = calendar.monthrange(2024, i + 1)[1]
+        ws = openpyxl.load_workbook(path_margin(b), data_only=True)['Stock']
+        n_hari = calendar.monthrange(TAHUN, i + 1)[1]
         for c in range(1, ws.max_column + 1):
             d = MARGIN_BLOK.get(str(ws.cell(2, c).value or '').strip())
             if d is None:
                 continue
+            kt = kolom_stock(ws, c)['terima']
             for r in range(4, 4 + n_hari):
                 h = ws.cell(r, c).value
                 if isinstance(h, (int, float)) and 1 <= int(h) <= n_hari:
-                    hasil[(dt.date(2024, i + 1, int(h)).isoformat(), d)] = angka(ws.cell(r, c + 2).value) or 0
+                    hasil[(dt.date(TAHUN, i + 1, int(h)).isoformat(), d)] = angka(ws.cell(r, c + kt).value) or 0
     return hasil
 
 
@@ -562,74 +712,179 @@ def atribusi_shift(hasil, stok, jual_hari):
 
 # --------------------------------------------------------------------------- pasangkan
 def pasang_lo_ke_terima(los, terima):
-    """Alokasi liter penerimaan ke LO per keluarga produk, urut waktu."""
+    """Pasangkan LO ke penerimaan per keluarga produk, per shift, urut waktu.
+
+    Satu LO = satu truk (8 KL; Pertamina Dex kelipatan 1 KL), keputusan pemilik data: ikuti alur
+    stok, 8 KL ya 8, 16 KL ya 16. Karena itu yang dibagi bukan liter per baris, tetapi truk per shift:
+    - semua bongkaran satu produk dalam satu shift (bisa ke dua tangki, mis. 1 Agu 2025 DM5 621 +
+      DM4 7.379) dijumlah, dibulatkan ke jumlah truk, lalu diberi LO utuh sebanyak itu (LO dari
+      Excel menurut antrian tanggal; tidak ada -> LO pengganti seukuran truk);
+    - sisa pembulatan >= EKOR (truk yang dibongkar melewati pergantian shift, mis. 4 Jun 2024 BS
+      4.905 + 3.095) dibawa ke shift berikutnya paling lama sehari; sisa lebih kecil = selisih bongkar;
+    - bongkaran < setengah truk tanpa sisa truk sebelumnya (mis. PX 40 L di sheet stok) bukan
+      penerimaan: kenaikan dipping-nya menjadi selisih stok taking.
+    Total rencana per LO = ukuran LO; selisih terhadap terukur tercatat sebagai susut bongkar.
+    """
     alok = []
+    nopol = lambda s: re.sub(r'\s+', '', str(s or '').upper())
     for kel in PRODUK:
+        unit = UNIT_TRUK.get(kel, 8000.0)
+        ekor = 300.0 if kel == 'DX' else 600.0
         q = sorted([l for l in los if l['kel'] == kel], key=lambda l: (l['terima'], l['urut']))
-        rs = sorted([x for x in terima if x['kel'] == kel], key=lambda x: (x['tanggal'], x['urutan'], x['dombak']))
-        sisa = {id(l): l['kl'] * 1000 for l in q}
-        qi = 0
-        lepas = []   # LO yang dilepas dari antrian karena lama tidak dibongkar (bisa diselamatkan via nopol)
-        nopol = lambda s: re.sub(r'\s+', '', str(s or '').upper())
+        rs = [x for x in terima if x['kel'] == kel]
+        grup0 = collections.defaultdict(list)
         for x in rs:
-            perlu = x['rencana']
-            bagian = []
-            while perlu > 0.5:
-                # LO yang terlalu lama tidak diterima dilepas dari antrian
-                while qi < len(q) and (x['tanggal'] - q[qi]['terima']).days > 3 and sisa[id(q[qi])] >= q[qi]['kl'] * 1000 - 0.5:
+            grup0[(x['tanggal'], x['urutan'])].append(x)
+        # shift dengan bongkaran < setengah truk = bagian truk yang dibongkar lintas shift (mis. 13 Okt 2024
+        # BS Shift 2 401 L + Shift 3 7.599 L): gabung ke shift bongkaran berikutnya (<= 1 hari), atau sebelumnya
+        kunci = sorted(grup0)
+        tot = {k: sum(x['rencana'] for x in grup0[k]) for k in kunci}
+        induk = {k: k for k in kunci}
+        for i, k in enumerate(kunci):
+            if tot[k] >= unit / 2:
+                continue
+            nx = kunci[i + 1] if i + 1 < len(kunci) and (kunci[i + 1][0] - k[0]).days <= 1 else None
+            pv = kunci[i - 1] if i > 0 and (k[0] - kunci[i - 1][0]).days <= 1 else None
+            if nx is not None:
+                induk[k] = nx
+            elif pv is not None:
+                induk[k] = pv
+        def akar(k):
+            while induk[k] != k:
+                k = induk[k]
+            return k
+        grup = collections.defaultdict(list)
+        for k in kunci:
+            grup[akar(k)].extend(grup0[k])
+        qi = 0
+        lepas = []
+        terpakai = set()
+        lo_akhir = None              # LO terakhir yang dipakai (penampung sisa truk lintas shift)
+        bawa, bawa_tgl = 0.0, None   # sisa pembulatan shift sebelumnya
+        alok_akhir, terisi_awal = [], {}
+        for (t, u) in sorted(grup):
+            awal_grup = len(alok)
+            xs = sorted(grup[(t, u)], key=lambda x: (-x['rencana'], x['dombak']))
+            t = max(x['tanggal'] for x in xs)   # gabungan lintas shift: tanggal terakhir untuk batas 1 hari
+            total = sum(x['rencana'] for x in xs)
+            if bawa_tgl is None or (t - bawa_tgl).days > 1:
+                bawa = 0.0
+            efektif = total + bawa
+            n = max(0, int(efektif / unit + 0.5))   # pembulatan setengah ke atas (bukan banker's rounding)
+            if n == 0 and bawa >= 0 and total < unit / 2:
+                for x in xs:
+                    x['bukan_penerimaan'] = True
+                    cat('terima_kecil_tanpa_lo', f"{kel} {x['rencana']:.0f} L di {x['dombak']} tanpa LO, bukan penerimaan "
+                                                 f"(jadi selisih stok taking)", sumber=x['sumber'], tanggal=t.isoformat())
+                bawa = 0.0
+                continue
+            # ambil LO utuh sebanyak n truk
+            dipilih = []
+            target = n * unit
+            while sum(l['kl'] * 1000 for l in dipilih) < target - unit / 2:
+                while qi < len(q) and (t - q[qi]['terima']).days > 3 and id(q[qi]) not in terpakai:
                     q[qi]['status'] = 'tanpa_penerimaan'
                     lepas.append(q[qi])
                     qi += 1
-                if qi >= len(q) or (q[qi]['terima'] - x['tanggal']).days > 2:
-                    # sebelum membuat LO pengganti: LO terlepas dengan truk (nopol) yang sama dalam 7 hari
-                    selamat = next((l for l in lepas if sisa[id(l)] > 0.5 and abs((l['terima'] - x['tanggal']).days) <= 7
-                                    and x['nopol'] and nopol(l.get('nopol')) == nopol(x['nopol'])), None)
-                    if selamat is not None:
-                        ambil = min(perlu, sisa[id(selamat)])
-                        bagian.append((selamat, ambil))
-                        sisa[id(selamat)] -= ambil
-                        perlu -= ambil
-                        selamat['status'] = 'diterima'
-                        cat('lo_diselamatkan', f"LO {selamat['no_lo']} ({selamat['terima']}) dipasangkan ke bongkaran "
-                                               f"{x['tanggal']} truk {x['nopol']}", sumber=x['sumber'], tanggal=x['tanggal'].isoformat())
-                        continue
-                    if bagian and perlu < 600:
-                        # sisa pembulatan (mis. rencana 8.012 untuk LO 8.000): bukan LO baru,
-                        # tempel ke LO terakhir supaya total rencana tetap sama dengan Excel
-                        cat('sisa_pembulatan', f"{kel} {perlu:.0f} L di {x['dombak']} dibebankan ke LO terakhir",
-                            sumber=x['sumber'], tanggal=x['tanggal'].isoformat())
-                        lo_akhir, a_akhir = bagian[-1]
-                        bagian[-1] = (lo_akhir, a_akhir + perlu)
-                        perlu = 0
-                        break
-                    # tidak ada LO yang pantas -> LO pengganti
-                    ph = {'kel': kel, 'no_lo': None, 'kl': perlu / 1000, 'terima': x['tanggal'], 'kirim': x['tanggal'],
-                          'nopol': x['nopol'], 'supir': x['supir'], 'sumber': x['sumber'], 'ket': 'PENGGANTI',
-                          'urut': 10 ** 9, 'status': 'pengganti'}
-                    los.append(ph)
-                    sisa[id(ph)] = perlu
-                    bagian.append((ph, perlu))
-                    cat('lo_pengganti', f"{kel} {perlu:.0f} L di {x['dombak']} tanpa LO", sumber=x['sumber'],
-                        tanggal=x['tanggal'].isoformat())
-                    perlu = 0
-                    break
-                lo = q[qi]
-                ambil = min(perlu, sisa[id(lo)])
-                bagian.append((lo, ambil))
-                sisa[id(lo)] -= ambil
-                perlu -= ambil
-                lo['status'] = 'diterima'
-                lo.setdefault('nopol_c', x['nopol'])
-                lo.setdefault('supir_c', x['supir'])
-                lo.setdefault('tgl_c', x['tanggal'])
-                if sisa[id(lo)] <= 0.5:
+                while qi < len(q) and id(q[qi]) in terpakai:
                     qi += 1
-            total = sum(a for _, a in bagian) or 1
-            for lo, a in bagian:
-                alok.append({'x': x, 'lo': lo, 'rencana': a, 'terukur': x['terukur'] * a / total})
-        for l in q[qi:]:
-            if sisa[id(l)] >= l['kl'] * 1000 - 0.5:
+                if qi < len(q) and (q[qi]['terima'] - t).days <= 2:
+                    lo = q[qi]
+                    qi += 1
+                else:
+                    x0 = xs[0]
+                    lo = next((l for l in lepas if id(l) not in terpakai and abs((l['terima'] - t).days) <= 7
+                               and x0['nopol'] and nopol(l.get('nopol')) == nopol(x0['nopol'])), None)
+                    if lo is not None:
+                        cat('lo_diselamatkan', f"LO {lo['no_lo']} ({lo['terima']}) dipasangkan ke bongkaran {t} truk {x0['nopol']}",
+                            sumber=x0['sumber'], tanggal=t.isoformat())
+                    else:
+                        lo = {'kel': kel, 'no_lo': None, 'kl': unit / 1000, 'terima': t, 'kirim': t,
+                              'nopol': x0['nopol'], 'supir': x0['supir'], 'sumber': x0['sumber'], 'ket': 'PENGGANTI',
+                              'urut': 10 ** 9, 'status': 'pengganti'}
+                        los.append(lo)
+                        cat('lo_pengganti', f"{kel} {unit / 1000:g} KL untuk bongkaran {t} shift {u} ({total:.0f} L) tanpa LO",
+                            sumber=x0['sumber'], tanggal=t.isoformat())
+                terpakai.add(id(lo))
+                if lo.get('status') != 'pengganti':
+                    lo['status'] = 'diterima'
+                lo.setdefault('nopol_c', xs[0]['nopol'])
+                lo.setdefault('supir_c', xs[0]['supir'])
+                lo.setdefault('tgl_c', t)
+                dipilih.append(lo)
+            if bawa > 0.5 and dipilih and alok_akhir:
+                # kelebihan bongkar shift sebelumnya (dibulatkan ke bawah) milik truk pertama shift ini
+                pindah = min(bawa, dipilih[0]['kl'] * 1000)
+                for i in reversed(alok_akhir):
+                    if pindah < 0.5:
+                        break
+                    a = alok[i]
+                    ambil = min(pindah, a['rencana'])
+                    porsi = ambil / a['rencana'] if a['rencana'] else 0
+                    alok.append({'x': a['x'], 'lo': dipilih[0], 'rencana': ambil, 'terukur': a['terukur'] * porsi})
+                    a['rencana'] -= ambil
+                    a['terukur'] -= a['terukur'] * porsi
+                    pindah -= ambil
+                    terisi_awal[id(dipilih[0])] = terisi_awal.get(id(dipilih[0]), 0) + ambil
+            bawa = efektif - sum(l['kl'] * 1000 for l in dipilih)
+            # sisa truk shift sebelumnya (bawa negatif) diisi dulu oleh shift ini
+            wadah = []
+            if lo_akhir is not None and efektif - total < -0.5:
+                wadah.append((lo_akhir, total - efektif if total - efektif < total else total))
+            for lo in dipilih:
+                wadah.append((lo, lo['kl'] * 1000 - terisi_awal.get(id(lo), 0)))
+            if not wadah:
+                wadah = [(lo_akhir, total)]
+            # bagi liter bongkaran (urut terbesar) ke wadah berurutan; lebihnya ke wadah terakhir
+            wi, isi = 0, 0.0
+            for x in xs:
+                sisa_x = x['rencana']
+                bagian = []
+                while sisa_x > 0.5:
+                    lo, kap = wadah[wi]
+                    ambil = sisa_x if wi == len(wadah) - 1 else min(sisa_x, kap - isi)
+                    if ambil > 0.5:
+                        bagian.append((lo, ambil))
+                        sisa_x -= ambil
+                        isi += ambil
+                    if wi < len(wadah) - 1 and isi >= kap - 0.5:
+                        wi, isi = wi + 1, 0.0
+                if not bagian:
+                    bagian = [(wadah[wi][0], x['rencana'])]
+                tot_x = sum(a for _, a in bagian) or 1
+                for lo, a in bagian:
+                    alok.append({'x': x, 'lo': lo, 'rencana': a, 'terukur': x['terukur'] * a / tot_x})
+            if dipilih:
+                lo_akhir = dipilih[-1]
+            alok_akhir = [i for i in range(awal_grup, len(alok)) if alok[i]['lo'] is lo_akhir]
+            if abs(bawa) >= ekor:
+                bawa_tgl = t
+                if bawa < 0:
+                    cat('truk_lintas_shift', f"{kel} {t} shift {u}: {-bawa:.0f} L LO {lo_akhir['no_lo'] or 'pengganti'} "
+                                             f"diharapkan di shift berikutnya", tanggal=t.isoformat())
+            else:
+                bawa, bawa_tgl = 0.0, None
+        for l in q:
+            if id(l) not in terpakai:
                 l.setdefault('status', 'tanpa_penerimaan')
+    # total rencana per LO = ukuran LO, supaya liter beli = liter masuk buku; selisih terhadap
+    # liter terukur tercatat sebagai susut bongkar di baris penerimaan itu sendiri
+    per_lo = collections.defaultdict(list)
+    for a in alok:
+        per_lo[id(a['lo'])].append(a)
+    for xs in per_lo.values():
+        d = xs[0]['lo']['kl'] * 1000 - sum(a['rencana'] for a in xs)
+        if abs(d) >= 600:
+            x = xs[-1]['x']
+            cat('selisih_bongkar_besar', f"LO {xs[0]['lo']['no_lo'] or 'pengganti'} {xs[0]['lo']['kel']}: bongkaran "
+                                        f"{sum(a['rencana'] for a in xs):.0f} L vs LO {xs[0]['lo']['kl'] * 1000:.0f} L",
+                sumber=x['sumber'], tanggal=x['tanggal'].isoformat())
+        for a in reversed(xs):
+            if abs(d) < 0.0005:
+                break
+            ubah = max(d, -a['rencana'])
+            a['rencana'] += ubah
+            d -= ubah
     return alok
 
 
@@ -644,10 +899,10 @@ def kapasitas_carry_over(orders, los, sisa_awal):
     hasil, per_bulan = {}, {}
     for kel in PRODUK:
         calon = {}
-        for m in range(2, 12):
+        for m in range(max(B_MULAI, 1), 12):
             if (m + 1, kel) not in sisa_awal:
                 continue
-            akhir = dt.date(2024, m, calendar.monthrange(2024, m)[1])
+            akhir = dt.date(TAHUN, m, calendar.monthrange(TAHUN, m)[1])
             o = sum(x['kl'] for x in orders if x['kel'] == kel and x['tanggal'] <= akhir)
             l = sum(x['kl'] for x in los if x['kel'] == kel and x['terima'] <= akhir)
             calon[m] = sisa_awal[(m + 1, kel)] - o + l
@@ -658,8 +913,12 @@ def kapasitas_carry_over(orders, los, sisa_awal):
         awal = sum(x['kl'] for x in los if x['kel'] == kel and (not det or x['terima'] < det[0]))
         per = KL_PER_LO[kel]
         hasil[kel] = max(round(max(med, 0) / per) * per, awal)
+        if (1, kel) in sisa_awal:
+            # sheet Setoran Januari baris 6 = sisa order 31 Des tahun lalu: dipakai apa adanya
+            hasil[kel] = sisa_awal[(1, kel)]
+            calon[0] = sisa_awal[(1, kel)]
         per_bulan[kel] = calon
-        print(f'carry-over 2023 {kel}: {hasil[kel]:.0f} KL (kebutuhan per akhir bulan {[(m, round(v)) for m, v in calon.items()]})')
+        print(f'carry-over {TAHUN - 1} {kel}: {hasil[kel]:.0f} KL (kebutuhan per akhir bulan {[(m, round(v)) for m, v in calon.items()]})')
     return hasil, per_bulan
 
 
@@ -677,11 +936,13 @@ def order_pelengkap(carry, per_bulan, tebus_pada):
         bulan = sorted(calon)
         sudah = 0
         for i, m in enumerate(bulan):
+            if m == 0:
+                continue   # sisa order 31 Des tahun lalu (sudah = carry-over)
             selubung = min(calon[k] - carry.get(kel, 0) for k in bulan[i:])
             perlu = max(0, round(selubung / per) * per)
             if perlu > sudah:
                 kl = perlu - sudah
-                t = dt.date(2024, m, 1)
+                t = dt.date(TAHUN, m, 1)
                 acuan = tebus_pada(kel, t)
                 total = acuan * kl * 1000
                 p = pecah_pajak(kel, total, total * PORSI_PPH[PRODUK[kel]])
@@ -699,7 +960,7 @@ def pasang_order(orders, los, carry):
     for kel in PRODUK:
         det = sorted([o for o in orders if o['kel'] == kel], key=lambda o: (o['tanggal'], o['urut']))
         if carry.get(kel):
-            det.insert(0, {'kode': 'CARRY-OVER-2023', 'kel': kel, 'kl': carry[kel], 'tanggal': dt.date(2023, 12, 31),
+            det.insert(0, {'kode': CARRY, 'kel': kel, 'kl': carry[kel], 'tanggal': dt.date(TAHUN - 1, 12, 31),
                            'urut': -1, 'sumber': 'carry-over', 'carry': True})
         ls = sorted([l for l in los if l['kel'] == kel], key=lambda l: (l['terima'], l['urut']))
         kap = {id(o): o['kl'] for o in det}
@@ -709,7 +970,7 @@ def pasang_order(orders, los, carry):
             while di < len(det) and kap[id(det[di])] <= 1e-6:
                 di += 1
             if not det or l['terima'] < det[0]['tanggal']:
-                l['order'] = 'CARRY-OVER-2023'
+                l['order'] = CARRY
                 continue
             if di >= len(det) or (det[di]['tanggal'] - l['terima']).days > 3:
                 # order yang tersisa masih jauh di depan: LO kelebihan, tempel ke order
@@ -750,7 +1011,12 @@ def pasang_order(orders, los, carry):
 def main():
     a_orders, a_los, tarif = baca_a()
     b_orders, b_los, sisa_awal = baca_b()
+    # faktur asli (nilai 'Harga BBM' terisi) sebelum dilengkapi tarif: acuan biaya per liter 2026
+    faktur_asli = [(o['tanggal'], o['kel'], o['total'] / (o['kl'] * 1000)) for o in b_orders
+                   if o['total'] and o['pph'] and o['kl']]
     terima = pilih_penerimaan(baca_c())
+    if not ada_laporan_bulanan():
+        terima = atur_shift_harian(terima)
 
     # tarif satuan per (bulan, produk) dari baris B yang punya nilai -> untuk baris tanpa nilai
     tarif_b = collections.defaultdict(collections.Counter)
@@ -774,10 +1040,23 @@ def main():
     a_idx = collections.defaultdict(list)
     for o in a_orders:
         a_idx[(o['tanggal'], o['kel'])].append(o)
+    # bulan yang order-nya dari A: 2024 Jan-Feb; 2025 dst. bulan yang sheet Setoran-nya jauh
+    # kurang lengkap dibanding Informasi Detail Produk (mis. September 2025)
+    bulan_a = set(range(1, B_MULAI + 1))
+    if TAHUN >= 2025:
+        for m in range(1, len(BULAN) + 1):
+            ka = sum(o['kl'] for o in a_orders if o['tanggal'].month == m)
+            kb = sum(o['kl'] for o in b_orders if o['tanggal'].month == m)
+            if ka > kb * 1.05 + 8:
+                bulan_a.add(m)
+                cat('order_dari_a', f'{BULAN[m - 1]}: sheet Setoran {kb:g} KL, Informasi Detail Produk {ka:g} KL -> pakai Detail Produk',
+                    tanggal=f'{TAHUN}-{m:02d}-01')
     orders = []
     for o in a_orders:
-        if o['tanggal'].month <= 2:
-            tar = tarif.get((o['tanggal'].month, o['kel'])) or tarif.get((3, o['kel']))
+        if o['tanggal'].month in bulan_a:
+            # harga per KL dari baris LO bernilai di bulan itu; tanpa itu bulan terdekat (Mar untuk 2024 Jan-Feb)
+            m0 = o['tanggal'].month
+            tar = next((tarif[(m0 + d, o['kel'])] for d in (0, 1, -1, 2, -2, 3, -3) if (m0 + d, o['kel']) in tarif), None)
             net, ppn, ppbkb, pph, tot = tar.most_common(1)[0][0] if tar else (None,) * 5
             if tot is None:
                 cat('order_tanpa_tarif', f"{o['ref']} {o['kel']}", sumber=o['sumber'])
@@ -790,7 +1069,12 @@ def main():
     tebus = tebus_excel()
     jual_harian = harga_margin()
 
+    seri_biaya = biaya_harian(faktur_asli, tebus) if TAHUN >= 2026 else {}
+
     def tebus_pada(kel, tanggal):
+        if seri_biaya:
+            return seri_biaya.get((tanggal.isoformat(), PRODUK[kel])) or seri_biaya[min(
+                (k for k in seri_biaya if k[1] == PRODUK[kel]), key=lambda k: abs(dt.date.fromisoformat(k[0]) - tanggal))]
         produk = PRODUK[kel]
         t = tanggal.isoformat()
         kandidat = sorted((d, v) for (d, p), v in tebus.items() if p == produk and d <= t and d[:7] >= t[:7])
@@ -814,8 +1098,26 @@ def main():
                 t = dt.date(int(m.group(1)), int(m.group(2)), int(m.group(3)))
             except ValueError:
                 continue
-            if t.year == 2024 and any(o['tanggal'] == t for o in b_orders + a_orders if o['ref'] in (None, ref)):
+            if t.year == TAHUN and any(o['tanggal'] == t for o in b_orders + a_orders if o['ref'] in (None, ref)):
                 ref_pertama[ref] = t
+    # 2026: Lap Tebusan (Agu-Nov) untuk bulan yang order di tab Setoran jauh kurang lengkap
+    # (Agu: 8 baris bernilai, Okt: tanpa nilai); nilai faktur = KL x harga tebus Excel hari itu
+    t_orders = baca_tebusan() if TAHUN >= 2026 else []
+    bulan_t = set()
+    for m in range(1, len(BULAN) + 1):
+        kt = sum(o['kl'] for o in t_orders if o['tanggal'].month == m and o['tanggal'].year == TAHUN)
+        kb = sum(o['kl'] for o in b_orders if o['tanggal'].month == m)
+        if kt > kb * 1.05 + 8:
+            bulan_t.add(m)
+            cat('order_dari_tebusan', f'{BULAN[m - 1]}: sheet Setoran {kb:g} KL, Lap Tebusan {kt:g} KL -> pakai Lap Tebusan',
+                tanggal=f'{TAHUN}-{m:02d}-01')
+    for o in t_orders:
+        if o['tanggal'].year != TAHUN or o['tanggal'].month not in bulan_t:
+            continue
+        acuan = tebus_pada(o['kel'], o['tanggal'])
+        total = acuan * o['kl'] * 1000
+        orders.append({**o, 'pajak': pecah_pajak(o['kel'], total, total * PORSI_PPH[PRODUK[o['kel']]])})
+    b_orders = [o for o in b_orders if o['tanggal'].month not in bulan_a | bulan_t]
     for o in b_orders:
         cocok = a_idx.get((o['tanggal'], o['kel']))
         if cocok and not o['ref']:
@@ -874,7 +1176,7 @@ def main():
         a_semua[l['no_lo']].append(l)
     los, sudah = [], set()
     for l in a_los:
-        if l['terima'] and l['terima'].month <= 2 and l['no_lo'] not in sudah:
+        if l['terima'] and l['terima'].month <= B_MULAI and l['no_lo'] not in sudah:
             los.append(dict(l))
             sudah.add(l['no_lo'])
     for l in b_los:
@@ -892,10 +1194,42 @@ def main():
                 l['terima'] = a['terima']
         los.append(l)
         sudah.add(l['no_lo'])
+    if TAHUN >= 2025:
+        # LO yang hanya ada di A (nomor di sheet Setoran hilang/tersalin dari baris lain): ikut dipakai
+        for l in a_los:
+            if l['terima'] and l['terima'].year == TAHUN and l['no_lo'] not in sudah:
+                los.append(dict(l))
+                sudah.add(l['no_lo'])
+                cat('lo_dari_a', f"{l['no_lo']} {l['kel']} {l['kl']:g} KL hanya ada di Informasi Detail Produk", sumber=l['sumber'],
+                    tanggal=l['terima'].isoformat())
     for n, l in enumerate(los):
         l['urut'] = n
 
     alok = pasang_lo_ke_terima(los, terima)
+    if TAHUN >= 2026:
+        # bulan tanpa order tercatat (Juli 2026: tab Setoran tidak diisi, belum ada Lap Tebusan):
+        # order dibentuk dari penerimaan tab Stock -- satu order per hari terima, tanggal sehari sebelum
+        # LO diterima, KL = LO yang diterima hari itu, nilai = KL x harga tebus Excel (keputusan pemilik)
+        for m in range(1, len(BULAN) + 1):
+            ko = sum(o['kl'] for o in orders if o['tanggal'].month == m)
+            ls = [l for l in los if l['terima'].month == m and l.get('status') in ('diterima', 'pengganti')]
+            kl_lo = sum(l['kl'] for l in ls)
+            if not kl_lo or ko >= 0.25 * kl_lo:
+                continue
+            per_hari = collections.defaultdict(float)
+            for l in ls:
+                per_hari[(l['terima'], l['kel'])] += l['kl']
+            for (t_lo, kel), kl in sorted(per_hari.items()):
+                t = t_lo - dt.timedelta(days=1) if (t_lo - dt.timedelta(days=1)).month == m else t_lo
+                acuan = tebus_pada(kel, t)
+                total = acuan * kl * 1000
+                o = {'tanggal': t, 'ref': f'STOK-{t:%Y%m%d}', 'kel': kel, 'kl': kl,
+                     'pajak': pecah_pajak(kel, total, total * PORSI_PPH[PRODUK[kel]]),
+                     'sumber': f'penerimaan tab Stock {t_lo}', 'urut': len(orders), 'kode': f'STOK-{t:%Y%m%d}'}
+                orders.append(o)
+                grup.setdefault(o['kode'], []).append(o)
+            cat('order_dari_penerimaan', f'{BULAN[m - 1]}: order tercatat {ko:g} KL vs LO {kl_lo:g} KL -> order dibentuk '
+                                         f'dari penerimaan tab Stock', tanggal=f'{TAHUN}-{m:02d}-01')
     carry, per_bulan = kapasitas_carry_over(orders, los, sisa_awal)
     tambahan = order_pelengkap(carry, per_bulan, tebus_pada)
     for o in tambahan:
@@ -923,6 +1257,9 @@ def main():
     import random
     n_ph = 0
     dipakai = {l['no_lo'] for l in los if l['no_lo']}
+    lalu = os.path.join(OUT_SEBELUM, 'lo.csv')
+    if os.path.exists(lalu):
+        dipakai |= {r['no_lo'] for r in csv.DictReader(open(lalu, encoding='utf-8'))}   # nomor unik lintas tahun
     lo_rows = []
     for l in los:
         if l['no_lo'] is None:
@@ -950,11 +1287,12 @@ def main():
                          'jam': x['jam'], 'dombak': x['dombak'], 'no_lo': a['lo']['no_lo'],
                          'jumlah_rencana': fmt(a['rencana'], 3), 'jumlah_terukur': fmt(a['terukur'], 3),
                          'sebelum_terukur': fmt(x['sebelum'], 3), 'sesudah_terukur': fmt(x['sesudah'], 3),
-                         'penerima': x['penerima'], 'supir': x['supir'], 'no_pol': x['nopol'] or '', 'sumber': x['sumber']})
+                         'penerima': x['penerima'], 'supir': x['supir'], 'no_pol': x['nopol'] or '', 'sumber': x['sumber'],
+                         'ke_dm5': '1' if x.get('ke_dm5') else ''})
     pen_rows.sort(key=lambda r: (r['tanggal'], r['urutan'], r['dombak'], r['no_lo']))
     tulis_csv('penerimaan.csv', ['tanggal', 'jam_kerja', 'urutan', 'jam', 'dombak', 'no_lo', 'jumlah_rencana',
                                  'jumlah_terukur', 'sebelum_terukur', 'sesudah_terukur', 'penerima', 'supir', 'no_pol',
-                                 'sumber'], pen_rows)
+                                 'sumber', 'ke_dm5'], pen_rows)
     for c in catatan:
         c.setdefault('tanggal', '')
         c.setdefault('sumber', '')
@@ -965,7 +1303,7 @@ def main():
     print(f"order detail: {len(orders)} dalam {len(grup)} rencana | LO: {len(los)} | penerimaan (alokasi): {len(alok)}")
     print('catatan:', dict(collections.Counter(c['jenis'] for c in catatan)))
     print('status LO:', dict(collections.Counter(l.get('status', 'tanpa_penerimaan') for l in los)))
-    print('LO ke order carry-over:', collections.Counter(l['kel'] for l in los if l.get('order') == 'CARRY-OVER-2023'))
+    print('LO ke order carry-over:', collections.Counter(l['kel'] for l in los if l.get('order') == CARRY))
     print('\nbulan    kel   order_KL   LO_KL   terima_rencana_KL  terima_terukur_KL')
     per = collections.defaultdict(lambda: [0.0, 0.0, 0.0, 0.0])
     for o in orders:
@@ -982,8 +1320,8 @@ def main():
     print('\nsisa order akhir bulan: hitungan FIFO vs sheet Setoran (baris awal bulan berikutnya)')
     for kel in PRODUK:
         baris = []
-        for m in range(2, 12):
-            akhir = dt.date(2024, m, calendar.monthrange(2024, m)[1])
+        for m in range(max(B_MULAI, 1), 12):
+            akhir = dt.date(TAHUN, m, calendar.monthrange(TAHUN, m)[1])
             dipesan = carry.get(kel, 0) + sum(o['kl'] for o in orders if o['kel'] == kel and o['tanggal'] <= akhir)
             terkirim = sum(l['kl'] for l in los if l['kel'] == kel and l['terima'] <= akhir)
             baris.append(f"{m:02d}:{dipesan - terkirim:+.0f}/{sisa_awal.get((m + 1, kel), 0):.0f}")

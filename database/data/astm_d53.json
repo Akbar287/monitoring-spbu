@@ -1,0 +1,23 @@
+{
+  "sumber": "astm_d53b_table_for_oil_density.pdf",
+  "sha256": "d713fe2bb717229fef087f2276049f8e9eadf04aaf4d6a90070c142cc94a1426",
+  "jumlah_sel": 15369,
+  "sel_konflik_tidak_diimpor": {
+    "('0.691', '25.0')": [
+      {
+        "density_15": "0.6995",
+        "halaman": 1
+      },
+      {
+        "density_15": "0.6996",
+        "halaman": 2
+      }
+    ]
+  },
+  "catatan": [
+    "Density 0.760–0.799 tidak ada pada PDF.",
+    "Density 0.690–0.699 pada suhu di bawah 15 C kosong.",
+    "Density 0.870–0.899 hanya tersedia pada suhu 25–50 C.",
+    "Nilai disalin apa adanya; tidak ada interpolasi atau ekstrapolasi."
+  ]
+}

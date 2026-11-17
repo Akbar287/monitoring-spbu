@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use App\Models\Bonus;
 use App\Models\DetailRencanaPembelian;
 use App\Models\DetailRencanaPembelianMs2;
+use App\Models\DetailTera;
 use App\Models\DokumenStok;
 use App\Models\Dombak;
 use App\Models\FileLo;
@@ -30,6 +31,7 @@ use App\Models\StatusMember;
 use App\Models\StatusPurchase;
 use App\Models\StokInventoryDombak;
 use App\Models\Supir;
+use App\Models\Tera;
 use App\Models\TypeDokumenStok;
 use App\Support\Akun;
 use App\Support\Import\MasterResolver;
@@ -66,11 +68,12 @@ use RuntimeException;
 class ImporHistoris2024 extends Command
 {
     protected $signature = 'impor:historis-2024
-        {tahap : bersihkan-stok-2026 | pajak-lib | stand-meter | pengadaan | saldo-awal | stok | penjualan | keuangan | bonus}
+        {tahap : bersihkan-stok-2026 | bersihkan-uji | pajak-lib | stand-meter | pengadaan | saldo-awal | stok | penjualan | keuangan | bonus}
+        {--tahun=2024 : tahun data (CSV di storage/app/impor-<tahun>)}
         {--dry-run : jalankan lalu rollback, hanya tampilkan hasil}
-        {--ganti : (saldo-awal) ganti jurnal saldo awal yang sudah ada; (stok) bangun ulang data stok 2024}';
+        {--ganti : (saldo-awal) ganti jurnal saldo awal yang sudah ada; (stok) bangun ulang data stok tahun itu}';
 
-    protected $description = 'Impor data historis 2024 (Excel docs/data/2024) per tahap';
+    protected $description = 'Impor data historis (Excel docs/data/<tahun>) per tahap';
 
     private const NOMOR_SPBU = '2434520';
     private const SUPERADMIN = 'superadmin';
@@ -78,16 +81,36 @@ class ImporHistoris2024 extends Command
     private const SALDO_AWAL_BANK = 1000000000;
     private const NO_REKENING = '2434520';
     private const NAMA_REKENING = 'PT. MGS';
-    private const PENANDA = '[Impor 2024]';
-    private const CARRY = 'CARRY-OVER-2023';
+    private const AKUN_UTANG_DSP = '2-1300';
 
     private ?string $memberId = null;
+
+    private int $tahun = 2024;
+
+    /** Penanda keterangan data impor tahun ini, mis. '[Impor 2025]'. */
+    private function penanda(): string
+    {
+        return "[Impor {$this->tahun}]";
+    }
+
+    /** Kode order sisa tahun lalu (LO awal tahun yang sudah dibayar tahun lalu). */
+    private function carry(): string
+    {
+        return 'CARRY-OVER-' . ($this->tahun - 1);
+    }
+
+    /** Rentang tanggal tahun impor. */
+    private function rentang(): array
+    {
+        return ["{$this->tahun}-01-01", "{$this->tahun}-12-31"];
+    }
 
     public function handle(): int
     {
         $tahap = $this->argument('tahap');
         $metode = match ($tahap) {
             'bersihkan-stok-2026' => 'bersihkanStok2026',
+            'bersihkan-uji' => 'bersihkanUji',
             'pajak-lib' => 'pajakLib',
             'saldo-awal' => 'saldoAwal',
             'stand-meter' => 'standMeter',
@@ -104,7 +127,18 @@ class ImporHistoris2024 extends Command
             return self::FAILURE;
         }
 
-        $this->info('Database: ' . DB::connection()->getDatabaseName() . ($this->option('dry-run') ? '  (DRY RUN)' : ''));
+        $this->tahun = (int) $this->option('tahun');
+        if ($this->tahun < 2024 || $this->tahun > 2030) {
+            $this->error("Tahun {$this->tahun} tidak didukung.");
+
+            return self::FAILURE;
+        }
+        if ($this->tahun !== 2024 && in_array($tahap, ['bersihkan-stok-2026', 'saldo-awal'], true)) {
+            $this->error("Tahap $tahap hanya untuk impor 2024 (cut-over); tahun berikutnya melanjutkan buku 2024.");
+
+            return self::FAILURE;
+        }
+        $this->info('Database: ' . DB::connection()->getDatabaseName() . " · tahun {$this->tahun}" . ($this->option('dry-run') ? '  (DRY RUN)' : ''));
         $mulai = microtime(true);
 
         DB::beginTransaction();
@@ -158,6 +192,32 @@ class ImporHistoris2024 extends Command
         $this->line("Terhapus: stand_meter_dokumen_stok=$pivot, dokumen_stok=$dok");
     }
 
+    /**
+     * Hapus jurnal uji coba aplikasi yang sumbernya sudah tidak ada (faktur/pembayaran tanpa rencana),
+     * mis. JRN-202608-00001/00002 (faktur A-20260813-1, 13 Agu 2026). Keputusan pemilik 2026-11-12.
+     */
+    private function bersihkanUji(): void
+    {
+        $yatim = Jurnal::whereIn('tipe_sumber', ['pembelian', 'pembayaran'])
+            ->whereBetween('tanggal', $this->rentang())
+            ->where(function ($q) {
+                $q->where(fn ($a) => $a->where('tipe_sumber', 'pembelian')
+                    ->whereNotIn('sumber_id', DB::table('pajak_pembelian')->select('pajak_pembelian_id')))
+                    ->orWhere(fn ($b) => $b->where('tipe_sumber', 'pembayaran')
+                        ->whereNotIn('sumber_id', DB::table('pembayaran')->select('pembayaran_id')));
+            })->get();
+        if ($yatim->count() > 5) {
+            throw new RuntimeException('Jurnal yatim ' . $yatim->count() . ' baris (> 5); periksa manual.');
+        }
+        foreach ($yatim as $j) {
+            $nilai = DB::table('jurnal_detail')->where('jurnal_id', $j->jurnal_id)->sum('debit');
+            $this->line("hapus {$j->nomor_jurnal} {$j->tanggal} {$j->tipe_sumber}: {$j->keterangan} (Rp " . number_format($nilai, 0, ',', '.') . ')');
+            DB::table('jurnal_detail')->where('jurnal_id', $j->jurnal_id)->delete();
+            DB::table('jurnal')->where('jurnal_id', $j->jurnal_id)->delete();
+        }
+        $this->line('jurnal yatim dihapus: ' . $yatim->count());
+    }
+
     /** Samakan tarif master dengan faktur Pertamina 2024 (Pertalite/Biosolar). */
     private function pajakLib(): void
     {
@@ -181,6 +241,7 @@ class ImporHistoris2024 extends Command
         $rows = $this->bacaCsv('stand_meter.csv');
         $baru = 0;
         $ada = 0;
+        $seragam = 0;
         foreach ($rows as $r) {
             $nozzle = $master->nozzle($r['nozzle']);
             $dombak = $master->dombak($r['dombak']);
@@ -189,8 +250,21 @@ class ImporHistoris2024 extends Command
             $sudah = StandMeter::where('nozzle_id', $nozzle->nozzle_id)
                 ->where('jam_kerja_id', $jam->jam_kerja_id)
                 ->where('tanggal', $r['tanggal'])
-                ->exists();
+                ->first();
             if ($sudah) {
+                // 2026: Jan-Mei sudah diinput lewat aplikasi (belum dikonfirmasi). Angkanya harus sama dengan
+                // Excel; dombak diseragamkan dengan Excel (keputusan pemilik) lalu dikonfirmasi.
+                if (abs(floatval($sudah->stand_meter_awal) - floatval($r['stand_meter_awal'])) > 0.005
+                    || abs(floatval($sudah->stand_meter_akhir) - floatval($r['stand_meter_akhir'])) > 0.005) {
+                    throw new RuntimeException("Stand meter {$r['tanggal']} {$r['jam_kerja']} {$r['nozzle']} di DB "
+                        . "{$sudah->stand_meter_awal}-{$sudah->stand_meter_akhir} berbeda dengan Excel "
+                        . "{$r['stand_meter_awal']}-{$r['stand_meter_akhir']} ({$r['sumber']}).");
+                }
+                if ($sudah->dombak_id !== $dombak->dombak_id || (string) $sudah->is_confirmation !== '1') {
+                    DB::table('stand_meter')->where('stand_meter_id', $sudah->stand_meter_id)
+                        ->update(['dombak_id' => $dombak->dombak_id, 'is_confirmation' => 1]);
+                    $seragam++;
+                }
                 $ada++;
                 continue;
             }
@@ -206,7 +280,7 @@ class ImporHistoris2024 extends Command
             ]);
             $baru++;
         }
-        $this->line("stand_meter baru: $baru, dilewati (sudah ada): $ada, total CSV: " . count($rows));
+        $this->line("stand_meter baru: $baru, sudah ada: $ada (diseragamkan dombak/konfirmasi: $seragam), total CSV: " . count($rows));
     }
 
     // ------------------------------------------------------------ pengadaan
@@ -218,8 +292,8 @@ class ImporHistoris2024 extends Command
      */
     private function pengadaan(): void
     {
-        if (RencanaPembelian::where('keterangan', 'like', self::PENANDA . '%')->exists()) {
-            throw new RuntimeException('Data pengadaan impor 2024 sudah ada.');
+        if (RencanaPembelian::where('keterangan', 'like', $this->penanda() . '%')->exists()) {
+            throw new RuntimeException("Data pengadaan impor {$this->tahun} sudah ada.");
         }
 
         $spbu = $this->spbu();
@@ -248,14 +322,20 @@ class ImporHistoris2024 extends Command
         foreach ($los as $l) {
             $loPer[$l['kode_order']][$l['produk']][] = $l;
         }
-        // carry-over: rencana tanpa faktur, isinya LO yang ditempel ke CARRY-OVER-2023
-        if (! empty($loPer[self::CARRY])) {
+        // carry-over 2024: rencana tanpa faktur, isinya LO yang ditempel ke CARRY-OVER-2023.
+        // Tahun berikutnya: LO itu mengisi baris order tahun lalu yang belum terkirim.
+        $sisaLalu = [];
+        if ($this->tahun > 2024 && ! empty($loPer[$this->carry()])) {
+            $sisaLalu = $loPer[$this->carry()];
+            unset($loPer[$this->carry()]);
+        }
+        if (! empty($loPer[$this->carry()])) {
             $det = [];
-            foreach ($loPer[self::CARRY] as $nama => $xs) {
-                $det[] = ['kode' => self::CARRY, 'produk' => $nama, 'kl' => array_sum(array_column($xs, 'kl')),
+            foreach ($loPer[$this->carry()] as $nama => $xs) {
+                $det[] = ['kode' => $this->carry(), 'produk' => $nama, 'kl' => array_sum(array_column($xs, 'kl')),
                     'net' => 0, 'ppn' => 0, 'ppbkb' => 0, 'pph' => 0, 'total' => 0, 'no_cek_bg' => '-', 'sumber' => 'carry-over'];
             }
-            $rencana = [self::CARRY => ['tanggal' => self::TANGGAL_SALDO_AWAL, 'detail' => $det]] + $rencana;
+            $rencana = [$this->carry() => ['tanggal' => self::TANGGAL_SALDO_AWAL, 'detail' => $det]] + $rencana;
         }
         uksort($rencana, fn ($a, $b) => strcmp($rencana[$a]['tanggal'] . $a, $rencana[$b]['tanggal'] . $b));
 
@@ -263,12 +343,15 @@ class ImporHistoris2024 extends Command
         $urutHari = [];
         $baris = [];       // no_lo -> ['detail' => id, 'ms2' => id]
         $hitung = ['rencana' => 0, 'detail' => 0, 'faktur' => 0, 'pembayaran' => 0, 'ms2' => 0];
+        if ($sisaLalu) {
+            $baris = $this->pasangSisaTahunLalu($sisaLalu, $produk, $jam, $shiftLo, $member);
+        }
 
         foreach ($rencana as $kunci => $r) {
             $tgl = $r['tanggal'];
             $n = $urutHari[$tgl] = ($urutHari[$tgl] ?? 0) + 1;
             $kode = 'A-' . str_replace('-', '', $tgl) . '-' . $n;
-            $carry = $kunci === self::CARRY;
+            $carry = $kunci === $this->carry();
             $waktu = Carbon::parse($tgl . ' 08:00:00')->addMinutes($n);
 
             // gabungkan detail per produk (LO dipasangkan per rencana+produk oleh extractor)
@@ -284,11 +367,18 @@ class ImporHistoris2024 extends Command
             // Carry-over: harga 0 karena nilainya sudah ada di saldo awal (dibayar Desember 2023),
             // supaya layar pembayaran tidak menampilkannya sebagai tagihan terbuka.
             $lines = [];
+            $tanpaBongkar = [];
             foreach ($perProduk as $nama => $d) {
                 $p = $produk[$nama] ?? throw new RuntimeException("Produk $nama tidak ada.");
                 $hl = $carry ? 0.0 : ($d['kl'] > 0 ? $d['net'] / ($d['kl'] * 1000) : $hargaLiter[$nama]);
                 $terkirim = 0;
                 foreach ($loPer[$kunci][$nama] ?? [] as $l) {
+                    if (($l['status'] ?? '') === 'tanpa_penerimaan') {
+                        // ikuti stok dombak: LO tanpa bongkaran yang menaikkan dipping = belum diterima,
+                        // literannya tetap jadi sisa order (sudah dibayar, belum terkirim); nomor LO dicatat
+                        $tanpaBongkar[] = $l['no_lo'];
+                        continue;
+                    }
                     $lines[] = ['produk' => $p, 'liter' => floatval($l['kl']) * 1000, 'harga' => $hl, 'lo' => $l];
                     $terkirim += floatval($l['kl']);
                 }
@@ -300,12 +390,16 @@ class ImporHistoris2024 extends Command
             $grand = array_sum(array_map(fn ($x) => round($x['liter'] * $x['harga'], 6), $lines));
             $ref = $carry ? 'Sisa pesanan Desember 2023, sudah dibayar 2023; LO diterima Januari 2024. Nilai tercatat di saldo awal persediaan'
                 : (str_starts_with($kunci, 'ONLINE-') ? 'Pembayaran online' : str_replace(['TRX-', 'SO-', 'BG-'], ['TRX ID ', 'SO ', 'BG '], $kunci));
+            if ($tanpaBongkar) {
+                $ref .= '; LO tanpa bongkaran di dombak (perlu dicek): ' . implode(', ', $tanpaBongkar);
+                $hitung['lo_tanpa_bongkar'] = ($hitung['lo_tanpa_bongkar'] ?? 0) + count($tanpaBongkar);
+            }
 
             $ren = new RencanaPembelian([
                 'status_purchase_id' => $statusMs2->status_purchase_id,
                 'spbu_id' => $spbu->spbu_id,
                 'member_id' => $member,
-                'keterangan' => self::PENANDA . ' ' . $ref,
+                'keterangan' => $this->penanda() . ' ' . $ref,
                 'keterangan_denied' => null,
                 'pembelian_id' => null,
                 'kode_pembelian' => $kode,
@@ -411,7 +505,7 @@ class ImporHistoris2024 extends Command
                 'is_confirmation_admin' => 1,
                 'is_confirmation_top' => 1,
                 'is_done' => 1,
-                'catatan' => self::PENANDA . ' dari Excel',
+                'catatan' => $this->penanda() . ' dari Excel',
             ]);
             $kirim->save();
             $nKirim++;
@@ -463,7 +557,105 @@ class ImporHistoris2024 extends Command
         }
         $this->line("pengiriman  : $nKirim (supir $nSupir)");
         $this->line("file_lo     : $nLo");
-        $this->line('jurnal      : ' . Jurnal::whereIn('tipe_sumber', ['pembelian', 'pembayaran'])->whereYear('tanggal', 2024)->count() . ' (pembelian + pembayaran 2024)');
+        $this->line('jurnal      : ' . Jurnal::whereIn('tipe_sumber', ['pembelian', 'pembayaran'])->whereYear('tanggal', $this->tahun)->count() . " (pembelian + pembayaran {$this->tahun})");
+    }
+
+    /**
+     * LO awal tahun milik order tahun lalu (sisa order 31 Des, sudah dibayar): diisikan ke baris
+     * order tahun lalu yang belum terkirim (delivery 0), urut tanggal order. Baris sisa dipecah:
+     * bagian LO menjadi baris terkirim baru, sisanya tetap terbuka. LO yang tidak kebagian baris
+     * terbuka ditempel ke order terakhir tahun lalu produk itu. Faktur tahun lalu tidak berubah.
+     *
+     * @return array no_lo => ['detail' => id, 'ms2' => id, 'lo' => baris lo.csv, 'produk' => Produk]
+     */
+    private function pasangSisaTahunLalu(array $perProduk, $produk, $jam, array $shiftLo, string $member): array
+    {
+        $penandaLalu = '[Impor ' . ($this->tahun - 1) . ']';
+        $baris = [];
+        $rencanaUbah = [];
+        foreach ($perProduk as $nama => $xs) {
+            $p = $produk[$nama] ?? throw new RuntimeException("Produk $nama tidak ada.");
+            usort($xs, fn ($a, $b) => strcmp($a['tanggal_terima'] . $a['no_lo'], $b['tanggal_terima'] . $b['no_lo']));
+            $dasar = fn () => DetailRencanaPembelian::query()
+                ->join('rencana_pembelian as r', 'r.rencana_pembelian_id', '=', 'detail_rencana_pembelian.rencana_pembelian_id')
+                ->where('r.keterangan', 'like', $penandaLalu . '%')
+                ->where('detail_rencana_pembelian.produk_id', $p->produk_id)
+                ->select('detail_rencana_pembelian.*', 'r.kode_pembelian', 'r.tanggal_pembelian');
+            foreach ($xs as $l) {
+                $liter = floatval($l['kl']) * 1000;
+                // utamakan baris sisa yang cukup menampung LO (backlog akhir tahun); sisa kecil
+                // FIFO (mis. 7 L April) jangan dibesarkan jadi 8 KL karena menambah liter beli
+                // backlog akhir tahun = order Desember; baris terbuka lebih lama (mis. order 2025 yang LO-nya
+                // tidak pernah dibongkar) bukan tempat LO awal tahun
+                $buka = $dasar()->where('detail_rencana_pembelian.delivery', '0')->where('detail_rencana_pembelian.jumlah', '>=', $liter - 0.5)
+                    ->where('r.tanggal_pembelian', '>=', ($this->tahun - 1) . '-12-01')
+                    ->orderBy('r.tanggal_pembelian')->orderBy('detail_rencana_pembelian.kode_detail')->first()
+                    ?? $dasar()->where('detail_rencana_pembelian.delivery', '0')->where('detail_rencana_pembelian.jumlah', '>=', $liter - 0.5)
+                    ->orderBy('r.tanggal_pembelian')->orderBy('detail_rencana_pembelian.kode_detail')->first()
+                    ?? $dasar()->where('detail_rencana_pembelian.delivery', '0')->where('detail_rencana_pembelian.jumlah', '>', 0.5)
+                        ->orderByDesc('detail_rencana_pembelian.jumlah')->first();
+                $acuan = $buka ?? $dasar()->orderByDesc('r.tanggal_pembelian')->orderByDesc('detail_rencana_pembelian.kode_detail')->first()
+                    ?? throw new RuntimeException("Tidak ada order $nama tahun lalu untuk LO {$l['no_lo']}.");
+                $w = Carbon::parse(substr($acuan->tanggal_pembelian, 0, 10) . ' 08:00:00');
+                if ($buka && floatval($buka->jumlah) <= $liter + 0.5) {
+                    // baris sisa habis: jadi baris LO
+                    DB::table('detail_rencana_pembelian')->where('detail_rencana_pembelian_id', $buka->detail_rencana_pembelian_id)
+                        ->update(['jumlah' => $liter, 'total_harga' => round($liter * floatval($buka->harga), 6), 'delivery' => '1',
+                            'rit' => ceil($liter / 8000)]);
+                    $detId = $buka->detail_rencana_pembelian_id;
+                } else {
+                    if ($buka) {
+                        $sisa = floatval($buka->jumlah) - $liter;
+                        DB::table('detail_rencana_pembelian')->where('detail_rencana_pembelian_id', $buka->detail_rencana_pembelian_id)
+                            ->update(['jumlah' => $sisa, 'total_harga' => round($sisa * floatval($buka->harga), 6), 'rit' => ceil($sisa / 8000)]);
+                    }
+                    $ke = DetailRencanaPembelian::where('rencana_pembelian_id', $acuan->rencana_pembelian_id)->count() + 1;
+                    $det = new DetailRencanaPembelian([
+                        'rencana_pembelian_id' => $acuan->rencana_pembelian_id,
+                        'produk_id' => $p->produk_id,
+                        'jumlah' => $liter,
+                        'satuan_jumlah' => 'Liter',
+                        'rit' => ceil($liter / 8000),
+                        'harga' => floatval($acuan->harga),
+                        'total_harga' => round($liter * floatval($acuan->harga), 6),
+                        'is_confirmation' => 0,
+                        'ms2' => 0,
+                        'delivery' => 1,
+                        'kode_detail' => $acuan->kode_pembelian . '-' . $ke,
+                    ]);
+                    $det->forceFill(['created_at' => $w, 'updated_at' => $w])->save();
+                    $detId = $det->detail_rencana_pembelian_id;
+                }
+                $rencanaUbah[$acuan->rencana_pembelian_id] = true;
+
+                $ms2 = DB::table('detail_rencana_pembelian_ms2 as x')
+                    ->join('detail_rencana_pembelian as d', 'd.detail_rencana_pembelian_id', '=', 'x.detail_rencana_pembelian_id')
+                    ->where('d.rencana_pembelian_id', $acuan->rencana_pembelian_id)->value('x.ms2_id');
+                if (is_null($ms2)) {
+                    $tgl = substr($acuan->tanggal_pembelian, 0, 10);
+                    $m = new Ms2(['member_id' => $member, 'tanggal' => $tgl, 'kode_sms' => 'MS2-' . substr(str_replace('-', '', $tgl), 2) . '-S', 'is_done' => 1]);
+                    $m->forceFill(['created_at' => $w, 'updated_at' => $w])->save();
+                    $ms2 = $m->ms2_id;
+                }
+                $jk = $jam[$shiftLo[$l['no_lo']] ?? 'Shift 1'] ?? $jam['Shift 1'];
+                $link = new DetailRencanaPembelianMs2([
+                    'ms2_id' => $ms2,
+                    'detail_rencana_pembelian_id' => $detId,
+                    'jam_kerja_id' => $jk->jam_kerja_id,
+                    'is_delivery' => 1,
+                ]);
+                $link->forceFill(['created_at' => $w, 'updated_at' => $w])->save();
+                $baris[$l['no_lo']] = ['detail' => $detId, 'ms2' => $ms2, 'lo' => $l, 'produk' => $p];
+            }
+        }
+        foreach (array_keys($rencanaUbah) as $id) {
+            DB::table('rencana_pembelian')->where('rencana_pembelian_id', $id)->update([
+                'grand_total' => DB::table('detail_rencana_pembelian')->where('rencana_pembelian_id', $id)->sum('total_harga'),
+            ]);
+        }
+        $this->line('LO sisa order ' . ($this->tahun - 1) . ': ' . count($baris) . ' LO ke ' . count($rencanaUbah) . ' rencana tahun lalu');
+
+        return $baris;
     }
 
     // ------------------------------------------------------------ saldo awal
@@ -505,7 +697,7 @@ class ImporHistoris2024 extends Command
         }
         $carry = [];
         foreach ($this->bacaCsv('lo.csv') as $l) {
-            if ($l['kode_order'] === self::CARRY) {
+            if ($l['kode_order'] === $this->carry()) {
                 $carry[$l['produk']] = ($carry[$l['produk']] ?? 0) + floatval($l['kl']) * 1000;
             }
         }
@@ -556,11 +748,11 @@ class ImporHistoris2024 extends Command
      */
     private function stok(): void
     {
-        if (DokumenStok::whereYear('tanggal', 2024)->exists()) {
+        if (DokumenStok::whereYear('tanggal', $this->tahun)->exists()) {
             if (! $this->option('ganti')) {
-                throw new RuntimeException('Dokumen stok 2024 sudah ada (pakai --ganti untuk membangun ulang).');
+                throw new RuntimeException("Dokumen stok {$this->tahun} sudah ada (pakai --ganti untuk membangun ulang).");
             }
-            $this->hapusStok2024();
+            $this->hapusStok();
         }
         $member = $this->superadmin();
         $tipe = TypeDokumenStok::get()->keyBy('type_movement');
@@ -574,12 +766,31 @@ class ImporHistoris2024 extends Command
         $inventory = StokInventoryDombak::get()->keyBy('dombak_id');
         $fileLo = FileLo::pluck('file_lo_id', 'no_lo');
 
+        // tera (2026): liter yang keluar lewat nozzle untuk tera lalu kembali ke tangki; bukan penjualan
+        // (penjualan_detail.csv kolom tera, dari kolom 'Tera' tab Stock Margin). Dicatat Good Issue Tera
+        // lalu Good Return Tera di shift yang sama, dengan header tera per hari.
+        $teraSm = [];
+        if (is_file($this->pathCsv('penjualan_detail.csv'))) {
+            foreach ($this->bacaCsv('penjualan_detail.csv') as $x) {
+                if (floatval($x['tera'] ?? 0) > 0.0005) {
+                    $teraSm[$x['tanggal'] . '|' . $x['jam_kerja'] . '|' . $x['nozzle']] = [floatval($x['tera']), floatval($x['harga_jual'])];
+                }
+            }
+        }
+        if ($teraSm) {
+            foreach (['Good Issue Tera', 'Good Return Tera'] as $t) {
+                $tipe[$t] ?? throw new RuntimeException("type_dokumen_stok \"$t\" tidak ada.");
+            }
+        }
+        $teraHari = [];   // tanggal -> Tera
+        $spbuId = $this->spbu()->spbu_id;
+
         // stand meter 2024 per (tanggal|jam_kerja_id|dombak_id)
         $sm = [];
-        StandMeter::whereYear('tanggal', 2024)->join('nozzle', 'nozzle.nozzle_id', '=', 'stand_meter.nozzle_id')
+        StandMeter::whereYear('tanggal', $this->tahun)->join('nozzle', 'nozzle.nozzle_id', '=', 'stand_meter.nozzle_id')
             ->orderBy('nozzle.nama_nozzle')
             ->get(['stand_meter.stand_meter_id', 'stand_meter.tanggal', 'stand_meter.jam_kerja_id', 'stand_meter.dombak_id',
-                'stand_meter.stand_meter_awal', 'stand_meter.stand_meter_akhir'])
+                'stand_meter.stand_meter_awal', 'stand_meter.stand_meter_akhir', 'nozzle.nama_nozzle'])
             ->each(function ($s) use (&$sm) {
                 $sm[substr($s->tanggal, 0, 10) . '|' . $s->jam_kerja_id . '|' . $s->dombak_id][] = $s;
             });
@@ -624,7 +835,9 @@ class ImporHistoris2024 extends Command
         // timeline per dombak: gabungan baris stok, stand meter, penerimaan, transfer
         $nomorShift = $jam->mapWithKeys(fn ($j) => [$j->jam_kerja_id => $j->nama_jam_kerja]);
         $timeline = [];
-        foreach ($this->bacaCsv('stok_shift.csv') as $r) {
+        // stok_dombak.csv (dm5.py: Biosolar dipecah DM4/DM5); stok_shift.csv untuk CSV lama
+        $fileStok = is_file($this->pathCsv('stok_dombak.csv')) ? 'stok_dombak.csv' : 'stok_shift.csv';
+        foreach ($this->bacaCsv($fileStok) as $r) {
             $timeline[$r['dombak']][$r['tanggal'] . '|' . $r['urutan']] = $r;
         }
         $namaDombakId = $dombak->mapWithKeys(fn ($x) => [$x->dombak_id => $x->nama_dombak]);
@@ -783,10 +996,30 @@ class ImporHistoris2024 extends Command
                     if ($liter < 0.0005) {
                         continue;   // nol / minus pembulatan stand meter: bukan penjualan (selisihnya ke stok taking)
                     }
-                    $dok = $buat('Good Issue Sales', $buku, $buku - $liter, $wJual);
-                    DB::table('stand_meter_dokumen_stok')->insert(['stand_meter_id' => $s->stand_meter_id, 'dokumen_stok_id' => $dok->dokumen_stok_id]);
-                    $buku -= $liter;
-                    $n['gi']++;
+                    [$tera, $hargaTera] = $teraSm[$r['tanggal'] . '|' . $jk->nama_jam_kerja . '|' . $s->nama_nozzle] ?? [0.0, 0.0];
+                    $tera = min($tera, $liter);
+                    if ($liter - $tera >= 0.0005) {
+                        $dok = $buat('Good Issue Sales', $buku, $buku - ($liter - $tera), $wJual);
+                        DB::table('stand_meter_dokumen_stok')->insert(['stand_meter_id' => $s->stand_meter_id, 'dokumen_stok_id' => $dok->dokumen_stok_id]);
+                        $buku -= $liter - $tera;
+                        $n['gi']++;
+                    }
+                    if ($tera >= 0.0005) {
+                        $hdr = $teraHari[$r['tanggal']] ??= Tera::create([
+                            'spbu_id' => $spbuId, 'tanggal' => $r['tanggal'], 'grand_total' => 0,
+                            'keterangan' => $this->penanda() . ' tera nozzle (kolom Tera tab Stock Margin); BBM kembali ke tangki',
+                        ]);
+                        $ket = "{$s->nama_nozzle} {$jk->nama_jam_kerja}: " . round($tera, 2) . ' L';
+                        foreach ([['Good Issue Tera', -$tera, 'keluar untuk tera'], ['Good Return Tera', $tera, 'kembali dari tera']] as [$jt, $gerak, $ket2]) {
+                            $dt = $buat($jt, $buku, $buku + $gerak, $wJual);
+                            DetailTera::create(['tera_id' => $hdr->tera_id, 'dokumen_stok_id' => $dt->dokumen_stok_id,
+                                'quantity' => round($tera, 6), 'harga' => $hargaTera, 'keterangan' => "$ket $ket2"]);
+                            $buku += $gerak;
+                        }
+                        $hdr->grand_total = round(floatval($hdr->grand_total) + $tera * $hargaTera, 6);
+                        $hdr->save();
+                        $n['tera'] = ($n['tera'] ?? 0) + 1;
+                    }
                 }
 
                 // 3) stok taking dipping akhir shift
@@ -804,11 +1037,11 @@ class ImporHistoris2024 extends Command
         foreach ($n as $k => $v) {
             $this->line(str_pad($k, 9) . ": $v");
         }
-        $this->line('Saldo buku akhir 2024 per dombak (vs dipping terakhir di Excel):');
+        $this->line("Saldo buku akhir {$this->tahun} per dombak (vs dipping terakhir di Excel):");
         foreach ($akhir as $nama => [$buku, $r]) {
             $this->line(sprintf('  %-14s %12s L  (Excel %s %s: %s)', $nama, number_format($buku, 2, ',', '.'), $r['tanggal'], $r['jam_kerja'], $r['dipping'] === '' ? '-' : number_format(floatval($r['dipping']), 2, ',', '.')));
         }
-        $this->line('Jurnal losses 2024: ' . Jurnal::where('tipe_sumber', 'losses')->whereYear('tanggal', 2024)->count());
+        $this->line("Jurnal losses {$this->tahun}: " . Jurnal::where('tipe_sumber', 'losses')->whereYear('tanggal', $this->tahun)->count());
     }
 
     /**
@@ -817,9 +1050,9 @@ class ImporHistoris2024 extends Command
      * tertaut ke dokumen 2024; transfer lain tidak disentuh), tautan stand meter, lalu
      * dokumen stoknya. LO, stand meter, penjualan, dan jurnal lain tidak berubah.
      */
-    private function hapusStok2024(): void
+    private function hapusStok(): void
     {
-        $dok = fn () => DB::table('dokumen_stok')->select('dokumen_stok_id')->whereBetween('tanggal', ['2024-01-01', '2024-12-31']);
+        $dok = fn () => DB::table('dokumen_stok')->select('dokumen_stok_id')->whereBetween('tanggal', $this->rentang());
         $pen = fn () => DB::table('penerimaan')->select('penerimaan_id')->whereIn('dokumen_stok_id', $dok());
         $dt = DB::table('dombak_transfer_dokumen_stok')->whereIn('dokumen_stok_id', $dok())->distinct()->pluck('dombak_transfer_id');
 
@@ -833,7 +1066,10 @@ class ImporHistoris2024 extends Command
         $n['dombak_transfer_dokumen_stok'] = DB::table('dombak_transfer_dokumen_stok')->whereIn('dokumen_stok_id', $dok())->delete();
         $n['dombak_transfer'] = DB::table('dombak_transfer')->whereIn('dombak_transfer_id', $dt)->delete();
         $n['stand_meter_dokumen_stok'] = DB::table('stand_meter_dokumen_stok')->whereIn('dokumen_stok_id', $dok())->delete();
-        $n['dokumen_stok'] = DB::table('dokumen_stok')->whereBetween('tanggal', ['2024-01-01', '2024-12-31'])->delete();
+        $teraIds = DB::table('detail_tera')->whereIn('dokumen_stok_id', $dok())->distinct()->pluck('tera_id');
+        $n['detail_tera'] = DB::table('detail_tera')->whereIn('dokumen_stok_id', $dok())->delete();
+        $n['tera'] = DB::table('tera')->whereIn('tera_id', $teraIds)->where('keterangan', 'like', $this->penanda() . '%')->delete();
+        $n['dokumen_stok'] = DB::table('dokumen_stok')->whereBetween('tanggal', $this->rentang())->delete();
         $this->line('Dihapus (--ganti): ' . collect($n)->map(fn ($v, $k) => "$k=$v")->implode(', '));
     }
 
@@ -853,8 +1089,8 @@ class ImporHistoris2024 extends Command
      */
     private function penjualan(): void
     {
-        if (\App\Models\Penjualan::whereYear('tanggal', 2024)->exists()) {
-            throw new RuntimeException('Penjualan 2024 sudah ada.');
+        if (\App\Models\Penjualan::whereYear('tanggal', $this->tahun)->exists()) {
+            throw new RuntimeException("Penjualan {$this->tahun} sudah ada.");
         }
         $spbu = $this->spbu();
         $member = $this->superadmin();
@@ -865,7 +1101,7 @@ class ImporHistoris2024 extends Command
 
         // stand meter 2024: tanggal|jam_kerja_id|nama_nozzle -> id
         $sm = [];
-        StandMeter::whereYear('stand_meter.tanggal', 2024)->join('nozzle', 'nozzle.nozzle_id', '=', 'stand_meter.nozzle_id')
+        StandMeter::whereYear('stand_meter.tanggal', $this->tahun)->join('nozzle', 'nozzle.nozzle_id', '=', 'stand_meter.nozzle_id')
             ->get(['stand_meter.stand_meter_id', 'stand_meter.tanggal', 'stand_meter.jam_kerja_id', 'nozzle.nama_nozzle'])
             ->each(function ($s) use (&$sm) {
                 $sm[substr($s->tanggal, 0, 10) . '|' . $s->jam_kerja_id . '|' . $s->nama_nozzle] = $s->stand_meter_id;
@@ -967,9 +1203,9 @@ class ImporHistoris2024 extends Command
         foreach ($n as $k => $v) {
             $this->line(str_pad($k, 10) . ": $v");
         }
-        $this->line('Omzet 2024  : Rp ' . number_format($omzet, 0, ',', '.'));
+        $this->line("Omzet {$this->tahun}  : Rp " . number_format($omzet, 0, ',', '.'));
         foreach (['penjualan', 'penjualan_hpp', 'penarikan'] as $t) {
-            $j = Jurnal::where('tipe_sumber', $t)->whereYear('tanggal', 2024);
+            $j = Jurnal::where('tipe_sumber', $t)->whereYear('tanggal', $this->tahun);
             $this->line(str_pad("jurnal $t", 22) . ': ' . $j->count());
         }
     }
@@ -982,22 +1218,50 @@ class ImporHistoris2024 extends Command
      */
     private function keuangan(): void
     {
-        if (Jurnal::where('tipe_sumber', 'manual')->where('keterangan', 'like', self::PENANDA . '%')->exists()) {
-            throw new RuntimeException('Jurnal keuangan impor 2024 sudah ada.');
+        if (Jurnal::where('tipe_sumber', 'manual')->where('keterangan', 'like', $this->penanda() . '%')->exists()) {
+            throw new RuntimeException("Jurnal keuangan impor {$this->tahun} sudah ada.");
         }
         $spbu = $this->spbu();
         $member = $this->superadmin();
 
+        $baris = $this->bacaCsv('keuangan_bulanan.csv');
+
+        // Utang DSP (2025): saldo awal per 31 Des tahun lalu = total pelunasan tahun ini, sehingga
+        // akhir tahun menjadi 0 (keputusan pemilik). Lawan: Modal Disetor (dana DSP dianggap pinjaman).
+        $utang = array_sum(array_map(fn ($x) => floatval($x['nilai']), array_filter($baris, fn ($x) => $x['jenis'] === 'utang')));
+        if ($utang > 0) {
+            $induk = \App\Models\Coa::where('kode_akun', '2-0000')->value('coa_id');
+            \App\Models\Coa::firstOrCreate(['kode_akun' => self::AKUN_UTANG_DSP], [
+                'parent_coa_id' => $induk, 'nama_akun' => 'Utang DSP', 'tipe_akun' => 'kewajiban', 'saldo_normal' => 'kredit',
+                'kategori_arus_kas' => 'pendanaan', 'is_kas' => false, 'is_header' => false, 'is_aktif' => true,
+                'keterangan' => 'Pinjaman pihak DSP, dilunasi bulanan (impor historis)',
+            ]);
+            $ket = "Saldo awal utang DSP (= total pelunasan {$this->tahun})";
+            JurnalPosting::post(
+                $spbu->spbu_id,
+                ($this->tahun - 1) . '-12-31',
+                'manual',
+                Uuid::uuid5(Uuid::NAMESPACE_URL, "impor-{$this->tahun}:utang-dsp-awal")->toString(),
+                $this->penanda() . ' ' . $ket,
+                [
+                    ['kode_akun' => Akun::MODAL_DISETOR, 'debit' => $utang, 'kredit' => 0, 'keterangan' => $ket],
+                    ['kode_akun' => self::AKUN_UTANG_DSP, 'debit' => 0, 'kredit' => $utang, 'keterangan' => $ket],
+                ],
+                $member
+            );
+            $this->line('saldo awal utang DSP ' . ($this->tahun - 1) . '-12-31: Rp ' . number_format($utang, 0, ',', '.'));
+        }
+
         $n = 0;
-        $tot = ['beban' => 0, 'prive' => 0];
-        foreach ($this->bacaCsv('keuangan_bulanan.csv') as $x) {
+        $tot = ['beban' => 0, 'prive' => 0, 'utang' => 0];
+        foreach ($baris as $x) {
             $nilai = floatval($x['nilai']);
             JurnalPosting::post(
                 $spbu->spbu_id,
                 $x['tanggal'],
                 'manual',
-                Uuid::uuid5(Uuid::NAMESPACE_URL, 'impor-2024:keuangan:' . $x['sumber'])->toString(),
-                self::PENANDA . ' ' . $x['keterangan'],
+                Uuid::uuid5(Uuid::NAMESPACE_URL, "impor-{$this->tahun}:keuangan:" . $x['sumber'])->toString(),
+                $this->penanda() . ' ' . $x['keterangan'],
                 [
                     ['kode_akun' => $x['kode_akun'], 'debit' => $nilai, 'kredit' => 0, 'keterangan' => $x['keterangan']],
                     ['kode_akun' => Akun::BANK, 'debit' => 0, 'kredit' => $nilai, 'keterangan' => 'Dibayar dari Bank'],
@@ -1007,7 +1271,8 @@ class ImporHistoris2024 extends Command
             $tot[$x['jenis']] += $nilai;
             $n++;
         }
-        $this->line("jurnal manual: $n (beban Rp " . number_format($tot['beban'], 0, ',', '.') . ', prive Rp ' . number_format($tot['prive'], 0, ',', '.') . ')');
+        $this->line("jurnal manual: $n (beban Rp " . number_format($tot['beban'], 0, ',', '.') . ', prive Rp ' . number_format($tot['prive'], 0, ',', '.')
+            . ', pelunasan utang Rp ' . number_format($tot['utang'], 0, ',', '.') . ')');
     }
 
     // ------------------------------------------------------------ bonus
@@ -1026,7 +1291,7 @@ class ImporHistoris2024 extends Command
         $n = ['baru' => 0, 'sudah ada' => 0];
         $memberBaru = [];
         foreach ($this->bacaCsv('bonus.csv') as $b) {
-            $deskripsi = self::PENANDA . ' Reward karyawan ' . $b['bulan'] . ' (' . $b['nama'] . ', ' . $b['jabatan'] . ')';
+            $deskripsi = $this->penanda() . ' Reward karyawan ' . $b['bulan'] . ' (' . $b['nama'] . ', ' . $b['jabatan'] . ')';
             if (Bonus::where('tanggal', $b['tanggal'])->where('deksripsi', $deskripsi)->exists()) {
                 $n['sudah ada']++;
                 continue;
@@ -1233,9 +1498,14 @@ class ImporHistoris2024 extends Command
         return $this->memberId = $id;
     }
 
+    private function pathCsv(string $nama): string
+    {
+        return storage_path("app/impor-{$this->tahun}/" . $nama);
+    }
+
     private function bacaCsv(string $nama): array
     {
-        $path = storage_path('app/impor-2024/' . $nama);
+        $path = $this->pathCsv($nama);
         if (! is_file($path)) {
             throw new RuntimeException("$path belum ada; jalankan extractor di scripts/impor-2024 dulu.");
         }

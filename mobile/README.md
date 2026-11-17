@@ -61,7 +61,7 @@ Variabel `EXPO_PUBLIC_*` di-inline saat bundling — **restart `npm start`
 setelah mengubah `.env`.**
 
 Untuk build rilis, alamat backend diambil dari **`.env.production`**
-(`https://spbu.seni.asia`) yang menimpa `.env`. Jadi `.env` bebas Anda ubah
+(`https://spbu.cloud`) yang menimpa `.env`. Jadi `.env` bebas Anda ubah
 untuk keperluan lokal tanpa mengganggu APK UAT.
 
 ---

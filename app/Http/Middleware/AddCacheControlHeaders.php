@@ -21,6 +21,6 @@ class AddCacheControlHeaders
         if ($response->headers->get('Content-Type') === 'application/javascript') {
             $response->header('Cache-Control', 'public, max-age=604800'); // Cache for 1 week
         }
-        return $next($request);
+        return $response;
     }
 }
